@@ -1,60 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
 
 function App() {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Feature One</h2>
-            <p className="text-gray-600 mb-4">This is a sample card demonstrating Tailwind's styling capabilities.</p>
-            <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">
-              Learn More
-            </button>
-          </div>
-
-          {/* Card 2 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Feature Two</h2>
-            <p className="text-gray-600 mb-4">Each card automatically adjusts its width based on screen size.</p>
-            <button className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
-              Explore
-            </button>
-          </div>
-
-          {/* Card 3 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Feature Three</h2>
-            <p className="text-gray-600 mb-4">The layout is fully responsive and uses Tailwind's grid system.</p>
-            <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg">
-              Get Started
-            </button>
-          </div>
-        </div>
-
-        {/* Full-width section */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-6 text-center">
-            Tailwind CSS is working! 🎉
-          </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-2">Left Content</h3>
-              <p className="text-gray-600">This section demonstrates full-width layout with responsive design.</p>
-            </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-2">Right Content</h3>
-              <p className="text-gray-600">The content automatically adjusts based on your screen size.</p>
-            </div>
-          </div>
-        </div>
+    <div className="fixed top-0 left-0 w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-purple-700 text-white overflow-hidden">
+      <h1 className="text-5xl font-bold mb-6 animate-bounce">Tailwind CSS Test 🚀</h1>
+      <p className="text-lg text-center max-w-lg">
+        If you see this, Tailwind CSS is working! Play around with the styles and test responsiveness.
+      </p>
+      <div className="mt-8 flex space-x-4">
+        <button className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl transition-all">
+          Click Me
+        </button>
+        <button className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-all">
+          Another Button
+        </button>
       </div>
     </div>
   );
 }
 
-export default App
+export default App;
