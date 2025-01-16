@@ -21,7 +21,7 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-10 ">
-            {["/", "/Properties", "/Cities", "/Our Story"].map((path, index) => (
+            {["/", "/Properties", "/Our Story"].map((path, index) => (
               <Link
                 key={index}
                 to={path}
@@ -34,7 +34,7 @@ const Navbar = () => {
 
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/search" className="text-gray-600 hover:text-blue-600 cursor-pointer">
+            <Link to="./SearchBox" className="text-gray-600 hover:text-blue-600 cursor-pointer">
               <Search className="h-5 w-5" />
             </Link>
             {/*<Link to="/favorites" className="text-gray-600 hover:text-blue-600">
