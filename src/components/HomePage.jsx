@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import SearchBox from './SearchBox';
 
 function HomePage() {
   return (
@@ -8,7 +9,12 @@ function HomePage() {
       <p className="text-lg text-gray-600 mt-4">
         Find your perfect student accommodation easily.
       </p>
+       {/* Search Box */}
+       <div className="mt-6 w-full flex justify-center">
+        <SearchBox />
+      </div>
     </div>
+
   );
 }
 
