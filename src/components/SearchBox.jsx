@@ -23,7 +23,7 @@ function SearchBox() {
           {/* Location Button */}
           <button
             onClick={() => handlePanelClick("location")}
-            className={`flex-1 flex items-center px-6 h-full rounded-l-full hover:bg-gray-50 transition-colors relative ${
+            className={`flex-1 flex items-center px-6 h-full rounded-l-full hover:bg-gray-50 transition-colors ${
               activePanel === "location" ? "bg-gray-50" : ""
             }`}
           >
@@ -82,7 +82,7 @@ function SearchBox() {
             {activePanel === "location" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold mb-4">Where to?</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {towns.map((town) => (
                     <button
                       key={town}
@@ -106,7 +106,7 @@ function SearchBox() {
             {activePanel === "payment" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {paymentMethods.map((method) => (
                     <button
                       key={method}

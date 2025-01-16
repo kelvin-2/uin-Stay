@@ -10,7 +10,7 @@ function HomePage() {
         Find your perfect student accommodation easily.
       </p>
        {/* Search Box */}
-       <div className="mt-6 w-full flex justify-center">
+      <div className="mt-6 w-full flex justify-center">
         <SearchBox />
       </div>
     </div>
