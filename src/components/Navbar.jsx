@@ -15,17 +15,17 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-blue-600">
+          <Link to="/" className="text-2xl font-bold text-blue-600 cursor-pointer">
             UniStay
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            {["/", "/properties", "/cities", "/about"].map((path, index) => (
+          <div className="hidden md:flex items-center space-x-10 ">
+            {["/", "/Properties", "/Cities", "/Our Story"].map((path, index) => (
               <Link
                 key={index}
                 to={path}
-                className={`${isActive(path) ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
+                className={`${isActive(path) ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600 cursor-pointer`}
               >
                 {path === '/' ? 'Home' : path.replace('/', '')}
               </Link>
@@ -34,13 +34,13 @@ const Navbar = () => {
 
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/search" className="text-gray-600 hover:text-blue-600">
+            <Link to="/search" className="text-gray-600 hover:text-blue-600 cursor-pointer">
               <Search className="h-5 w-5" />
             </Link>
-            <Link to="/favorites" className="text-gray-600 hover:text-blue-600">
+            {/*<Link to="/favorites" className="text-gray-600 hover:text-blue-600">
               <Heart className="h-5 w-5" />
-            </Link>
-            <Link to="/signin" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+            </Link>*/}
+            <Link to="/signin" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 cursor-pointer">
               <User className="h-4 w-4" />
               <span>Sign In</span>
             </Link>
