@@ -8,7 +8,6 @@ function HomePage() {
       <p className="text-lg text-gray-600 mt-4">
         Find your perfect student accommodation easily.
       </p>
-   
     </div>
   );
 }
