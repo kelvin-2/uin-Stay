@@ -86,7 +86,7 @@ const Properties = () => {
           <div className="p-4">
             {/* Price */}
             <div className="flex items-center gap-1 mb-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
+             
               <span className="text-lg font-bold text-gray-900">R{property.price.toLocaleString()}</span>
               <span className="text-gray-600 text-sm">/month</span>
             </div>
