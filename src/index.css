@@ -5,10 +5,8 @@
 html, body {
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: 100vw !important;
     height: 100%;
     background-color:white;
   }
-  .w-screen {
-    width: 100vw !important;
-  }
+ 
