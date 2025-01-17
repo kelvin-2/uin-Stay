@@ -1,0 +1,66 @@
+[
+    {
+      "id": 1,
+      "name": "Sunrise Student Apartments",
+      "location": "Cape Town, South Africa",
+      "price": 3500,
+      "nsfas_accredited": true,
+      "distance_from_shuttle_stop": "200m",
+      "amenities": ["Wi-Fi", "Laundry", "24/7 Security", "Study Area", "Furnished Rooms"],
+      "images": [
+        "https://example.com/images/sunrise1.jpg",
+        "https://example.com/images/sunrise2.jpg",
+        "https://example.com/images/sunrise3.jpg"
+      ],
+      "landlord": {
+        "id": 101,
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "phone": "+27 71 234 5678",
+        "profile_picture": "https://example.com/images/johnsmith.jpg"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Campus Edge Residency",
+      "location": "Johannesburg, South Africa",
+      "price": 4200,
+      "nsfas_accredited": false,
+      "distance_from_shuttle_stop": "100m",
+      "amenities": ["Gym", "Pool", "Parking", "24/7 Security", "Furnished"],
+      "images": [
+        "https://example.com/images/campusedge1.jpg",
+        "https://example.com/images/campusedge2.jpg",
+        "https://example.com/images/campusedge3.jpg"
+      ],
+      "landlord": {
+        "id": 102,
+        "name": "Sarah Johnson",
+        "email": "sarah.johnson@example.com",
+        "phone": "+27 72 987 6543",
+        "profile_picture": "https://example.com/images/sarahjohnson.jpg"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Greenview Student Lofts",
+      "location": "Durban, South Africa",
+      "price": 3800,
+      "nsfas_accredited": true,
+      "distance_from_shuttle_stop": "150m",
+      "amenities": ["Wi-Fi", "CCTV Security", "Shared Kitchen", "Balcony", "Furnished Rooms"],
+      "images": [
+        "https://example.com/images/greenview1.jpg",
+        "https://example.com/images/greenview2.jpg",
+        "https://example.com/images/greenview3.jpg"
+      ],
+      "landlord": {
+        "id": 103,
+        "name": "Michael Brown",
+        "email": "michael.brown@example.com",
+        "phone": "+27 73 345 6789",
+        "profile_picture": "https://example.com/images/michaelbrown.jpg"
+      }
+    }
+  ]
+  
