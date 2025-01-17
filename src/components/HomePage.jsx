@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import SearchBox from './SearchBox';
 import Properties from './Properties';
 import { Building2, GraduationCap, Home, Users } from 'lucide-react';
+import './something.css'
 
 function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="w-full mx-auto ">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 ">
           <div className="text-center">
             <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl bg-gradient-to-r from-blue-600 to-indigo-600 inline-block text-transparent bg-clip-text">
               Welcome to UniStay
@@ -48,7 +49,7 @@ function HomePage() {
       </div>
 
       {/* Featured Properties Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="w-full  ">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Featured Properties</h2>
           <Link 
@@ -65,8 +66,8 @@ function HomePage() {
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-blue-50 py-16">
-        <div className="max-w-7xl mx-auto px-4">
+      <div className="bg-blue-50 py-16 w-full">
+        <div className="px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Why Choose UniStay?
           </h2>
