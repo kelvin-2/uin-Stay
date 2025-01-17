@@ -63,9 +63,9 @@ const Properties = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 mt-11">
       {properties.map((property) => (
-        <div key={property.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1">
+        <div key={property.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer">
           {/* Favorite Button */}
           <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300 opacity-0 group-hover:opacity-100 z-10 ">
             <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
@@ -76,7 +76,7 @@ const Properties = () => {
             <img
               src={property.image}
               alt={property.name}
-              className="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-300"
+              className="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-300 cursor-pointer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-lg">
@@ -92,7 +92,6 @@ const Properties = () => {
             {/* Price and Features */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
-                <DollarSign className="w-5 h-5 text-green-600" />
                 <span className="text-lg font-bold text-gray-900">R{property.price.toLocaleString()}</span>
                 <span className="text-gray-500 text-sm">/month</span>
               </div>
