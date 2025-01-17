@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import Navbar from './components/Navbar'
 import HomePage from './components/HomePage'
+import Properties from './components/Properties'
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -14,6 +15,7 @@ function App() {
       <Routes>
          {/* Default Route: Home Page */}
        <Route path="/" element={<HomePage/>} />
+       <Route path="/Properties" element={<Properties/>} />
       
       </Routes>
      
