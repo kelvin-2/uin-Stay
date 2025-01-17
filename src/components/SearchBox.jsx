@@ -32,7 +32,7 @@ function SearchBox() {
                 <MapPin className="w-4 h-4 text-gray-500 mr-2" />
                 <span className="font-medium">Location</span>
               </div>
-              <p className="text-sm text-gray-500">{location || "Where are you going?"}</p>
+              <p className="text-sm text-gray-500">{location || "Choose your location"}</p>
             </div>
           </button>
 
@@ -81,7 +81,7 @@ function SearchBox() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
             {activePanel === "location" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold mb-4">Where to?</h3>
+                <h3 className="text-lg font-semibold mb-4">Where to Stay?</h3>
                 <div className="grid grid-cols-3 gap-4">
                   {towns.map((town) => (
                     <button
