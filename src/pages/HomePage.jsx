@@ -21,7 +21,7 @@ function HomePage() {
         </div>
       </div>
 
-      {/* Featured Properties Section */}
+      {/* Featured Properties Section d*/}
       <FeaturedProperties/>
 
       {/* Benefits Section */}
