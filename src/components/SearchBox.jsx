@@ -10,21 +10,28 @@ function SearchBox() {
   const towns = ["Summerstrand", "Central", "Humewood", "Forest Hill", "Wallmer"];
   const paymentMethods = ["Cash", "Bursary", "NSFAS"];
 
-
   const handlePanelClick = (panel) => {
     setActivePanel(activePanel === panel ? null : panel);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="relative w-full max-w-4xl mx-auto">
+      {/* Backdrop */}
+      {activePanel && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+          onClick={() => setActivePanel(null)}
+        />
+      )}
+
       {/* Main Search Pill */}
-      <div className="bg-white rounded-full shadow-lg border border-gray-200 divide-x">
+      <div className="relative bg-white rounded-full shadow-lg border border-gray-200 divide-x z-20">
         <div className="flex items-center h-16">
           {/* Location Button */}
           <button
             onClick={() => handlePanelClick("location")}
-            className={`flex-1 flex items-center px-6 h-full rounded-l-full hover:bg-gray-50 transition-colors ${
-              activePanel === "location" ? "bg-gray-50" : ""
+            className={`flex-1 flex items-center px-6 h-full rounded-l-full hover:bg-gray-50 transition-all duration-200 ${
+              activePanel === "location" ? "bg-gray-50 ring-2 ring-blue-100" : ""
             }`}
           >
             <div>
@@ -39,8 +46,8 @@ function SearchBox() {
           {/* Payment Method Button */}
           <button
             onClick={() => handlePanelClick("payment")}
-            className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-colors ${
-              activePanel === "payment" ? "bg-gray-50" : ""
+            className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-all duration-200 ${
+              activePanel === "payment" ? "bg-gray-50 ring-2 ring-blue-100" : ""
             }`}
           >
             <div>
@@ -55,8 +62,8 @@ function SearchBox() {
           {/* Price Range Button */}
           <button
             onClick={() => handlePanelClick("price")}
-            className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-colors ${
-              activePanel === "price" ? "bg-gray-50" : ""
+            className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-all duration-200 ${
+              activePanel === "price" ? "bg-gray-50 ring-2 ring-blue-100" : ""
             }`}
           >
             <div>
@@ -77,8 +84,8 @@ function SearchBox() {
 
       {/* Dropdown Panels */}
       {activePanel && (
-        <div className="absolute left-0 right-0 mt-2 mx-auto max-w-4xl">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+        <div className="absolute left-0 right-0 mt-4 mx-auto max-w-4xl z-20">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform transition-all duration-200 ease-out">
             {activePanel === "location" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold mb-4">Where to Stay?</h3>
@@ -90,7 +97,7 @@ function SearchBox() {
                         setLocation(town);
                         setActivePanel(null);
                       }}
-                      className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
                     >
                       <MapPin className="w-5 h-5 text-gray-400" />
                       <div className="text-left">
@@ -114,7 +121,7 @@ function SearchBox() {
                         setPaymentMethod(method);
                         setActivePanel(null);
                       }}
-                      className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
                     >
                       <Wallet className="w-5 h-5 text-gray-400" />
                       <span className="font-medium">{method}</span>
@@ -135,7 +142,7 @@ function SearchBox() {
                     step="100"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full"
+                    className="w-full accent-blue-500"
                   />
                   <div className="flex items-center justify-between">
                     <div className="flex-1 mr-4">
@@ -144,7 +151,7 @@ function SearchBox() {
                         type="number"
                         value={priceRange[0]}
                         onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-                        className="w-full p-2 border rounded-lg"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
                     <div className="flex-1">
@@ -153,7 +160,7 @@ function SearchBox() {
                         type="number"
                         value={priceRange[1]}
                         onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                        className="w-full p-2 border rounded-lg"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
                   </div>
