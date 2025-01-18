@@ -88,7 +88,7 @@ const Properties = () => {
           </div>
 
           {/* Content Container */}
-          <div className="p-5">
+          <div className="p-5 cursor-pointer">
             {/* Price and Features */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
