@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import HeroSection from "../components/HeroOurStory";
 import MiddleSection from "../components/MiddleSection";
+import { Shield, Eye, Users } from "lucide-react";
 
 function OurStory() {
   return (
@@ -19,7 +20,9 @@ function OurStory() {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6"></div>
+              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-zinc-600" />
+              </div>
               <h3 className="text-xl font-semibold text-zinc-800 mb-4">
                 Safety First
               </h3>
@@ -30,7 +33,9 @@ function OurStory() {
             </div>
 
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6"></div>
+              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6 flex items-center justify-center">
+                <Eye className="w-6 h-6 text-zinc-600" />
+              </div>
               <h3 className="text-xl font-semibold text-zinc-800 mb-4">
                 Full Transparency
               </h3>
@@ -41,7 +46,9 @@ function OurStory() {
             </div>
 
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6"></div>
+              <div className="w-12 h-12 bg-zinc-100 rounded-full mb-6 flex items-center justify-center">
+                <Users className="w-6 h-6 text-zinc-600" />
+              </div>
               <h3 className="text-xl font-semibold text-zinc-800 mb-4">
                 Student-First Approach
               </h3>
