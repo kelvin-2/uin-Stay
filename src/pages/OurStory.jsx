@@ -3,9 +3,9 @@ import BGimage from "../assets/background.jpg";
 
 function OurStory() {
   return (
-    <main className="relative w-full">
+    <main className="relative ">
       <div
-        className="fixed top-[64px] left-[64px] w-full min-h-[400px] flex flex-col items-center justify-center"
+        className="fixed top-[64px] left-0 w-full min-h-[400px] flex flex-col items-center justify-center"
         style={{
           backgroundImage: `url(${BGimage})`,
           backgroundSize: "cover",
