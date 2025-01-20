@@ -1,4 +1,5 @@
 import React from "react";
+import picture from '../assets/pexels-mikhail-nilov-8390083.jpg'
 
 function MiddleSection(){
     return (
@@ -18,7 +19,17 @@ function MiddleSection(){
               deserves a place that feels like home, and we're here to make that happen.
             </p>
           </div>
-          <div className="bg-zinc-100 h-64 rounded-lg"></div>
+          <div >
+          <img
+            src={picture}
+            alt="Description of the image"
+            style={{
+              width: "450px",  // Adjust the width to your preference
+              height: "250px", // Adjust the height to your preference
+              objectFit: "cover", // This ensures the image fills the dimensions without distortion
+            }}
+          />
+          </div>
         </div>
       </section>
     )
