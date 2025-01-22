@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import Properties from './components/Properties';
 import OurStory from './pages/OurStory';
 import ContactUs from './pages/ContactUs';
+import FAQSection from './pages/FAQSection';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
 
         {/*Contanct Page*/}
         <Route path="/ContactUs" element={<ContactUs/>} />
+        <Route path="/Help" element={<FAQSection/>}/>
       </Routes>
     </BrowserRouter>
   );
