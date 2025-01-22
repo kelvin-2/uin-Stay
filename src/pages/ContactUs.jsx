@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Phone, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, MessageCircle, Check, X } from 'lucide-react';
 import ContactInfo from '../components/ContactInfo';
 
 const ContactUs = () => {
@@ -13,40 +13,86 @@ const ContactUs = () => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
+  const [validFields, setValidFields] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+  // Validation patterns
+  const patterns = {
+    name: /^[a-zA-Z\s]{2,30}$/,
+    email: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
+    phone: /^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/,
+    message: /.{10,}/
+  };
+
+  // Validation messages
+  const validationMessages = {
+    name: {
+      pattern: 'Name should only contain letters and spaces (2-30 characters)',
+      required: 'Name is required'
+    },
+    email: {
+      pattern: 'Please enter a valid email address',
+      required: 'Email is required'
+    },
+    phone: {
+      pattern: 'Please enter a valid phone number'
+    },
+    message: {
+      pattern: 'Message should be at least 10 characters long',
+      required: 'Message is required'
+    }
+  };
+
+  // Live validation function
+  const validateField = (name, value) => {
+    if (!value.trim() && (name === 'name' || name === 'email' || name === 'message')) {
+      return validationMessages[name].required;
     }
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+    if (patterns[name] && value.trim() && !patterns[name].test(value.trim())) {
+      return validationMessages[name].pattern;
     }
 
-    return newErrors;
+    return '';
   };
+
+  // Handle real-time validation
+  useEffect(() => {
+    const newValidFields = {};
+    const newErrors = {};
+
+    Object.keys(formData).forEach(field => {
+      if (formData[field].trim()) {
+        const error = validateField(field, formData[field]);
+        if (!error) {
+          newValidFields[field] = true;
+        } else {
+          newErrors[field] = error;
+        }
+      }
+    });
+
+    setValidFields(newValidFields);
+    setErrors(newErrors);
+  }, [formData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newErrors = validateForm();
+    const newErrors = {};
+    
+    // Validate all required fields
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
 
     if (Object.keys(newErrors).length === 0) {
-      // Here you would typically send the form data to your backend
       console.log('Form submitted:', formData);
-      // Clear the form
       setFormData(initialFormState);
-      // Show success message
+      setValidFields({});
       setSubmitSuccess(true);
-      // Hide success message after 3 seconds
       setTimeout(() => {
         setSubmitSuccess(false);
       }, 3000);
@@ -61,20 +107,22 @@ const ContactUs = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+  };
+
+  const getInputClassName = (fieldName) => {
+    const baseClasses = "mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-1";
+    if (errors[fieldName]) {
+      return `${baseClasses} border-red-500 focus:border-red-500 focus:ring-red-500`;
     }
+    if (validFields[fieldName]) {
+      return `${baseClasses} border-green-500 focus:border-green-500 focus:ring-green-500`;
+    }
+    return `${baseClasses} border-gray-300 focus:border-blue-500 focus:ring-blue-500`;
   };
 
   return (
-    
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-blue-600 mb-4">Contact Us</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -84,105 +132,59 @@ const ContactUs = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Contact Information */}
           <ContactInfo/>
 
-          {/* Contact Form */}
           <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
             {submitSuccess && (
-              <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">
+              <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg flex items-center">
+                <Check className="w-5 h-5 mr-2" />
                 Thank you for your message! We will get back to you soon.
               </div>
             )}
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full rounded-md border ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
-                  } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
-              </div>
+              {['name', 'email', 'phone', 'subject', 'message'].map((field) => (
+                <div key={field} className="relative">
+                  <label htmlFor={field} className="block text-sm font-medium text-gray-700 capitalize">
+                    {field} {field !== 'phone' && field !== 'subject' && '*'}
+                  </label>
+                  {field === 'message' ? (
+                    <textarea
+                      id={field}
+                      name={field}
+                      rows={4}
+                      value={formData[field]}
+                      onChange={handleChange}
+                      className={getInputClassName(field)}
+                    />
+                  ) : (
+                    <input
+                      type={field === 'email' ? 'email' : 'text'}
+                      id={field}
+                      name={field}
+                      value={formData[field]}
+                      onChange={handleChange}
+                      className={getInputClassName(field)}
+                    />
+                  )}
+                  {validFields[field] && (
+                    <Check className="absolute right-3 top-8 w-5 h-5 text-green-500" />
+                  )}
+                  {errors[field] && (
+                    <div className="mt-1 flex items-center text-sm text-red-500">
+                      <X className="w-4 h-4 mr-1" />
+                      {errors[field]}
+                    </div>
+                  )}
+                </div>
+              ))}
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full rounded-md border ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                />
-                {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
-                  Subject (Optional)
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                  Message *
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows={4}
-                  value={formData.message}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full rounded-md border ${
-                    errors.message ? 'border-red-500' : 'border-gray-300'
-                  } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                />
-                {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Send Message
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Send Message
+              </button>
             </form>
           </div>
         </div>
