@@ -18,14 +18,14 @@ function SearchBox() {
     <div className="relative w-full max-w-4xl mx-auto">
       {/* Backdrop */}
       {activePanel && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
           onClick={() => setActivePanel(null)}
         />
       )}
 
       {/* Main Search Pill */}
-      <div className="relative bg-white rounded-full shadow-lg border border-gray-200 divide-x z-20">
+      <div className="relative bg-white rounded-full shadow-lg border border-gray-200 divide-x z-40">
         <div className="flex items-center h-16">
           {/* Location Button */}
           <button
@@ -84,7 +84,7 @@ function SearchBox() {
 
       {/* Dropdown Panels */}
       {activePanel && (
-        <div className="absolute left-0 right-0 mt-4 mx-auto max-w-4xl z-20">
+        <div className="absolute left-0 right-0 mt-4 mx-auto max-w-4xl z-40">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform transition-all duration-200 ease-out">
             {activePanel === "location" && (
               <div className="space-y-4">
