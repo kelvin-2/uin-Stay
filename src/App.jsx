@@ -22,7 +22,7 @@ function App() {
         <Route path="/OurStory" element={<OurStory/>} />
 
         {/*Contanct Page*/}
-        <Route path="/ContactUs" element={<ContactUs />} />
+        <Route path="/ContactUs" element={<ContactUs/>} />
       </Routes>
     </BrowserRouter>
   );
