@@ -1,282 +1,288 @@
 {
-    "users": [
+  "users": [
+    {
+      "id": "1",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "phone": "123-456-7890",
+      "role": "student",
+      "password": "hashedpassword123",
+      "profile_image": "/images/profiles/john-doe.jpg",
+      "student_info": {
+        "university": "University of Example",
+        "student_number": "2025001234",
+        "funding_type": "NSFAS"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "phone": "987-654-3210",
+      "role": "landlord",
+      "password": "hashedpassword456",
+      "profile_image": "/images/profiles/jane-smith.jpg"
+    }
+  ],
+  "landlords": [
+    {
+      "id": "2",
+      "user_id": 2,
+      "business_name": "Jane's Apartments",
+      "website": "https://janesapartments.com",
+      "address": "789 Landlord St, City, State",
+      "contact_person": "Jane Smith",
+      "contact_email": "jane.smith@janesapartments.com",
+      "contact_phone": "987-654-3210",
+      "rating": 4.5,
+      "business_logo": "/images/logos/janes-apartments.png",
+      "verification_documents": [
+        "/images/documents/business-license.pdf",
+        "/images/documents/insurance.pdf"
+      ],
+      "accreditation": {
+        "is_accredited": true,
+        "accreditation_number": "ACC123456",
+        "accrediting_body": "Department of Higher Education",
+        "accreditation_expiry": "2026-12-31",
+        "accreditation_document": "/images/documents/accreditation.pdf",
+        "verification_status": "verified"
+      }
+    }
+  ],
+  "listings": [
+    {
+      "id": "1",
+      "title": "Cozy 2-bedroom apartment near campus",
+      "description": "A beautiful 2-bedroom apartment just 5 minutes from the university.",
+      "price": 1200,
+      "location": "Central",
+      "owner_id": 2,
+      "available": true,
+      "features": [
+        "Air Conditioning",
+        "In-unit Laundry",
+        "Parking",
+        "Pet Friendly"
+      ],
+      "square_feet": 850,
+      "bedrooms": 2,
+      "bathrooms": 1.5,
+      "lease_length": 12,
+      "coordinates": {
+        "latitude": 40.7128,
+        "longitude": -74.006
+      },
+      "payment_options": {
+        "accepts_nsfas": true,
+        "accepts_bursary": true,
+        "accepts_cash": true,
+        "payment_details": {
+          "nsfas_accredited": true,
+          "nsfas_reference": "NSFAS2025001",
+          "bursary_process": "Direct payment from registered bursary providers",
+          "deposit_required": true,
+          "deposit_amount": 1200,
+          "payment_schedule": "Monthly",
+          "accepted_payment_methods": [
+            "Bank Transfer",
+            "Debit Order",
+            "Credit Card"
+          ]
+        },
+        "price_breakdown": {
+          "base_rent": 1200,
+          "utilities": "Included",
+          "wifi": "Included",
+          "security": 100,
+          "total_monthly": 1300
+        }
+      },
+      "student_verification_required": true,
+      "affiliated_institutions": [
+        "University of Example",
+        "City College"
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Studio Apartment for Rent",
+      "description": "Perfect for a single student or professional. 10 minutes from downtown.",
+      "price": 800,
+      "location": "Humewood",
+      "owner_id": 2,
+      "available": true,
+      "features": [
+        "Air Conditioning",
+        "Street Parking",
+        "Study Room",
+        "Wifi",
+        "TV"
+      ],
+      "square_feet": 450,
+      "bedrooms": 0,
+      "bathrooms": 1,
+      "lease_length": 12,
+      "coordinates": {
+        "latitude": 40.7129,
+        "longitude": -74.0061
+      },
+      "payment_options": {
+        "accepts_nsfas": false,
+        "accepts_bursary": true,
+        "accepts_cash": true,
+        "payment_details": {
+          "nsfas_accredited": false,
+          "bursary_process": "Direct payment from registered bursary providers",
+          "deposit_required": true,
+          "deposit_amount": 800,
+          "payment_schedule": "Monthly",
+          "accepted_payment_methods": [
+            "Bank Transfer",
+            "Debit Order"
+          ]
+        }
+      },
+      "student_verification_required": true,
+      "affiliated_institutions": [
+        "University of Example"
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "1",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "phone": "123-456-7890",
+      "subject": "Inquiry about apartment",
+      "message": "Is the cozy 2-bedroom apartment still available?",
+      "status": "pending",
+      "created_at": "2025-01-22T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "Alice Brown",
+      "email": "alice.brown@example.com",
+      "phone": "555-555-5555",
+      "subject": "Renting Information",
+      "message": "I'd like to know more about the studio apartment near downtown.",
+      "status": "responded",
+      "created_at": "2025-01-20T12:30:00Z"
+    },
+    {
+      "id": "c1ee",
+      "name": "kelvin",
+      "email": "kelvin@gmail.com",
+      "phone": "",
+      "subject": "",
+      "message": "help me find accomodation"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "1",
+      "listing_id": 1,
+      "user_id": 1,
+      "rating": 5,
+      "comment": "Great apartment! Very close to campus and the landlord is very friendly.",
+      "created_at": "2025-01-21T14:00:00Z",
+      "images": [
+        "/images/reviews/review1-1.jpg",
+        "/images/reviews/review1-2.jpg"
+      ]
+    },
+    {
+      "id": "2",
+      "listing_id": 2,
+      "user_id": 2,
+      "rating": 4,
+      "comment": "Nice place, but a bit far from the university. Still, a good option for those who need more privacy.",
+      "created_at": "2025-01-15T16:00:00Z",
+      "images": [
+        "/images/reviews/review2-1.jpg"
+      ]
+    }
+  ],
+  "property_images": [
+    {
+      "id": "1",
+      "listing_id": 1,
+      "images": [
         {
-            "id": 1,
-            "name": "John Doe",
-            "email": "john.doe@example.com",
-            "phone": "123-456-7890",
-            "role": "student",
-            "password": "hashedpassword123",
-            "profile_image": "/images/profiles/john-doe.jpg",
-            "student_info": {
-                "university": "University of Example",
-                "student_number": "2025001234",
-                "funding_type": "NSFAS"
-            }
+          "id": 1,
+          "url": "/images/properties/listing1/main.jpg",
+          "type": "main",
+          "caption": "Building Exterior",
+          "order": 1
         },
         {
-            "id": 2,
-            "name": "Jane Smith",
-            "email": "jane.smith@example.com",
-            "phone": "987-654-3210",
-            "role": "landlord",
-            "password": "hashedpassword456",
-            "profile_image": "/images/profiles/jane-smith.jpg"
-        }
-    ],
-
-    "landlords": [
-        {
-            "id": 2,
-            "user_id": 2,
-            "business_name": "Jane's Apartments",
-            "website": "https://janesapartments.com",
-            "address": "789 Landlord St, City, State",
-            "contact_person": "Jane Smith",
-            "contact_email": "jane.smith@janesapartments.com",
-            "contact_phone": "987-654-3210",
-            "rating": 4.5,
-            "business_logo": "/images/logos/janes-apartments.png",
-            "verification_documents": [
-                "/images/documents/business-license.pdf",
-                "/images/documents/insurance.pdf"
-            ],
-            "accreditation": {
-                "is_accredited": true,
-                "accreditation_number": "ACC123456",
-                "accrediting_body": "Department of Higher Education",
-                "accreditation_expiry": "2026-12-31",
-                "accreditation_document": "/images/documents/accreditation.pdf",
-                "verification_status": "verified"
-            }
-        }
-    ],
-
-    "listings": [
-        {
-            "id": 1,
-            "title": "Cozy 2-bedroom apartment near campus",
-            "description": "A beautiful 2-bedroom apartment just 5 minutes from the university.",
-            "price": 1200,
-            "location": "Central",
-            "owner_id": 2,
-            "available": true,
-            "features": [
-                "Air Conditioning",
-                "In-unit Laundry",
-                "Parking",
-                "Pet Friendly"
-            ],
-            "square_feet": 850,
-            "bedrooms": 2,
-            "bathrooms": 1.5,
-            "lease_length": 12,
-            "coordinates": {
-                "latitude": 40.7128,
-                "longitude": -74.0060
-            },
-            "payment_options": {
-                "accepts_nsfas": true,
-                "accepts_bursary": true,
-                "accepts_cash": true,
-                "payment_details": {
-                    "nsfas_accredited": true,
-                    "nsfas_reference": "NSFAS2025001",
-                    "bursary_process": "Direct payment from registered bursary providers",
-                    "deposit_required": true,
-                    "deposit_amount": 1200,
-                    "payment_schedule": "Monthly",
-                    "accepted_payment_methods": [
-                        "Bank Transfer",
-                        "Debit Order",
-                        "Credit Card"
-                    ]
-                },
-                "price_breakdown": {
-                    "base_rent": 1200,
-                    "utilities": "Included",
-                    "wifi": "Included",
-                    "security": 100,
-                    "total_monthly": 1300
-                }
-            },
-            "student_verification_required": true,
-            "affiliated_institutions": [
-                "University of Example",
-                "City College"
-            ]
+          "id": 2,
+          "url": "/images/properties/listing1/living-room.jpg",
+          "type": "interior",
+          "caption": "Living Room",
+          "order": 2
         },
         {
-            "id": 2,
-            "title": "Studio Apartment for Rent",
-            "description": "Perfect for a single student or professional. 10 minutes from downtown.",
-            "price": 800,
-            "location": "Humewood",
-            "owner_id": 2,
-            "available": true,
-            "features": [
-                "Air Conditioning",
-                "Street Parking",
-                "Study Room",
-                "Wifi","TV"
-            ],
-            "square_feet": 450,
-            "bedrooms": 0,
-            "bathrooms": 1,
-            "lease_length": 12,
-            "coordinates": {
-                "latitude": 40.7129,
-                "longitude": -74.0061
-            },
-            "payment_options": {
-                "accepts_nsfas": false,
-                "accepts_bursary": true,
-                "accepts_cash": true,
-                "payment_details": {
-                    "nsfas_accredited": false,
-                    "bursary_process": "Direct payment from registered bursary providers",
-                    "deposit_required": true,
-                    "deposit_amount": 800,
-                    "payment_schedule": "Monthly",
-                    "accepted_payment_methods": [
-                        "Bank Transfer",
-                        "Debit Order"
-                    ]
-                }
-            },
-            "student_verification_required": true,
-            "affiliated_institutions": [
-                "University of Example"
-            ]
-        }
-    ],
-    "messages": [
-        {
-            "id": 1,
-            "name": "John Doe",
-            "email": "john.doe@example.com",
-            "phone": "123-456-7890",
-            "subject": "Inquiry about apartment",
-            "message": "Is the cozy 2-bedroom apartment still available?",
-            "status": "pending",
-            "created_at": "2025-01-22T10:00:00Z"
+          "id": 3,
+          "url": "/images/properties/listing1/kitchen.jpg",
+          "type": "interior",
+          "caption": "Modern Kitchen",
+          "order": 3
         },
         {
-            "id": 2,
-            "name": "Alice Brown",
-            "email": "alice.brown@example.com",
-            "phone": "555-555-5555",
-            "subject": "Renting Information",
-            "message": "I'd like to know more about the studio apartment near downtown.",
-            "status": "responded",
-            "created_at": "2025-01-20T12:30:00Z"
-        }
-    ],
-
-    "reviews": [
-        {
-            "id": 1,
-            "listing_id": 1,
-            "user_id": 1,
-            "rating": 5,
-            "comment": "Great apartment! Very close to campus and the landlord is very friendly.",
-            "created_at": "2025-01-21T14:00:00Z",
-            "images": [
-                "/images/reviews/review1-1.jpg",
-                "/images/reviews/review1-2.jpg"
-            ]
+          "id": 4,
+          "url": "/images/properties/listing1/bedroom1.jpg",
+          "type": "interior",
+          "caption": "Master Bedroom",
+          "order": 4
         },
         {
-            "id": 2,
-            "listing_id": 2,
-            "user_id": 2,
-            "rating": 4,
-            "comment": "Nice place, but a bit far from the university. Still, a good option for those who need more privacy.",
-            "created_at": "2025-01-15T16:00:00Z",
-            "images": [
-                "/images/reviews/review2-1.jpg"
-            ]
+          "id": 5,
+          "url": "/images/properties/listing1/bathroom.jpg",
+          "type": "interior",
+          "caption": "Updated Bathroom",
+          "order": 5
         }
-    ],
-    "property_images": [
+      ],
+      "virtual_tour": "/virtual-tours/listing1.html",
+      "floor_plan": "/images/properties/listing1/floor-plan.pdf"
+    },
+    {
+      "id": "2",
+      "listing_id": 2,
+      "images": [
         {
-            "id": 1,
-            "listing_id": 1,
-            "images": [
-                {
-                    "id": 1,
-                    "url": "/images/properties/listing1/main.jpg",
-                    "type": "main",
-                    "caption": "Building Exterior",
-                    "order": 1
-                },
-                {
-                    "id": 2,
-                    "url": "/images/properties/listing1/living-room.jpg",
-                    "type": "interior",
-                    "caption": "Living Room",
-                    "order": 2
-                },
-                {
-                    "id": 3,
-                    "url": "/images/properties/listing1/kitchen.jpg",
-                    "type": "interior",
-                    "caption": "Modern Kitchen",
-                    "order": 3
-                },
-                {
-                    "id": 4,
-                    "url": "/images/properties/listing1/bedroom1.jpg",
-                    "type": "interior",
-                    "caption": "Master Bedroom",
-                    "order": 4
-                },
-                {
-                    "id": 5,
-                    "url": "/images/properties/listing1/bathroom.jpg",
-                    "type": "interior",
-                    "caption": "Updated Bathroom",
-                    "order": 5
-                }
-            ],
-            "virtual_tour": "/virtual-tours/listing1.html",
-            "floor_plan": "/images/properties/listing1/floor-plan.pdf"
+          "id": 6,
+          "url": "/images/properties/listing2/main.jpg",
+          "type": "main",
+          "caption": "Building Front",
+          "order": 1
         },
         {
-            "id": 2,
-            "listing_id": 2,
-            "images": [
-                {
-                    "id": 6,
-                    "url": "/images/properties/listing2/main.jpg",
-                    "type": "main",
-                    "caption": "Building Front",
-                    "order": 1
-                },
-                {
-                    "id": 7,
-                    "url": "/images/properties/listing2/studio-space.jpg",
-                    "type": "interior",
-                    "caption": "Studio Space",
-                    "order": 2
-                },
-                {
-                    "id": 8,
-                    "url": "/images/properties/listing2/kitchen.jpg",
-                    "type": "interior",
-                    "caption": "Kitchenette",
-                    "order": 3
-                },
-                {
-                    "id": 9,
-                    "url": "/images/properties/listing2/bathroom.jpg",
-                    "type": "interior",
-                    "caption": "Bathroom",
-                    "order": 4
-                }
-            ],
-            "virtual_tour": "/virtual-tours/listing2.html",
-            "floor_plan": "/images/properties/listing2/floor-plan.pdf"
+          "id": 7,
+          "url": "/images/properties/listing2/studio-space.jpg",
+          "type": "interior",
+          "caption": "Studio Space",
+          "order": 2
+        },
+        {
+          "id": 8,
+          "url": "/images/properties/listing2/kitchen.jpg",
+          "type": "interior",
+          "caption": "Kitchenette",
+          "order": 3
+        },
+        {
+          "id": 9,
+          "url": "/images/properties/listing2/bathroom.jpg",
+          "type": "interior",
+          "caption": "Bathroom",
+          "order": 4
         }
-    ]
+      ],
+      "virtual_tour": "/virtual-tours/listing2.html",
+      "floor_plan": "/images/properties/listing2/floor-plan.pdf"
+    }
+  ]
 }

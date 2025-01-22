@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MessageCircle, Check, X } from 'lucide-react';
 import ContactInfo from '../components/ContactInfo';
+import axios from 'axios';
 
 const ContactUs = () => {
   const initialFormState = {
@@ -15,6 +16,7 @@ const ContactUs = () => {
   const [errors, setErrors] = useState({});
   const [validFields, setValidFields] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Validation patterns
   const patterns = {
@@ -76,7 +78,7 @@ const ContactUs = () => {
     setErrors(newErrors);
   }, [formData]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     
@@ -89,13 +91,23 @@ const ContactUs = () => {
     });
 
     if (Object.keys(newErrors).length === 0) {
-      console.log('Form submitted:', formData);
-      setFormData(initialFormState);
-      setValidFields({});
-      setSubmitSuccess(true);
-      setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 3000);
+      setIsLoading(true);
+      try {
+        // Send form data to the mock API
+        const response = await axios.post('http://localhost:3001/messages', formData);
+        console.log('Form submitted successfully:', response.data);
+        setFormData(initialFormState);
+        setValidFields({});
+        setSubmitSuccess(true);
+        setTimeout(() => {
+          setSubmitSuccess(false);
+        }, 3000);
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        setErrors({ form: 'Failed to submit the form. Please try again.' });
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -141,6 +153,12 @@ const ContactUs = () => {
                 Thank you for your message! We will get back to you soon.
               </div>
             )}
+            {errors.form && (
+              <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-center">
+                <X className="w-5 h-5 mr-2" />
+                {errors.form}
+              </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-6">
               {['name', 'email', 'phone', 'subject', 'message'].map((field) => (
@@ -181,9 +199,10 @@ const ContactUs = () => {
 
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Send Message
+                {isLoading ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           </div>
