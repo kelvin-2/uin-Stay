@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MessageCircle } from 'lucide-react';
+import ContactInfo from '../components/ContactInfo';
 
 const ContactUs = () => {
   const initialFormState = {
@@ -84,41 +85,7 @@ const ContactUs = () => {
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Information */}
-          <div className="bg-blue-50 p-8 rounded-lg">
-            <h2 className="text-2xl font-semibold text-blue-600 mb-6">Get in Touch</h2>
-            
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-blue-900">Email</h3>
-                  <p className="text-blue-600">support@uinstay.com</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-blue-900">Phone</h3>
-                  <p className="text-blue-600">+1 (555) 123-4567</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-blue-900">Live Chat</h3>
-                  <p className="text-blue-600">Available 9 AM - 5 PM CST</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ContactInfo/>
 
           {/* Contact Form */}
           <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
