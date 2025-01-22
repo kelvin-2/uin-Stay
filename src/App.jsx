@@ -3,13 +3,13 @@ import './App.css';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import Properties from './components/Properties';
-import OurStory from './pages/OurStory';  // Corrected import path
-
+import OurStory from './pages/OurStory';
+import ContactUs from './pages/ContactUs';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (
-    <BrowserRouter w-full>
+    <BrowserRouter >
       <Navbar />
       <Routes>
         {/* Default Route: Home Page */}
@@ -20,6 +20,9 @@ function App() {
         
         {/* OurStory Page */}
         <Route path="/OurStory" element={<OurStory/>} />
+
+        {/*Contanct Page*/}
+        <Route path="/ContactUs" element={<ContactUs />} />
       </Routes>
     </BrowserRouter>
   );
