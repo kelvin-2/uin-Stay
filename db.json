@@ -22,6 +22,36 @@
       "role": "landlord",
       "password": "hashedpassword456",
       "profile_image": "/images/profiles/jane-smith.jpg"
+    },
+    {
+      "id": "d216",
+      "fullName": "kelvin",
+      "email": "kelvinmudzingwa@skiff.com",
+      "password": "123456789",
+      "university": "NElso",
+      "phone": "",
+      "location": "",
+      "userType": "student"
+    },
+    {
+      "id": "8160",
+      "fullName": "",
+      "email": "",
+      "password": "",
+      "university": "",
+      "phone": "",
+      "location": "",
+      "userType": "student"
+    },
+    {
+      "id": "d1f6",
+      "fullName": "Kelvin Mudzingwa",
+      "email": "kelvinmudzingwsa@skiff.com",
+      "password": "123456789",
+      "university": "s",
+      "phone": "0657120222",
+      "location": "port elizabirth",
+      "userType": "landlord"
     }
   ],
   "landlords": [
