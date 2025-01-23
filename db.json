@@ -34,14 +34,13 @@
       "userType": "student"
     },
     {
-      "id": "8160",
-      "fullName": "",
-      "email": "",
-      "password": "",
-      "university": "",
-      "phone": "",
-      "location": "",
-      "userType": "student"
+      "id": "3",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "phone": "111-222-3333",
+      "role": "admin",
+      "password": "hashedpassword789",
+      "profile_image": "/images/profiles/admin.jpg"
     },
     {
       "id": "d1f6",
