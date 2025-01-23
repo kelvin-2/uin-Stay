@@ -7,6 +7,7 @@ import OurStory from './pages/OurStory';
 import ContactUs from './pages/ContactUs';
 import FAQSection from './pages/FAQSection';
 import UniStayAuth from './pages/UniStayAuth';
+import PropertyCard from './components/PropertyCard'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         
         {/* Properties Page */}
         <Route path="/Properties" element={<Properties />} />
+        <Route path="/property/:id" element={<PropertyCard />} />
         
         {/* OurStory Page */}
         <Route path="/OurStory" element={<OurStory/>} />
