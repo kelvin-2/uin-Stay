@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Wallet, Home, Heart, Clock, Shield, Wifi } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi } from 'lucide-react';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -8,8 +8,7 @@ const Properties = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Replace with your MockAPI endpoint
-    fetch('https://mockapi.io/projects/<project-id>/properties')
+    fetch('/propertyData.json')
       .then(response => {
         if (!response.ok) {
           throw new Error('Failed to fetch properties');
@@ -68,7 +67,7 @@ const Properties = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 mt-11">
       {properties.map((property) => (
         <Link 
-          to={`/property/${property.id}`} 
+          to={`/property/${property.id}`} // Link to the property details page
           key={property.id} 
           className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer"
         >
