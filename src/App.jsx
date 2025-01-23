@@ -2,7 +2,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import Properties from './components/Properties';
-import OurStory from './pages/OurStory';
+import CreatorSupportMessage from './pages/CreatorSupportMessge';
 import ContactUs from './pages/ContactUs';
 import FAQSection from './pages/FAQSection';
 import UniStayAuth from './pages/UniStayAuth';
@@ -33,7 +33,7 @@ function App() {
         />
         
         {/* OurStory Page */}
-        <Route path="/OurStory" element={<OurStory />} />
+        <Route path="/Support" element={<CreatorSupportMessage />} />
 
         {/* Contact Page */}
         <Route path="/ContactUs" element={<ContactUs />} />

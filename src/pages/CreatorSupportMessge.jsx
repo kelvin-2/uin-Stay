@@ -25,7 +25,7 @@ const CreatorSupportMessage = () => {
             <h3 className="text-2xl font-semibold">My Journey</h3>
           </div>
           <p className="text-gray-700 leading-relaxed mb-4">
-            Hi, I'm [Your Name], a final-year Computer Science student with a passion for creating solutions that make life easier for others. uinStay started as a personal project to help students like me find affordable housing during university.
+            Hi, I'm Kelvin, a final-year Computer Science student with a passion for creating solutions that make life easier for others. uinStay started as a personal project to help students like me find affordable housing during university.
           </p>
           <p className="text-gray-700 leading-relaxed">
             Balancing my studies and building this platform has been a rewarding journey, but it comes with challenges. As a solo developer, I'm also managing the costs of tuition, hosting, and maintaining uinStay.
