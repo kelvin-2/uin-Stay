@@ -99,7 +99,7 @@ const Navbar = () => {
     { path: "/", label: "Home" },
     { path: "/Properties", label: "Properties" },
     { path: "/ContactUs", label: "Contact Us" },
-    { path: "/OurStory", label: "Our Story" },
+    { path: "/Support", label: "Support" },
     { path: "/Help", label: "FAQs / Help" },
   ];
 
