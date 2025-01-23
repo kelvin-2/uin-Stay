@@ -1,4 +1,3 @@
-import viteLogo from '/vite.svg';
 import './App.css';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
@@ -7,14 +6,14 @@ import OurStory from './pages/OurStory';
 import ContactUs from './pages/ContactUs';
 import FAQSection from './pages/FAQSection';
 import UniStayAuth from './pages/UniStayAuth';
-import PropertyCard from './components/PropertyCard'
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import PropertyCard from './components/PropertyCard';
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AutContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
   return (
-    <AuthProvider >
+    <AuthProvider>
       <Navbar />
       <Routes>
         {/* Default Route: Home Page */}
@@ -22,16 +21,28 @@ function App() {
         
         {/* Properties Page */}
         <Route path="/Properties" element={<Properties />} />
-        <Route path="/property/:id" element={<PropertyCard />} />
+        
+        {/* Protected Route: Property Details Page */}
+        <Route
+          path="/property/:id"
+          element={
+            <ProtectedRoute>
+              <PropertyCard />
+            </ProtectedRoute>
+          }
+        />
         
         {/* OurStory Page */}
-        <Route path="/OurStory" element={<OurStory/>} />
+        <Route path="/OurStory" element={<OurStory />} />
 
-        {/*Contanct Page*/}
-        <Route path="/ContactUs" element={<ContactUs/>} />
-        <Route path="/Help" element={<FAQSection/>}/>
-        {/*Sign In*/}
-        <Route path="/signin" element={<UniStayAuth/>}/>
+        {/* Contact Page */}
+        <Route path="/ContactUs" element={<ContactUs />} />
+
+        {/* FAQ/Help Page */}
+        <Route path="/Help" element={<FAQSection />} />
+
+        {/* Sign In Page */}
+        <Route path="/signin" element={<UniStayAuth />} />
       </Routes>
     </AuthProvider>
   );
