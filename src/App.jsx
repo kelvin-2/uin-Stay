@@ -9,10 +9,12 @@ import FAQSection from './pages/FAQSection';
 import UniStayAuth from './pages/UniStayAuth';
 import PropertyCard from './components/PropertyCard'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AutContext';
+import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
   return (
-    <BrowserRouter >
+    <AuthProvider >
       <Navbar />
       <Routes>
         {/* Default Route: Home Page */}
@@ -31,7 +33,7 @@ function App() {
         {/*Sign In*/}
         <Route path="/signin" element={<UniStayAuth/>}/>
       </Routes>
-    </BrowserRouter>
+    </AuthProvider>
   );
 }
 
