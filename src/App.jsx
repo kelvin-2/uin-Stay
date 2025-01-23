@@ -10,6 +10,7 @@ import PropertyCard from './components/PropertyCard';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AutContext';
 import ProtectedRoute from './routes/ProtectedRoute';
+import LandlordGuide from './pages/LandlordGuide';
 
 function App() {
   return (
@@ -43,6 +44,8 @@ function App() {
 
         {/* Sign In Page */}
         <Route path="/signin" element={<UniStayAuth />} />
+        {/*LandLord guide*/}
+        <Route path="/landlord-guide" element={<LandlordGuide/>}/>
       </Routes>
     </AuthProvider>
   );
