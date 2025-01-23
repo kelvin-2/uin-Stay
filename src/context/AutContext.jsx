@@ -3,13 +3,20 @@ import React, { createContext, useContext, useState } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const login = () => setIsAuthenticated(true);
-  const logout = () => setIsAuthenticated(false);
+  const login = (userData) => {
+    setCurrentUser(userData); // Update the current user
+    localStorage.setItem('user', JSON.stringify(userData)); // Save user data to localStorage
+  };
+
+  const logout = () => {
+    setCurrentUser(null); // Clear the current user
+    localStorage.removeItem('user'); // Remove user data from localStorage
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

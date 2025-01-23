@@ -11,6 +11,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AutContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import LandlordGuide from './pages/LandlordGuide';
+import LandlordDashboard from './Landlord/LandlordDashboard';
 
 function App() {
   return (
@@ -46,6 +47,15 @@ function App() {
         <Route path="/signin" element={<UniStayAuth />} />
         {/*LandLord guide*/}
         <Route path="/landlord-guide" element={<LandlordGuide/>}/>
+
+        <Route
+          path="/landlord-dashboard"
+          element={
+            <ProtectedRoute>
+              <LandlordDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AuthProvider>
   );

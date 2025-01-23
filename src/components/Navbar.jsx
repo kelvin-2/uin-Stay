@@ -1,50 +1,20 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, User, ChevronDown } from 'lucide-react';
+import { useAuth } from '../context/AutContext'; // Import useAuth
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
+  const { currentUser, logout } = useAuth(); // Use currentUser and logout from AuthContext
   const location = useLocation();
   const navigate = useNavigate();
 
   const landlordDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
-
-  // Clear localStorage completely on app initialization
-  useEffect(() => {
-    console.log('Clearing localStorage completely...'); // Debugging
-    localStorage.clear(); // Remove all key-value pairs
-    console.log('done?');
-  }, []);
-
-  // Load user from localStorage and handle role-based navigation
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setCurrentUser(parsedUser); // Set the current user if valid
-
-        // Navigate based on user role
-        if (parsedUser.userType === 'student') {
-          navigate('/', { replace: true }); // Navigate to home page for students
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user'); // Clear invalid data
-        localStorage.removeItem('token'); // Clear any related tokens
-      }
-    } else {
-      // If no valid user data, ensure localStorage is clean
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-    }
-  }, [navigate]);
 
   // Outside dropdown close effect
   useEffect(() => {
@@ -73,28 +43,15 @@ const Navbar = () => {
   }, []);
 
   // Logout Handler
-  const handleLogout = useCallback(() => {
-    console.log('Logout initiated'); // Debugging
-    try {
-      console.log('Before logout - localStorage:', localStorage.getItem('user')); // Debugging
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      console.log('After logout - localStorage:', localStorage.getItem('user')); // Debugging
-      
-      setCurrentUser(null);
-      setProfileDropdownOpen(false);
-      
-      navigate('/', { replace: true });
-      
-      console.log('User logged out, localStorage cleared.'); // Debugging
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }, [navigate]);
+  const handleLogout = () => {
+    logout(); // Use the logout function from AuthContext
+    navigate('/', { replace: true });
+  };
 
-  // Rest of the component remains the same...
-  const isActive = useCallback((path) => location.pathname === path, [location]);
+  // Check if a path is active
+  const isActive = (path) => location.pathname === path;
 
+  // Nav links
   const navLinks = [
     { path: "/", label: "Home" },
     { path: "/Properties", label: "Properties" },
@@ -103,6 +60,7 @@ const Navbar = () => {
     { path: "/Help", label: "FAQs / Help" },
   ];
 
+  // Render auth button (Sign In or User Profile)
   const renderAuthButton = () => {
     if (currentUser) {
       return (
@@ -183,7 +141,7 @@ const Navbar = () => {
               ))}
               
               {/* Conditionally render the Landlords dropdown */}
-              {currentUser?.userType !== 'student' && (
+              {currentUser && currentUser.userType !== 'student' && (
                 <div className="relative" ref={landlordDropdownRef}>
                   <button 
                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -195,13 +153,6 @@ const Navbar = () => {
                   
                   {dropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                      <Link 
-                        to="/list-property" 
-                        className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        List Your Property
-                      </Link>
                       <Link 
                         to="/landlord-guide" 
                         className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
@@ -255,11 +206,10 @@ const Navbar = () => {
               ))}
               
               {/* Conditionally render the Landlords section for mobile */}
-              {currentUser?.userType !== 'student' && (
+              {currentUser && currentUser.userType !== 'student' && (
                 <div className="border-t border-gray-100 pt-4">
                   <div className="text-gray-600 font-medium mb-2">Landlords</div>
                   <div className="flex flex-col space-y-2 pl-4">
-                    <Link to="/list-property" className="text-gray-600 hover:text-blue-600">List Your Property</Link>
                     <Link to="/landlord-guide" className="text-gray-600 hover:text-blue-600">Landlord Guide</Link>
                     <Link to="/pricing" className="text-gray-600 hover:text-blue-600">Pricing</Link>
                   </div>
