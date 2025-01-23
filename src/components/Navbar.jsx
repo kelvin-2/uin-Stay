@@ -15,6 +15,38 @@ const Navbar = () => {
   const landlordDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
 
+  // Clear localStorage completely on app initialization
+  useEffect(() => {
+    console.log('Clearing localStorage completely...'); // Debugging
+    localStorage.clear(); // Remove all key-value pairs
+    console.log('done?');
+  }, []);
+
+  // Load user from localStorage and handle role-based navigation
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser); // Set the current user if valid
+
+        // Navigate based on user role
+        if (parsedUser.userType === 'student') {
+          navigate('/', { replace: true }); // Navigate to home page for students
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('user'); // Clear invalid data
+        localStorage.removeItem('token'); // Clear any related tokens
+      }
+    } else {
+      // If no valid user data, ensure localStorage is clean
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+  }, [navigate]);
+
+  // Outside dropdown close effect
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (landlordDropdownRef.current && !landlordDropdownRef.current.contains(event.target)) {
@@ -29,6 +61,7 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Scroll effect
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 20;
@@ -39,28 +72,27 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-        console.log('User loaded from localStorage:', JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user');
-      }
+  // Logout Handler
+  const handleLogout = useCallback(() => {
+    console.log('Logout initiated'); // Debugging
+    try {
+      console.log('Before logout - localStorage:', localStorage.getItem('user')); // Debugging
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      console.log('After logout - localStorage:', localStorage.getItem('user')); // Debugging
+      
+      setCurrentUser(null);
+      setProfileDropdownOpen(false);
+      
+      navigate('/', { replace: true });
+      
+      console.log('User logged out, localStorage cleared.'); // Debugging
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-  }, []);
+  }, [navigate]);
 
-  const handleLogout = () => {
-    console.log('Hello world');
-    localStorage.removeItem('user');
-    setCurrentUser(null);
-    setProfileDropdownOpen(false);
-    navigate('/');
-    console.log('User logged out, localStorage cleared.');
-  };
-
+  // Rest of the component remains the same...
   const isActive = useCallback((path) => location.pathname === path, [location]);
 
   const navLinks = [
@@ -94,11 +126,10 @@ const Navbar = () => {
           {profileDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
               <button
-              onClick={(e) => {
-                e.stopPropagation(); // Stop event propagation
-                console.log('Sign Out button clicked'); // Debugging
-                handleLogout();
-              }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLogout();
+                }}
                 className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
               >
                 Sign Out
@@ -151,41 +182,44 @@ const Navbar = () => {
                 </Link>
               ))}
               
-              <div className="relative" ref={landlordDropdownRef}>
-                <button 
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors duration-200"
-                >
-                  <span>Landlords</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {dropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                    <Link 
-                      to="/list-property" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      List Your Property
-                    </Link>
-                    <Link 
-                      to="/landlord-guide" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Landlord Guide
-                    </Link>
-                    <Link 
-                      to="/pricing" 
-                      className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Pricing
-                    </Link>
-                  </div>
-                )}
-              </div>
+              {/* Conditionally render the Landlords dropdown */}
+              {currentUser?.userType !== 'student' && (
+                <div className="relative" ref={landlordDropdownRef}>
+                  <button 
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors duration-200"
+                  >
+                    <span>Landlords</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {dropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                      <Link 
+                        to="/list-property" 
+                        className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        List Your Property
+                      </Link>
+                      <Link 
+                        to="/landlord-guide" 
+                        className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Landlord Guide
+                      </Link>
+                      <Link 
+                        to="/pricing" 
+                        className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Pricing
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="hidden md:flex items-center space-x-6">
@@ -220,14 +254,17 @@ const Navbar = () => {
                 </Link>
               ))}
               
-              <div className="border-t border-gray-100 pt-4">
-                <div className="text-gray-600 font-medium mb-2">Landlords</div>
-                <div className="flex flex-col space-y-2 pl-4">
-                  <Link to="/list-property" className="text-gray-600 hover:text-blue-600">List Your Property</Link>
-                  <Link to="/landlord-guide" className="text-gray-600 hover:text-blue-600">Landlord Guide</Link>
-                  <Link to="/pricing" className="text-gray-600 hover:text-blue-600">Pricing</Link>
+              {/* Conditionally render the Landlords section for mobile */}
+              {currentUser?.userType !== 'student' && (
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="text-gray-600 font-medium mb-2">Landlords</div>
+                  <div className="flex flex-col space-y-2 pl-4">
+                    <Link to="/list-property" className="text-gray-600 hover:text-blue-600">List Your Property</Link>
+                    <Link to="/landlord-guide" className="text-gray-600 hover:text-blue-600">Landlord Guide</Link>
+                    <Link to="/pricing" className="text-gray-600 hover:text-blue-600">Pricing</Link>
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
                 <button className="text-gray-600 hover:text-blue-600 transition-colors duration-200">

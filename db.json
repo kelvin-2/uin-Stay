@@ -52,6 +52,16 @@
       "phone": "0657120222",
       "location": "port elizabirth",
       "userType": "landlord"
+    },
+    {
+      "id": "a84a",
+      "fullName": "kelvinx",
+      "email": "kelvinmudzingwsaww@skiff.com",
+      "password": "123456789",
+      "university": "xxx",
+      "phone": "",
+      "location": "",
+      "userType": "student"
     }
   ],
   "landlords": [
