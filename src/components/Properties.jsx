@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import { MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi } from 'lucide-react';
 
 const Properties = () => {
@@ -65,7 +66,11 @@ const Properties = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 mt-11">
       {properties.map((property) => (
-        <div key={property.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer">
+        <Link 
+          to={`/property/${property.id}`} // Link to the property details page
+          key={property.id} 
+          className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer"
+        >
           {/* Favorite Button */}
           <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300 opacity-0 group-hover:opacity-100 z-10 ">
             <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
@@ -132,7 +137,7 @@ const Properties = () => {
               ))}
             </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
