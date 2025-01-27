@@ -12,11 +12,17 @@ const LandlordDashboard = () => {
   const totalProperties = properties.length;
   const totalViews = properties.reduce((sum, property) => sum + property.views, 0);
 
+  const handleAddProperty = () => {
+    navigate('/add-property');
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 mt-20">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">My Properties</h1>
-        <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={handleAddProperty}
+        className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           <Plus className="h-5 w-5" />
           <span>Add Property</span>
         </button>
