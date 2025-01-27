@@ -70,6 +70,7 @@ const Navbar = () => {
   // Render auth button (Sign In or User Profile)
   const renderAuthButton = () => {
     if (currentUser) {
+      console.log(currentUser);
     // Check if the user is a landlord
         if (currentUser.role === 'landlord') {
           // Redirect to landlord dashboard
