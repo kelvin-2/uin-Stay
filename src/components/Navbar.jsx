@@ -140,8 +140,8 @@ const Navbar = () => {
                 </Link>
               ))}
               
-              {/* Conditionally render the Landlords dropdown */}
-              {currentUser && currentUser.userType !== 'student' && (
+              {/* Conditionally render the Landlords dropdown render if no one is loged in */}
+              {!currentUser && (
                 <div className="relative" ref={landlordDropdownRef}>
                   <button 
                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -206,7 +206,7 @@ const Navbar = () => {
               ))}
               
               {/* Conditionally render the Landlords section for mobile */}
-              {currentUser && currentUser.userType !== 'student' && (
+              {!currentUser && (
                 <div className="border-t border-gray-100 pt-4">
                   <div className="text-gray-600 font-medium mb-2">Landlords</div>
                   <div className="flex flex-col space-y-2 pl-4">
