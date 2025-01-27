@@ -11,20 +11,18 @@ const AddPropertyForm = () => {
     paymentAccepted: []
   });
 
-  // Predefined options
   const roomTypes = [
     "Studio",
-    "1 Bedroom",
-    "2 Bedroom",
-    "3 Bedroom",
-    "4 Bedroom",
-    "Shared Room"
+    "Single",
+    "ensuite",
+    "2 Shared room",
+    "3 Shared room"
   ];
 
   const amenityOptions = [
     "WiFi",
     "Air Conditioning",
-    "Laundry",
+    "Washin Machine",
     "Parking",
     "Kitchen",
     "Study Area",
@@ -35,12 +33,7 @@ const AddPropertyForm = () => {
   ];
 
   const paymentOptions = [
-    "Credit Card",
-    "Debit Card",
-    "Bank Transfer",
-    "Cash",
-    "Check",
-    "Digital Wallet"
+    "NSFAS", "BUSARY", "PRIVATE"
   ];
 
   const handleInputChange = (e) => {
@@ -63,17 +56,16 @@ const AddPropertyForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
-    // Add your submission logic here
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">Add New Property</h2>
+    <div className="max-w-3xl mx-auto p-8 bg-white rounded-xl shadow-lg">
+      <h2 className="text-3xl font-bold mb-8 text-blue-700">Add New Property</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-blue-900">
             Property Address
           </label>
           <input
@@ -81,21 +73,21 @@ const AddPropertyForm = () => {
             name="address"
             value={formData.address}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             required
           />
         </div>
 
         {/* Room Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-blue-900">
             Room Type
           </label>
           <select
             name="roomType"
             value={formData.roomType}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             required
           >
             <option value="">Select Room Type</option>
@@ -106,9 +98,9 @@ const AddPropertyForm = () => {
         </div>
 
         {/* Distances */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
               Distance from Shuttle Stop (meters)
             </label>
             <input
@@ -116,13 +108,13 @@ const AddPropertyForm = () => {
               name="distanceFromShuttle"
               value={formData.distanceFromShuttle}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               min="0"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
               Distance from School (meters)
             </label>
             <input
@@ -130,7 +122,7 @@ const AddPropertyForm = () => {
               name="distanceFromSchool"
               value={formData.distanceFromSchool}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               min="0"
               required
             />
@@ -138,57 +130,57 @@ const AddPropertyForm = () => {
         </div>
 
         {/* Amenities */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-blue-900">
             Amenities
           </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {amenityOptions.map(amenity => (
-              <label key={amenity} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50">
+              <label key={amenity} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.amenities.includes(amenity)}
                   onChange={() => handleCheckboxChange('amenities', amenity)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm">{amenity}</span>
+                <span className="text-sm text-blue-900">{amenity}</span>
               </label>
             ))}
           </div>
         </div>
 
         {/* Payment Methods */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-blue-900">
             Payment Methods Accepted
           </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {paymentOptions.map(payment => (
-              <label key={payment} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50">
+              <label key={payment} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.paymentAccepted.includes(payment)}
                   onChange={() => handleCheckboxChange('paymentAccepted', payment)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm">{payment}</span>
+                <span className="text-sm text-blue-900">{payment}</span>
               </label>
             ))}
           </div>
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end space-x-4 pt-4">
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700 hover:bg-blue-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Add Property
           </button>
