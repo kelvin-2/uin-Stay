@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, User, ChevronDown } from 'lucide-react';
-import { useAuth } from '../context/AutContext'; // Import useAuth
+import { useAuth } from '../context/AutContext'; // Ensure the correct import path
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +15,11 @@ const Navbar = () => {
 
   const landlordDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.clear();
+    console.log("Local storage cleared on first render.");
+  }, []);
 
   // Outside dropdown close effect
   useEffect(() => {
@@ -44,8 +49,10 @@ const Navbar = () => {
 
   // Logout Handler
   const handleLogout = () => {
+    console.log("handleLogout called"); // Debugging line
     logout(); // Use the logout function from AuthContext
     navigate('/', { replace: true });
+    setProfileDropdownOpen(false);
   };
 
   // Check if a path is active
@@ -63,6 +70,12 @@ const Navbar = () => {
   // Render auth button (Sign In or User Profile)
   const renderAuthButton = () => {
     if (currentUser) {
+    // Check if the user is a landlord
+        if (currentUser.role === 'landlord') {
+          // Redirect to landlord dashboard
+          navigate('/landlord-dashboard');
+          return null; // Return null to prevent rendering anything else
+        }
       return (
         <div className="relative" ref={profileDropdownRef}>
           <button 
@@ -86,6 +99,7 @@ const Navbar = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log("Sign Out button clicked"); // Debugging line
                   handleLogout();
                 }}
                 className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
@@ -140,7 +154,7 @@ const Navbar = () => {
                 </Link>
               ))}
               
-              {/* Conditionally render the Landlords dropdown render if no one is loged in */}
+              {/* Conditionally render the Landlords dropdown render if no one is logged in */}
               {!currentUser && (
                 <div className="relative" ref={landlordDropdownRef}>
                   <button 
