@@ -98,25 +98,28 @@ const UniStayAuth = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
       if (!validateForm()) {
         setLoading(false);
         return;
       }
-
+  
       const user = mockUsers.find(
         u => u.email === formData.email && 
             u.password === formData.password && 
             u.userType === userType
       );
-
+  
       if (user) {
-        // First update the auth context
         await login(user);
-        // Then navigate
-        const path = user.userType === 'student' ? '/' : '/landlord-dashboard';
-        setTimeout(() => navigate(path), 0);
+        // Redirect based on user type
+        if (user.userType === 'landlord') {
+          console.log("landlord");
+          navigate('/landlord-dashboard');
+        } else {
+          navigate('/');
+        }
       } else {
         setErrors({
           auth: 'Invalid email or password'

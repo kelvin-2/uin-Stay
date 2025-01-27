@@ -8,23 +8,30 @@ import FAQSection from './pages/FAQSection';
 import UniStayAuth from './pages/UniStayAuth';
 import PropertyCard from './components/PropertyCard';
 import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AutContext';
+import { AuthProvider, useAuth } from './context/AutContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import LandlordGuide from './pages/LandlordGuide';
-import LandlordDashboard from './Landlord/LandlordDashboard';
+import LandlordDashboard from './pages/LandlordDashboard';
+import LandlordNavbar from './components/LandlordNavbar';
 
-function App() {
+// Create a wrapper component to use useAuth hook
+const AppContent = () => {
+  const { currentUser } = useAuth();
+
   return (
-    <AuthProvider>
-      <Navbar />
+    <>
+      {currentUser?.userType === 'landlord' ? <LandlordNavbar /> : <Navbar />}
       <Routes>
-        {/* Default Route: Home Page */}
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-        
-        {/* Properties Page */}
         <Route path="/Properties" element={<Properties />} />
-        
-        {/* Protected Route: Property Details Page */}
+        <Route path="/Support" element={<CreatorSupportMessage />} />
+        <Route path="/ContactUs" element={<ContactUs />} />
+        <Route path="/Help" element={<FAQSection />} />
+        <Route path="/signin" element={<UniStayAuth />} />
+        <Route path="/landlord-guide" element={<LandlordGuide />} />
+
+        {/* Protected Routes */}
         <Route
           path="/property/:id"
           element={
@@ -33,30 +40,31 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
-        {/* OurStory Page */}
-        <Route path="/Support" element={<CreatorSupportMessage />} />
 
-        {/* Contact Page */}
-        <Route path="/ContactUs" element={<ContactUs />} />
-
-        {/* FAQ/Help Page */}
-        <Route path="/Help" element={<FAQSection />} />
-
-        {/* Sign In Page */}
-        <Route path="/signin" element={<UniStayAuth />} />
-        {/*LandLord guide*/}
-        <Route path="/landlord-guide" element={<LandlordGuide/>}/>
-
+        {/* Landlord Protected Routes */}
         <Route
           path="/landlord-dashboard"
           element={
-            <ProtectedRoute>
               <LandlordDashboard />
-            </ProtectedRoute>
+          }
+        />
+        
+        {/* Add more landlord routes here */}
+        <Route
+          path="/landlord-properties"
+          element={
+              <LandlordDashboard />
           }
         />
       </Routes>
+    </>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
