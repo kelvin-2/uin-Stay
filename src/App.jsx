@@ -13,6 +13,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import LandlordGuide from './pages/LandlordGuide';
 import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordNavbar from './components/LandlordNavbar';
+import ManageProperties from './pages/MyProperties'
 
 // Create a wrapper component to use useAuth hook
 const AppContent = () => {
@@ -53,9 +54,10 @@ const AppContent = () => {
         <Route
           path="/landlord-properties"
           element={
-              <LandlordDashboard />
+            <ManageProperties/>
           }
         />
+      
       </Routes>
     </>
   );

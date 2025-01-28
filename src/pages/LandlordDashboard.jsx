@@ -133,9 +133,9 @@ const LandlordDashboard = () => {
         }}
         onClose={handleCloseModal}
       />
+      </div>
     </div>
-  </div>
-)}
+  )}
 
     </div>
   );

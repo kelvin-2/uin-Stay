@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Upload, Image as ImageIcon } from 'lucide-react';
 
 const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
@@ -8,8 +8,11 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     distanceFromShuttle: '',
     distanceFromSchool: '',
     amenities: [],
-    paymentAccepted: []
+    paymentAccepted: [],
+    images: []
   });
+
+  const [previewImages, setPreviewImages] = useState([]);
 
   const roomTypes = [
     "Studio",
@@ -21,7 +24,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
 
   const amenityOptions = [
     "WiFi",
-    "Pool",
+    "Air Conditioning",
     "Washin Machine",
     "Parking",
     "Kitchen",
@@ -53,16 +56,74 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     }));
   };
 
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Create preview URLs for the images
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewImages(prev => [...prev, ...newPreviewUrls]);
+    
+    // Add files to form data
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }));
+  };
+
+  const removeImage = (index) => {
+    // Remove from preview and form data
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
   return (
-    <div className="flex flex-col h-[80vh]">
-      {/* Scrollable Form Content */}
-      <div className="flex-1 overflow-y-auto px-6">
-        <form id="propertyForm" onSubmit={handleSubmit} className="space-y-8 py-6">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <div className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Images Section */}
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-blue-900">
+              Property Images
+            </label>
+            <div className="flex flex-wrap gap-4">
+              {previewImages.map((url, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={url}
+                    alt={`Preview ${index + 1}`}
+                    className="w-24 h-24 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
+                <ImageIcon className="h-8 w-8 text-blue-500" />
+                <span className="text-xs text-blue-500 mt-1">Add Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
           {/* Address */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
@@ -98,7 +159,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           </div>
 
           {/* Distances */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
                 Distance from Shuttle Stop (meters)
@@ -168,27 +229,24 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               ))}
             </div>
           </div>
-        </form>
-      </div>
 
-      {/* Fixed Button Container */}
-      <div className="border-t bg-white px-6 py-4 mt-4">
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700 hover:bg-blue-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="propertyForm"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Add Property
-          </button>
-        </div>
+          {/* Submit Buttons */}
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700 hover:bg-blue-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Add Property
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
