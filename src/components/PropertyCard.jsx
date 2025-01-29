@@ -1,163 +1,221 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import {
+  MapPin,
+  BedDouble,
+  Bath,
+  Home,
+  Calendar,
+  Wifi,
+  Car,
+  Utensils,
+  Lock,
+  ThermometerSun,
+  Sofa,
+  Phone,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle
+} from 'lucide-react';
 
-const PropertyDetails = () => {
-  const { id } = useParams();
-  const [property, setProperty] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    // Fetch property details from the Mock API
-    fetch(`https://mockapi.io/properties/${id}`) // Replace with your Mock API endpoint
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch property details');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProperty(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error loading property details:', error);
-        setError(error.message);
-        setLoading(false);
-      });
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6 text-center">
-        <div className="animate-pulse bg-gray-200 h-96 w-full rounded-2xl mb-6"></div>
-        <div className="space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto"></div>
-          <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <div className="bg-red-50 p-6 rounded-2xl inline-block shadow-sm">
-          <p className="text-red-600 font-medium">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-3 px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Emoji-based amenities map
-  const amenitiesMap = {
-    wifi: { symbol: '📶', label: 'WiFi' },
-    security: { symbol: '🛡️', label: '24/7 Security' },
-    parking: { symbol: '🚗', label: 'Parking' },
-    kitchen: { symbol: '🍳', label: 'Fully Equipped Kitchen' },
-    livingRoom: { symbol: '🛋️', label: 'Living Room' },
-    heating: { symbol: '🔥', label: 'Heating' },
-    airConditioning: { symbol: '❄️', label: 'Air Conditioning' },
-    tv: { symbol: '📺', label: 'TV' },
-    washer: { symbol: '🧺', label: 'Washing Machine' },
-    pool: { symbol: '🏊‍♂️', label: 'Swimming Pool' },
+const PropertyDetail = () => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const property = {
+    id: 1,
+    title: "Modern Studio near Campus",
+    price: 750,
+    location: "123 University Avenue, University District",
+    type: "Studio",
+    bedrooms: 1,
+    bathrooms: 1,
+    size: "450 sq ft",
+    furnished: true,
+    description: "Modern and cozy studio apartment perfect for students. Recently renovated with new appliances and furniture. Great location with easy access to campus and public transportation.",
+    availableFrom: "2025-02-15",
+    leaseLength: "12 months",
+    deposit: 750,
+    utilities: "Water and internet included",
+    images: [
+      "/api/placeholder/800/500",
+      "/api/placeholder/800/500",
+      "/api/placeholder/800/500"
+    ],
+    amenities: [
+      { icon: <Wifi />, name: "High-speed WiFi" },
+      { icon: <Car />, name: "Parking Available" },
+      { icon: <Utensils />, name: "Furnished Kitchen" },
+      { icon: <Lock />, name: "Security System" },
+      { icon: <ThermometerSun />, name: "Air Conditioning" },
+      { icon: <Sofa />, name: "Furnished" }
+    ],
+    landlord: {
+      name: "John Doe",
+      phone: "+1234567890",
+      responseTime: "Usually responds within 1 hour",
+      rating: 4.8,
+      reviews: 15
+    },
+    rules: [
+      "No smoking",
+      "No pets",
+      "Quiet hours after 10 PM",
+      "No parties or events"
+    ]
   };
 
-  const landlord = {
-    name: 'John Smith',
-    phone: '+27 (123) 456-7890',
-    email: 'john.smith@properties.com',
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === property.images.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? property.images.length - 1 : prev - 1
+    );
+  };
+
+  const handleWhatsAppContact = () => {
+    const message = `Hey there! I saw your property "${property.title}" at ${property.location} on uinStay, and it looks perfect for me. Could you share any updates on its availability? Looking forward to your response!`;
+    const whatsappUrl = `https://wa.me/${property.landlord.phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
-        {/* Image Container */}
-        <div className="relative overflow-hidden">
-          <img
-            src={property.image}
-            alt={property.name}
-            className="w-full h-[500px] object-cover"
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Image Gallery */}
+        <div className="relative h-96">
+          <img 
+            src={property.images[currentImageIndex]}
+            alt={`Property view ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover"
           />
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium text-gray-700 shadow-lg">
-            <div>{property.type || 'Accommodation'}</div>
-          </div>
-        </div>
-
-        {/* Content Container */}
-        <div className="grid md:grid-cols-2 gap-8 p-8">
-          {/* Left Column - Basic Details */}
-          <div>
-            <div className="mb-6">
-              <div className="text-3xl font-bold text-gray-900 mb-3">
-                R{property.price.toLocaleString()} /month
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                {property.name}
-              </h1>
-              <div className="text-lg text-gray-600 mb-3">📍 {property.location}</div>
-              <div className="text-lg text-gray-600 mb-6">⏱️ 10 min walk to campus</div>
-            </div>
-
-            {/* Property Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg flex items-center gap-3">
-                🛏️ <div>Bedrooms: {property.bedrooms}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg flex items-center gap-3">
-                🛁 <div>Bathrooms: {property.bathrooms}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg flex items-center gap-3">
-                📐 <div>Size: {property.size} m²</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg flex items-center gap-3">
-                📅 <div>Available: {property.availableFrom}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Amenities and Contact */}
-          <div>
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">Amenities</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {property.amenities?.map((amenity, index) => {
-                  const amenityDetails = amenitiesMap[amenity];
-                  return (
-                    <div key={index} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
-                      <span>{amenityDetails?.symbol || '❔'}</span>
-                      <span>{amenityDetails?.label || amenity}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-4">Contact Landlord</h3>
-              <div className="space-y-3">
-                <div>📞 {landlord.phone}</div>
-                <div>📧 {landlord.email}</div>
-                <div>👤 {landlord.name}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-8 border-t border-gray-100">
-          <button className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors text-lg font-semibold">
-            Contact Property Owner
+          <button 
+            onClick={prevImage}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full"
+          >
+            <ChevronLeft className="w-6 h-6" />
           </button>
+          <button 
+            onClick={nextImage}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+          <div className="absolute bottom-4 right-4 bg-white/80 px-2 py-1 rounded-lg text-sm">
+            {currentImageIndex + 1} / {property.images.length}
+          </div>
+        </div>
+
+        <div className="p-6">
+          {/* Header Information */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
+              <div className="flex items-center text-gray-600">
+                <MapPin className="w-4 h-4 mr-1" />
+                <span>{property.location}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600">${property.price}/mo</div>
+              <div className="text-sm text-gray-600">Deposit: ${property.deposit}</div>
+            </div>
+          </div>
+
+          {/* Quick Info */}
+          <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center">
+              <BedDouble className="w-5 h-5 mr-2 text-gray-600" />
+              <span>{property.bedrooms} Bedroom</span>
+            </div>
+            <div className="flex items-center">
+              <Bath className="w-5 h-5 mr-2 text-gray-600" />
+              <span>{property.bathrooms} Bathroom</span>
+            </div>
+            <div className="flex items-center">
+              <Home className="w-5 h-5 mr-2 text-gray-600" />
+              <span>{property.size}</span>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-2">About this property</h2>
+            <p className="text-gray-600">{property.description}</p>
+          </div>
+
+          {/* Availability */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-2">Availability</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-gray-600" />
+                <div>
+                  <div className="font-medium">Available From</div>
+                  <div className="text-gray-600">{property.availableFrom}</div>
+                </div>
+              </div>
+              <div>
+                <div className="font-medium">Lease Length</div>
+                <div className="text-gray-600">{property.leaseLength}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Amenities */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-2">Amenities</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {property.amenities.map((amenity, index) => (
+                <div key={index} className="flex items-center">
+                  <span className="mr-2 text-gray-600">{amenity.icon}</span>
+                  <span>{amenity.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* House Rules */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-2">House Rules</h2>
+            <ul className="list-disc list-inside text-gray-600">
+              {property.rules.map((rule, index) => (
+                <li key={index}>{rule}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Landlord Information */}
+          <div className="border-t pt-6">
+            <h2 className="text-lg font-semibold mb-4">Contact Landlord</h2>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-medium">{property.landlord.name}</h3>
+                <div className="text-sm text-gray-600 mt-1">{property.landlord.responseTime}</div>
+                <div className="flex items-center mt-2">
+                  <span className="text-yellow-400">★</span>
+                  <span className="ml-1">{property.landlord.rating}</span>
+                  <span className="text-gray-600 ml-1">({property.landlord.reviews} reviews)</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleWhatsAppContact}
+                  className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Contact via WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default PropertyDetails;
+export default PropertyDetail;
