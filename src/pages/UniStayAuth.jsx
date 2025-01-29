@@ -347,7 +347,7 @@ const UniStayAuth = () => {
                         <>
                           <div className="space-y-2">
                             <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
-                              Phone Number
+                              Phone Number (WhatsApp)
                             </label>
                             <div className="relative">
                               <Phone className="h-4 w-4 absolute left-3 top-3 text-blue-400" />

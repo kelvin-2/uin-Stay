@@ -6,7 +6,7 @@ const ProtectedRoute = ({ children }) => {
 
   // If the user is not logged in, redirect to the login page
   if (!currentUser) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/signin" />;
   }
 
   // If the user is logged in, render the children (PropertyCard in your case)
