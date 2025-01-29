@@ -15,11 +15,16 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
-  MessageCircle
+  MessageCircle,
+  Star
 } from 'lucide-react';
 
 const PropertyDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [hasRated, setHasRated] = useState(false);
+  const [showRatingMessage, setShowRatingMessage] = useState(false);
   
   const property = {
     id: 1,
@@ -82,6 +87,15 @@ const PropertyDetail = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleRating = (value) => {
+    if (!hasRated) {
+      setRating(value);
+      setHasRated(true);
+      setShowRatingMessage(true);
+      setTimeout(() => setShowRatingMessage(false), 3000);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -122,6 +136,36 @@ const PropertyDetail = () => {
             <div className="text-right">
               <div className="text-2xl font-bold text-blue-600">${property.price}/mo</div>
               <div className="text-sm text-gray-600">Deposit: ${property.deposit}</div>
+            </div>
+          </div>
+
+          {/* Rating Section */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h2 className="text-lg font-semibold mb-2">Rate this Property</h2>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => handleRating(value)}
+                  onMouseEnter={() => !hasRated && setHoveredRating(value)}
+                  onMouseLeave={() => !hasRated && setHoveredRating(0)}
+                  disabled={hasRated}
+                  className={`p-1 transition-colors ${hasRated ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                  <Star
+                    className={`w-8 h-8 ${
+                      (hoveredRating && value <= hoveredRating) || (!hoveredRating && value <= rating)
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'text-gray-300'
+                    }`}
+                  />
+                </button>
+              ))}
+              {showRatingMessage && (
+                <span className="ml-4 text-green-600 font-medium">
+                  Thanks for rating!
+                </span>
+              )}
             </div>
           </div>
 
