@@ -9,7 +9,10 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     distanceFromSchool: '',
     amenities: [],
     paymentAccepted: [],
-    images: []
+    images: [],
+    houseRules: [],
+    leaseLength: '',
+    depositAmount: ''
   });
 
   const [previewImages, setPreviewImages] = useState([]);
@@ -37,6 +40,25 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
 
   const paymentOptions = [
     "NSFAS", "BUSARY", "PRIVATE"
+  ];
+
+  const houseRuleOptions = [
+    "No Smoking",
+    "No Pets",
+    "No Overnight Guests",
+    "No Parties",
+    "Quiet Hours",
+    "No Alcohol",
+    "Keep Common Areas Clean",
+    "No Cooking in Rooms"
+  ];
+
+  const leaseLengthOptions = [
+    "6 months",
+    "12 months",
+    "18 months",
+    "24 months",
+    "Month-to-month"
   ];
 
   const handleInputChange = (e) => {
@@ -139,21 +161,57 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             />
           </div>
 
-          {/* Room Type */}
+          {/* Room Type and Deposit Amount */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-blue-900">
+                Room Type
+              </label>
+              <select
+                name="roomType"
+                value={formData.roomType}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                required
+              >
+                <option value="">Select Room Type</option>
+                {roomTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-blue-900">
+                Deposit Amount (R)
+              </label>
+              <input
+                type="number"
+                name="depositAmount"
+                value={formData.depositAmount}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                min="0"
+                placeholder="Enter deposit amount"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Lease Length */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
-              Room Type
+              Lease Length
             </label>
             <select
-              name="roomType"
-              value={formData.roomType}
+              name="leaseLength"
+              value={formData.leaseLength}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               required
             >
-              <option value="">Select Room Type</option>
-              {roomTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
+              <option value="">Select Lease Length</option>
+              {leaseLengthOptions.map(length => (
+                <option key={length} value={length}>{length}</option>
               ))}
             </select>
           </div>
@@ -205,6 +263,26 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-blue-900">{amenity}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* House Rules */}
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-blue-900">
+              House Rules
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {houseRuleOptions.map(rule => (
+                <label key={rule} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.houseRules.includes(rule)}
+                    onChange={() => handleCheckboxChange('houseRules', rule)}
+                    className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-blue-900">{rule}</span>
                 </label>
               ))}
             </div>
