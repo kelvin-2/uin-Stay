@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Eye, X, Pencil, ArrowLeft } from 'lucide-react';
+import { Building2, Plus, Eye, X } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
+import PropertyDetails from '../components/PropertyDetailsCard';
 
 const LandlordDashboard = () => {
   const [properties, setProperties] = useState([
@@ -9,22 +10,28 @@ const LandlordDashboard = () => {
       address: "123 Main St", 
       roomType: "Studio", 
       views: 245,
-      distanceFromShuttle: "500",
-      distanceFromSchool: "1000",
+      distanceFromShuttle: "0.5",
+      distanceFromSchool: "1.0",
       amenities: ["WiFi", "Parking"],
       paymentAccepted: ["NSFAS", "PRIVATE"],
-      images: []
+      images: [],
+      leaseLength: "12 months",
+      depositAmount: "5000",
+      houseRules: ["No Smoking", "No Pets"]
     },
     { 
       id: 2, 
       address: "456 Oak Ave", 
       roomType: "2 Bedroom", 
       views: 187,
-      distanceFromShuttle: "300",
-      distanceFromSchool: "800",
+      distanceFromShuttle: "0.3",
+      distanceFromSchool: "0.8",
       amenities: ["WiFi", "Air Conditioning", "Parking"],
       paymentAccepted: ["NSFAS", "BUSARY"],
-      images: []
+      images: [],
+      leaseLength: "6 months",
+      depositAmount: "4500",
+      houseRules: ["No Parties", "Quiet Hours"]
     },
   ]);
 
@@ -45,7 +52,6 @@ const LandlordDashboard = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsEditing(false);
-    ///setSelectedProperty(null);
   };
 
   const handleViewDetails = (property) => {
@@ -58,18 +64,15 @@ const LandlordDashboard = () => {
     setIsModalOpen(true);
   };
 
-  
   const handleUpdateProperty = (updatedProperty) => {
     const updatedProperties = properties.map(p => 
       p.id === updatedProperty.id ? { ...updatedProperty, views: p.views } : p
     );
     setProperties(updatedProperties);
-    // Update the selected property to show the updated details
     setSelectedProperty({ ...updatedProperty, views: selectedProperty.views });
     setIsModalOpen(false);
     setIsEditing(false);
   };
-
 
   const handleBackToList = () => {
     setViewMode('list');
@@ -77,83 +80,6 @@ const LandlordDashboard = () => {
     setIsEditing(false);
     setIsModalOpen(false);
   };
-
-  // Property Details View Component
-  const PropertyDetails = ({ property }) => (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <button onClick={handleBackToList} className="text-blue-600 hover:text-blue-800">
-            <ArrowLeft className="h-6 w-6" />
-          </button>
-          <h2 className="text-2xl font-bold">{property.address}</h2>
-        </div>
-        <button 
-          onClick={handleEditProperty}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Pencil className="h-4 w-4" />
-          <span>Edit Property</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Property Details</h3>
-            <div className="space-y-2">
-              <p><span className="font-medium">Room Type:</span> {property.roomType}</p>
-              <p><span className="font-medium">Distance from Shuttle:</span> {property.distanceFromShuttle}m</p>
-              <p><span className="font-medium">Distance from School:</span> {property.distanceFromSchool}m</p>
-              <p><span className="font-medium">Total Views:</span> {property.views}</p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Amenities</h3>
-            <div className="flex flex-wrap gap-2">
-              {property.amenities.map((amenity, index) => (
-                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  {amenity}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Payment Methods</h3>
-            <div className="flex flex-wrap gap-2">
-              {property.paymentAccepted.map((payment, index) => (
-                <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                  {payment}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Property Images</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {property.images.length > 0 ? (
-              property.images.map((image, index) => (
-                <img
-                  key={index}
-                  src={URL.createObjectURL(image)}
-                  alt={`Property ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              ))
-            ) : (
-              <div className="col-span-2 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">No images available</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 mt-20">
@@ -235,7 +161,11 @@ const LandlordDashboard = () => {
           </div>
         </>
       ) : (
-        <PropertyDetails property={selectedProperty} />
+        <PropertyDetails 
+        property={selectedProperty}
+        onBackToList={handleBackToList}
+        onEditProperty={handleEditProperty}
+      />
       )}
 
       {/* Add/Edit Property Modal */}
