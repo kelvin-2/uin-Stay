@@ -8,7 +8,6 @@ import FeaturedProperties from "../components/FeaturedProperties";
 import { Building2, GraduationCap, Home, Users } from 'lucide-react';
 import SearchResults from '../components/SearchResults';
 
-
 function HomePage() {
   const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -26,9 +25,9 @@ function HomePage() {
   return (
     <div className="w-full mx-auto">
       <HeroSection/>
-      <div className="relative -mt-10 mb-10">
-        <div className="mx-auto max-w-4xl px-4">
-          <div className="bg-white rounded-xl shadow-xl p-4">
+      <div className="relative -mt-6 sm:-mt-10 mb-8 sm:mb-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-xl p-3 sm:p-4">
             <SearchBox 
               onSearch={(searchData) => {
                 setLoading(true);
@@ -39,18 +38,20 @@ function HomePage() {
         </div>
       </div>
 
-      {searchResults ? (
-        <SearchResults 
-          results={searchResults} 
-          loading={loading}
-          error={error}
-        />
-      ) : (
-        <>
-          <FeaturedProperties/>
-          <Benefits/>
-        </>
-      )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {searchResults ? (
+          <SearchResults 
+            results={searchResults} 
+            loading={loading}
+            error={error}
+          />
+        ) : (
+          <>
+            <FeaturedProperties/>
+            <Benefits/>
+          </>
+        )}
+      </div>
     </div>
   );
 }
