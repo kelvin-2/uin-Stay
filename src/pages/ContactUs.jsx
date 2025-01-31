@@ -180,7 +180,7 @@ const ContactUs = () => {
                       type={field === 'email' ? 'email' : 'text'}
                       id={field}
                       name={field}
-                      value={formData[field]}
+                      value={formData[field]} 
                       onChange={handleChange}
                       className={getInputClassName(field)}
                     />
