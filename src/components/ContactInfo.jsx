@@ -7,8 +7,8 @@ const ContactInfo = () => (
     <div className="space-y-6">
       {[
         { icon: Mail, title: 'Email', detail: 'support@uinstay.com' },
-        { icon: Phone, title: 'Phone', detail: '+1 (555) 123-4567' },
-        { icon: MessageCircle, title: 'Live Chat', detail: 'Available 9 AM - 5 PM CST' },
+        { icon: Phone, title: 'Phone', detail: '+27 657 120 222' },
+        { icon: MessageCircle, title: 'Live Chat', detail: 'Available 9 AM - 5 PM CAT' },
       ].map((info, idx) => (
         <div key={idx} className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">

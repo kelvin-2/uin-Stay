@@ -327,7 +327,7 @@ const UniStayAuth = () => {
                       {userType === 'student' && (
                         <div className="space-y-2">
                           <label htmlFor="university" className="block text-sm font-medium text-blue-900">
-                            University
+                            University/College
                           </label>
                           <div className="relative">
                             <BookOpen className="h-4 w-4 absolute left-3 top-3 text-blue-400" />

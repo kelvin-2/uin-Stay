@@ -25,7 +25,7 @@ const PropertyDetail = () => {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showRatingMessage, setShowRatingMessage] = useState(false);
   
-  // Rest of the property data...
+  
   const property = {
     id: 1,
     title: "Modern Studio near Campus",
