@@ -27,7 +27,7 @@ function HomePage() {
       <HeroSection/>
       <div className="relative -mt-6 sm:-mt-10 mb-8 sm:mb-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-xl p-3 sm:p-4">
+          <div className="bg-blue rounded-xl shadow-xl p-3 sm:p-4">
             <SearchBox 
               onSearch={(searchData) => {
                 setLoading(true);
