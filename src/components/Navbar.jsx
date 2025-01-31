@@ -184,9 +184,7 @@ const Navbar = () => {
             </div>
 
             <div className="hidden md:flex items-center space-x-6">
-              <button className="text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                <Search className="h-5 w-5" />
-              </button>
+             
               {renderAuthButton()}
             </div>
 
@@ -227,9 +225,7 @@ const Navbar = () => {
               )}
               
               <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
-                <button className="text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                  <Search className="h-5 w-5" />
-                </button>
+               
                 {renderAuthButton()}
               </div>
             </div>
