@@ -14,6 +14,50 @@ function SearchBox() {
     setActivePanel(activePanel === panel ? null : panel);
   };
 
+  const handleSearch=()=>{
+    //Creating search parameters object
+    const searchParams={
+      location:location,
+      paymentMethod:paymentMethod,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1]
+    };
+    // Mock API call to fetch properties based on search parameters
+    const fetchProperties = async () => {
+      try{
+        //API cal 
+        const response =await fetch('/propertyData.json');
+        if(!response.ok){
+          throw new Error('Failed to fetch properties');
+        }
+        const allProperties=await response.json();
+
+        //filter the properties 
+        const filteredProperties = allProperties.filter(property => {
+          const matchesLocation = !location || property.location.includes(location);
+          const matchesPayment = !paymentMethod || 
+            (property.paymentMethods && property.paymentMethods.includes(paymentMethod));
+          const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
+
+          return matchesLocation && matchesPayment && matchesPrice;
+      });
+      onSearch({
+        results:filteredProperties,
+        searchParams:searchParams
+      });
+    } catch(error){
+      onSearch({
+        results:[],
+        error:error.message,
+        searchParams:searchParams
+        });
+      }
+    }
+    fetchProperties();
+    setActivePanel(null);
+  };
+
+
   return (
     <div className="relative w-full max-w-4xl mx-auto">
       {/* Backdrop */}
