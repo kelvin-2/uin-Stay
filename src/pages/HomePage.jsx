@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import SearchBox from '../components/SearchBox';
 import Properties from '../components/Properties';
@@ -6,6 +6,7 @@ import HeroSection from "../components/HeroSection";
 import Benefits from "../components/Benefits";
 import FeaturedProperties from "../components/FeaturedProperties";
 import { Building2, GraduationCap, Home, Users } from 'lucide-react';
+import SearchResults from '../components/SearchResults';
 
 
 function HomePage() {
@@ -53,5 +54,4 @@ function HomePage() {
     </div>
   );
 }
-
 export default HomePage;

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Search, MapPin, Wallet, Calendar } from "lucide-react";
 
-function SearchBox() {
+function SearchBox({ onSearch }) {
   const [activePanel, setActivePanel] = useState(null);
   const [location, setLocation] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [priceRange, setPriceRange] = useState([0, 10000]);
-
+  
   const towns = ["Summerstrand", "Central", "Humewood", "Forest Hill", "Wallmer"];
   const paymentMethods = ["Cash", "Bursary", "NSFAS"];
 
@@ -14,25 +14,45 @@ function SearchBox() {
     setActivePanel(activePanel === panel ? null : panel);
   };
 
-  const handleSearch=()=>{
-    //Creating search parameters object
-    const searchParams={
-      location:location,
-      paymentMethod:paymentMethod,
+  const handlePriceRangeChange = (index, value) => {
+    const newValue = value === "" ? 0 : Math.max(0, parseInt(value) || 0);
+    
+    setPriceRange(prev => {
+      const newRange = [...prev];
+      newRange[index] = newValue;
+      
+      if (index === 0 && newValue > prev[1]) {
+        newRange[1] = newValue;
+      }
+      if (index === 1 && newValue < prev[0]) {
+        newRange[0] = newValue;
+      }
+      
+      return newRange;
+    });
+  };
+
+  const handleSliderChange = (e) => {
+    const value = parseInt(e.target.value);
+    setPriceRange(prev => [prev[0], value]);
+  };
+
+  const handleSearch = () => {
+    const searchParams = {
+      location: location,
+      paymentMethod: paymentMethod,
       minPrice: priceRange[0],
       maxPrice: priceRange[1]
     };
-    // Mock API call to fetch properties based on search parameters
+
     const fetchProperties = async () => {
-      try{
-        //API cal 
-        const response =await fetch('/propertyData.json');
-        if(!response.ok){
+      try {
+        const response = await fetch('/propertyData.json');
+        if (!response.ok) {
           throw new Error('Failed to fetch properties');
         }
-        const allProperties=await response.json();
+        const allProperties = await response.json();
 
-        //filter the properties 
         const filteredProperties = allProperties.filter(property => {
           const matchesLocation = !location || property.location.includes(location);
           const matchesPayment = !paymentMethod || 
@@ -40,27 +60,28 @@ function SearchBox() {
           const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
 
           return matchesLocation && matchesPayment && matchesPrice;
-      });
-      onSearch({
-        results:filteredProperties,
-        searchParams:searchParams
-      });
-    } catch(error){
-      onSearch({
-        results:[],
-        error:error.message,
-        searchParams:searchParams
+        });
+
+        onSearch({
+          results: filteredProperties,
+          searchParams: searchParams
+        });
+
+      } catch (error) {
+        onSearch({
+          results: [],
+          error: error.message,
+          searchParams: searchParams
         });
       }
-    }
+    };
+
     fetchProperties();
     setActivePanel(null);
   };
 
-
   return (
     <div className="relative w-full max-w-4xl mx-auto">
-      {/* Backdrop */}
       {activePanel && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
@@ -68,10 +89,8 @@ function SearchBox() {
         />
       )}
 
-      {/* Main Search Pill */}
       <div className="relative bg-white rounded-full shadow-lg border border-gray-200 divide-x z-40">
         <div className="flex items-center h-16">
-          {/* Location Button */}
           <button
             onClick={() => handlePanelClick("location")}
             className={`flex-1 flex items-center px-6 h-full rounded-l-full hover:bg-gray-50 transition-all duration-200 ${
@@ -87,7 +106,6 @@ function SearchBox() {
             </div>
           </button>
 
-          {/* Payment Method Button */}
           <button
             onClick={() => handlePanelClick("payment")}
             className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-all duration-200 ${
@@ -103,7 +121,6 @@ function SearchBox() {
             </div>
           </button>
 
-          {/* Price Range Button */}
           <button
             onClick={() => handlePanelClick("price")}
             className={`flex-1 flex items-center px-6 h-full hover:bg-gray-50 transition-all duration-200 ${
@@ -119,14 +136,15 @@ function SearchBox() {
             </div>
           </button>
 
-          {/* Search Button */}
-          <button className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors">
+          <button 
+            onClick={handleSearch}
+            className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors"
+          >
             <Search className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
 
-      {/* Dropdown Panels */}
       {activePanel && (
         <div className="absolute left-0 right-0 mt-4 mx-auto max-w-4xl z-40">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform transition-all duration-200 ease-out">
@@ -185,7 +203,7 @@ function SearchBox() {
                     max="10000"
                     step="100"
                     value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                    onChange={handleSliderChange}
                     className="w-full accent-blue-500"
                   />
                   <div className="flex items-center justify-between">
@@ -193,8 +211,9 @@ function SearchBox() {
                       <label className="block text-sm text-gray-600 mb-1">Minimum</label>
                       <input
                         type="number"
+                        min="0"
                         value={priceRange[0]}
-                        onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                        onChange={(e) => handlePriceRangeChange(0, e.target.value)}
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
@@ -202,8 +221,9 @@ function SearchBox() {
                       <label className="block text-sm text-gray-600 mb-1">Maximum</label>
                       <input
                         type="number"
+                        min="0"
                         value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                        onChange={(e) => handlePriceRangeChange(1, e.target.value)}
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
