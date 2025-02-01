@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, MapPin, Wallet, Calendar } from "lucide-react";
 
-function SearchBox() {
+function SearchBox({ onSearch }) {
   const [activePanel, setActivePanel] = useState(null);
   const [location, setLocation] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -20,6 +20,69 @@ function SearchBox() {
 
   const handlePanelClick = (panel) => {
     setActivePanel(activePanel === panel ? null : panel);
+  };
+
+  const handlePriceRangeChange = (index, value) => {
+    const newValue = value === "" ? 0 : Math.max(0, parseInt(value) || 0);
+
+    setPriceRange((prev) => {
+      const newRange = [...prev];
+      newRange[index] = newValue;
+
+      if (index === 0 && newValue > prev[1]) {
+        newRange[1] = newValue;
+      }
+      if (index === 1 && newValue < prev[0]) {
+        newRange[0] = newValue;
+      }
+
+      return newRange;
+    });
+  };
+
+  const handleSliderChange = (e) => {
+    const value = parseInt(e.target.value);
+    setPriceRange((prev) => [prev[0], value]);
+  };
+
+  const handleSearchClick = async () => {
+    const searchParams = {
+      location,
+      paymentMethod,
+      priceRange,
+    };
+
+    try {
+      const response = await fetch('/propertyData.json');
+      if (!response.ok) {
+        throw new Error('Failed to fetch properties');
+      }
+      const allProperties = await response.json();
+
+      const filteredProperties = allProperties.filter((property) => {
+        const matchesLocation = !location || property.location.includes(location);
+        const matchesPayment =
+          !paymentMethod ||
+          (property.paymentMethods && property.paymentMethods.includes(paymentMethod));
+        const matchesPrice =
+          property.price >= priceRange[0] && property.price <= priceRange[1];
+
+        return matchesLocation && matchesPayment && matchesPrice;
+      });
+
+      onSearch({
+        results: filteredProperties,
+        searchParams: searchParams,
+      });
+    } catch (error) {
+      onSearch({
+        results: [],
+        error: error.message,
+        searchParams: searchParams,
+      });
+    }
+
+    setActivePanel(null);
   };
 
   if (isMobile) {
@@ -65,7 +128,10 @@ function SearchBox() {
             </div>
           </button>
 
-          <button className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center">
+          <button
+            onClick={handleSearchClick}
+            className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center"
+          >
             <Search className="w-5 h-5 mr-2" />
             <span>Search</span>
           </button>
@@ -78,7 +144,6 @@ function SearchBox() {
               onClick={() => setActivePanel(null)}
             />
             <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl border-t p-6 z-40 max-h-[80vh] overflow-y-auto">
-              {/* Panel content remains the same as original */}
               {activePanel === "location" && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold mb-4">Where to Stay?</h3>
@@ -134,7 +199,7 @@ function SearchBox() {
                       max="10000"
                       step="100"
                       value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      onChange={handleSliderChange}
                       className="w-full accent-blue-500"
                     />
                     <div className="space-y-4">
@@ -143,7 +208,7 @@ function SearchBox() {
                         <input
                           type="number"
                           value={priceRange[0]}
-                          onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                          onChange={(e) => handlePriceRangeChange(0, e.target.value)}
                           className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                         />
                       </div>
@@ -152,7 +217,7 @@ function SearchBox() {
                         <input
                           type="number"
                           value={priceRange[1]}
-                          onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                          onChange={(e) => handlePriceRangeChange(1, e.target.value)}
                           className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                         />
                       </div>
@@ -170,7 +235,6 @@ function SearchBox() {
   // Desktop version remains unchanged
   return (
     <div className="relative w-full max-w-4xl mx-auto p-4">
-      {/* Original desktop code remains the same */}
       {activePanel && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
@@ -225,7 +289,10 @@ function SearchBox() {
             </div>
           </button>
 
-          <button className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors">
+          <button
+            onClick={handleSearchClick}
+            className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors"
+          >
             <Search className="w-5 h-5 text-white" />
           </button>
         </div>
@@ -234,7 +301,6 @@ function SearchBox() {
       {activePanel && (
         <div className="absolute left-0 right-0 mt-4 mx-auto max-w-4xl z-40">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform transition-all duration-200 ease-out">
-            {/* Panel content remains the same */}
             {activePanel === "location" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold mb-4">Where to Stay?</h3>
@@ -290,7 +356,7 @@ function SearchBox() {
                     max="10000"
                     step="100"
                     value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                    onChange={handleSliderChange}
                     className="w-full accent-blue-500"
                   />
                   <div className="flex items-center space-x-4">
@@ -299,7 +365,7 @@ function SearchBox() {
                       <input
                         type="number"
                         value={priceRange[0]}
-                        onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                        onChange={(e) => handlePriceRangeChange(0, e.target.value)}
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
@@ -308,7 +374,7 @@ function SearchBox() {
                       <input
                         type="number"
                         value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                        onChange={(e) => handlePriceRangeChange(1, e.target.value)}
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
                       />
                     </div>
