@@ -1,327 +1,168 @@
 {
   "users": [
     {
-      "id": "1",
-      "name": "John Doe",
+      "id": 1,
+      "full_name": "John Doe",
+      "gender": "Male",
       "email": "john.doe@example.com",
-      "phone": "123-456-7890",
-      "role": "student",
-      "password": "hashedpassword123",
-      "profile_image": "/images/profiles/john-doe.jpg",
-      "student_info": {
-        "university": "University of Example",
-        "student_number": "2025001234",
-        "funding_type": "NSFAS"
-      }
+      "password": "password123",
+      "phone_number": "+1234567890",
+      "university": "University of Example",
+      "funding_id": 1,
+      "role": "student"
     },
     {
-      "id": "2",
-      "name": "Jane Smith",
+      "id": 2,
+      "full_name": "Jane Smith",
+      "gender": "Female",
       "email": "jane.smith@example.com",
-      "phone": "987-654-3210",
-      "role": "landlord",
-      "password": "hashedpassword456",
-      "profile_image": "/images/profiles/jane-smith.jpg"
+      "password": "password456",
+      "phone_number": "+0987654321",
+      "university": "Example State University",
+      "funding_id": 2,
+      "role": "student"
     },
     {
-      "id": "d216",
-      "fullName": "kelvin",
-      "email": "kelvinmudzingwa@skiff.com",
-      "password": "123456789",
-      "university": "NElso",
-      "phone": "",
-      "location": "",
-      "userType": "student"
+      "id": 3,
+      "full_name": "Alice Johnson",
+      "email": "alice.johnson@example.com",
+      "password": "landlord123",
+      "phone_number": "+1122334455",
+      "role": "landlord"
     },
     {
-      "id": "3",
-      "name": "Admin User",
-      "email": "admin@example.com",
-      "phone": "111-222-3333",
-      "role": "admin",
-      "password": "hashedpassword789",
-      "profile_image": "/images/profiles/admin.jpg"
-    },
-    {
-      "id": "d1f6",
-      "fullName": "Kelvin Mudzingwa",
-      "email": "kelvinmudzingwsa@skiff.com",
-      "password": "123456789",
-      "university": "s",
-      "phone": "0657120222",
-      "location": "port elizabirth",
-      "userType": "landlord"
-    },
-    {
-      "id": "a84a",
-      "fullName": "kelvinx",
-      "email": "kelvinmudzingwsaww@skiff.com",
-      "password": "123456789",
-      "university": "xxx",
-      "phone": "",
-      "location": "",
-      "userType": "student"
+      "id": 4,
+      "full_name": "Bob Brown",
+      "email": "bob.brown@example.com",
+      "password": "landlord456",
+      "phone_number": "+5566778899",
+      "role": "landlord"
     }
   ],
-  "landlords": [
+  "accommodations": [
     {
-      "id": "2",
-      "user_id": 2,
-      "business_name": "Jane's Apartments",
-      "website": "https://janesapartments.com",
-      "address": "789 Landlord St, City, State",
-      "contact_person": "Jane Smith",
-      "contact_email": "jane.smith@janesapartments.com",
-      "contact_phone": "987-654-3210",
-      "rating": 4.5,
-      "business_logo": "/images/logos/janes-apartments.png",
-      "verification_documents": [
-        "/images/documents/business-license.pdf",
-        "/images/documents/insurance.pdf"
-      ],
-      "accreditation": {
-        "is_accredited": true,
-        "accreditation_number": "ACC123456",
-        "accrediting_body": "Department of Higher Education",
-        "accreditation_expiry": "2026-12-31",
-        "accreditation_document": "/images/documents/accreditation.pdf",
-        "verification_status": "verified"
-      }
-    }
-  ],
-  "listings": [
-    {
-      "id": "1",
-      "title": "Cozy 2-bedroom apartment near campus",
-      "description": "A beautiful 2-bedroom apartment just 5 minutes from the university.",
-      "price": 1200,
-      "location": "Central",
-      "owner_id": 2,
-      "available": true,
-      "features": [
-        "Air Conditioning",
-        "In-unit Laundry",
-        "Parking",
-        "Pet Friendly"
-      ],
-      "square_feet": 850,
-      "bedrooms": 2,
-      "bathrooms": 1.5,
-      "lease_length": 12,
-      "coordinates": {
-        "latitude": 40.7128,
-        "longitude": -74.006
-      },
-      "payment_options": {
-        "accepts_nsfas": true,
-        "accepts_bursary": true,
-        "accepts_cash": true,
-        "payment_details": {
-          "nsfas_accredited": true,
-          "nsfas_reference": "NSFAS2025001",
-          "bursary_process": "Direct payment from registered bursary providers",
-          "deposit_required": true,
-          "deposit_amount": 1200,
-          "payment_schedule": "Monthly",
-          "accepted_payment_methods": [
-            "Bank Transfer",
-            "Debit Order",
-            "Credit Card"
-          ]
-        },
-        "price_breakdown": {
-          "base_rent": 1200,
-          "utilities": "Included",
-          "wifi": "Included",
-          "security": 100,
-          "total_monthly": 1300
-        }
-      },
-      "student_verification_required": true,
-      "affiliated_institutions": [
-        "University of Example",
-        "City College"
-      ]
+      "acc_id": 1,
+      "landlord_id": 3,
+      "name": "Cozy Apartment",
+      "address": "123 Main St, Example City",
+      "max_occupancy": 2,
+      "room_type": "Studio",
+      "availability": true,
+      "price": 500,
+      "distance_from_shuttle": 0.5,
+      "distance_from_varsity": 1.2,
+      "image_url": "https://example.com/image1.jpg",
+      "date_listed": "2023-10-01"
     },
     {
-      "id": "2",
-      "title": "Studio Apartment for Rent",
-      "description": "Perfect for a single student or professional. 10 minutes from downtown.",
+      "acc_id": 2,
+      "landlord_id": 4,
+      "name": "Modern Loft",
+      "address": "456 Elm St, Example City",
+      "max_occupancy": 4,
+      "room_type": "2-Bedroom",
+      "availability": true,
       "price": 800,
-      "location": "Humewood",
-      "owner_id": 2,
-      "available": true,
-      "features": [
-        "Air Conditioning",
-        "Street Parking",
-        "Study Room",
-        "Wifi",
-        "TV"
-      ],
-      "square_feet": 450,
-      "bedrooms": 0,
-      "bathrooms": 1,
-      "lease_length": 12,
-      "coordinates": {
-        "latitude": 40.7129,
-        "longitude": -74.0061
-      },
-      "payment_options": {
-        "accepts_nsfas": false,
-        "accepts_bursary": true,
-        "accepts_cash": true,
-        "payment_details": {
-          "nsfas_accredited": false,
-          "bursary_process": "Direct payment from registered bursary providers",
-          "deposit_required": true,
-          "deposit_amount": 800,
-          "payment_schedule": "Monthly",
-          "accepted_payment_methods": [
-            "Bank Transfer",
-            "Debit Order"
-          ]
-        }
-      },
-      "student_verification_required": true,
-      "affiliated_institutions": [
-        "University of Example"
-      ]
+      "distance_from_shuttle": 0.8,
+      "distance_from_varsity": 1.5,
+      "image_url": "https://example.com/image2.jpg",
+      "date_listed": "2023-10-05"
     }
   ],
-  "messages": [
+  "bookings": [
     {
-      "id": "1",
-      "name": "John Doe",
-      "email": "john.doe@example.com",
-      "phone": "123-456-7890",
-      "subject": "Inquiry about apartment",
-      "message": "Is the cozy 2-bedroom apartment still available?",
-      "status": "pending",
-      "created_at": "2025-01-22T10:00:00Z"
+      "booking_id": 1,
+      "student_id": 1,
+      "accommodation_id": 1,
+      "start_date": "2023-11-01",
+      "end_date": "2024-06-30",
+      "rent": 500,
+      "deposit": 1000,
+      "status": "Confirmed"
     },
     {
-      "id": "2",
-      "name": "Alice Brown",
-      "email": "alice.brown@example.com",
-      "phone": "555-555-5555",
-      "subject": "Renting Information",
-      "message": "I'd like to know more about the studio apartment near downtown.",
-      "status": "responded",
-      "created_at": "2025-01-20T12:30:00Z"
+      "booking_id": 2,
+      "student_id": 2,
+      "accommodation_id": 2,
+      "start_date": "2023-12-01",
+      "end_date": "2024-05-31",
+      "rent": 800,
+      "deposit": 1600,
+      "status": "Pending"
+    }
+  ],
+  "fundings": [
+    {
+      "funding_id": 1,
+      "funding_type": "Bursary"
     },
     {
-      "id": "c1ee",
-      "name": "kelvin",
-      "email": "kelvin@gmail.com",
-      "phone": "",
-      "subject": "",
-      "message": "help me find accomodation"
+      "funding_id": 2,
+      "funding_type": "Scholarship"
+    }
+  ],
+  "donations": [
+    {
+      "donation_id": 1,
+      "donor_name": "Example Donor",
+      "amount": 1000,
+      "date": "2023-10-10",
+      "status": "Completed",
+      "payment_method": "Credit Card"
+    }
+  ],
+  "amenities": [
+    {
+      "amenity_id": 1,
+      "name": "Wi-Fi"
+    },
+    {
+      "amenity_id": 2,
+      "name": "Parking"
+    }
+  ],
+  "accommodation_amenities": [
+    {
+      "accommodation_id": 1,
+      "amenity_id": 1
+    },
+    {
+      "accommodation_id": 1,
+      "amenity_id": 2
+    },
+    {
+      "accommodation_id": 2,
+      "amenity_id": 1
     }
   ],
   "reviews": [
     {
-      "id": "1",
-      "listing_id": 1,
-      "user_id": 1,
+      "review_id": 1,
+      "accommodation_id": 1,
+      "student_id": 1,
       "rating": 5,
-      "comment": "Great apartment! Very close to campus and the landlord is very friendly.",
-      "created_at": "2025-01-21T14:00:00Z",
-      "images": [
-        "/images/reviews/review1-1.jpg",
-        "/images/reviews/review1-2.jpg"
-      ]
+      "comment": "Great place to stay!",
+      "date": "2023-10-15"
     },
     {
-      "id": "2",
-      "listing_id": 2,
-      "user_id": 2,
+      "review_id": 2,
+      "accommodation_id": 2,
+      "student_id": 2,
       "rating": 4,
-      "comment": "Nice place, but a bit far from the university. Still, a good option for those who need more privacy.",
-      "created_at": "2025-01-15T16:00:00Z",
-      "images": [
-        "/images/reviews/review2-1.jpg"
-      ]
+      "comment": "Nice and modern.",
+      "date": "2023-10-20"
     }
   ],
-  "property_images": [
+  "images": [
     {
-      "id": "1",
-      "listing_id": 1,
-      "images": [
-        {
-          "id": 1,
-          "url": "/images/properties/listing1/main.jpg",
-          "type": "main",
-          "caption": "Building Exterior",
-          "order": 1
-        },
-        {
-          "id": 2,
-          "url": "/images/properties/listing1/living-room.jpg",
-          "type": "interior",
-          "caption": "Living Room",
-          "order": 2
-        },
-        {
-          "id": 3,
-          "url": "/images/properties/listing1/kitchen.jpg",
-          "type": "interior",
-          "caption": "Modern Kitchen",
-          "order": 3
-        },
-        {
-          "id": 4,
-          "url": "/images/properties/listing1/bedroom1.jpg",
-          "type": "interior",
-          "caption": "Master Bedroom",
-          "order": 4
-        },
-        {
-          "id": 5,
-          "url": "/images/properties/listing1/bathroom.jpg",
-          "type": "interior",
-          "caption": "Updated Bathroom",
-          "order": 5
-        }
-      ],
-      "virtual_tour": "/virtual-tours/listing1.html",
-      "floor_plan": "/images/properties/listing1/floor-plan.pdf"
+      "image_id": 1,
+      "image_url": "https://example.com/image1.jpg",
+      "accommodation_id": 1
     },
     {
-      "id": "2",
-      "listing_id": 2,
-      "images": [
-        {
-          "id": 6,
-          "url": "/images/properties/listing2/main.jpg",
-          "type": "main",
-          "caption": "Building Front",
-          "order": 1
-        },
-        {
-          "id": 7,
-          "url": "/images/properties/listing2/studio-space.jpg",
-          "type": "interior",
-          "caption": "Studio Space",
-          "order": 2
-        },
-        {
-          "id": 8,
-          "url": "/images/properties/listing2/kitchen.jpg",
-          "type": "interior",
-          "caption": "Kitchenette",
-          "order": 3
-        },
-        {
-          "id": 9,
-          "url": "/images/properties/listing2/bathroom.jpg",
-          "type": "interior",
-          "caption": "Bathroom",
-          "order": 4
-        }
-      ],
-      "virtual_tour": "/virtual-tours/listing2.html",
-      "floor_plan": "/images/properties/listing2/floor-plan.pdf"
+      "image_id": 2,
+      "image_url": "https://example.com/image2.jpg",
+      "accommodation_id": 2
     }
   ]
 }
