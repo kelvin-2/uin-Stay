@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { Link } from 'react-router-dom';
 import { MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi } from 'lucide-react';
 
 const Properties = () => {
@@ -8,7 +8,7 @@ const Properties = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/propertyData.json')
+    fetch('http://localhost:3001/accommodations')
       .then(response => {
         if (!response.ok) {
           throw new Error('Failed to fetch properties');
@@ -65,10 +65,10 @@ const Properties = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 mt-11">
-      {properties.map((property) => (
+      {properties.map((accommodation) => (
         <Link 
-          to={`/property/${property.id}`} // Link to the property details page
-          key={property.id} 
+          to={`/property/${accommodation.acc_id}`}
+          key={accommodation.acc_id} 
           className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer"
         >
           {/* Favorite Button */}
@@ -79,15 +79,15 @@ const Properties = () => {
           {/* Image Container */}
           <div className="relative overflow-hidden">
             <img
-              src={property.image}
-              alt={property.name}
+              src={accommodation.image_url}
+              alt={accommodation.name}
               className="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-300 cursor-pointer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-lg">
               <div className="flex items-center gap-1.5">
                 <Home className="w-4 h-4" />
-                {property.type || 'Accommodation'}
+                {accommodation.room_type || 'Accommodation'}
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ const Properties = () => {
             {/* Price and Features */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold text-gray-900">R{property.price.toLocaleString()}</span>
+                <span className="text-lg font-bold text-gray-900">R{accommodation.price.toLocaleString()}</span>
                 <span className="text-gray-500 text-sm">/month</span>
               </div>
               <div className="flex gap-2">
@@ -107,35 +107,32 @@ const Properties = () => {
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">{property.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">{accommodation.name}</h3>
 
             {/* Location */}
             <div className="flex items-center gap-1.5 text-gray-500 mb-4">
               <MapPin className="w-4 h-4" />
-              <span className="text-sm line-clamp-1">{property.location}</span>
+              <span className="text-sm line-clamp-1">{accommodation.address}</span>
             </div>
 
             {/* Walking Time */}
             <div className="flex items-center gap-1.5 text-gray-500 mb-4">
               <Clock className="w-4 h-4" />
-              <span className="text-sm">10 min walk to campus</span>
+              <span className="text-sm">{Math.round(accommodation.distance_from_varsity * 10)} min walk to campus</span>
             </div>
 
             {/* Divider */}
             <div className="border-t border-gray-100 my-4" />
 
             {/* Payment Methods */}
-            <div className="flex flex-wrap gap-3">
-              {property.paymentMethods?.map((method, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-full"
-                >
+            {accommodation.paymentMethods && (
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-full">
                   <Wallet className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm text-blue-700 font-medium">{method}</span>
+                  <span className="text-sm text-blue-700 font-medium">{accommodation.paymentMethods}</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         </Link>
       ))}
