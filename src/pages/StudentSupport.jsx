@@ -152,7 +152,7 @@ const BankingDetailsPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Reference</p>
-              <p className="font-medium">Student Number</p>
+              <p className="font-medium">Student Number:225047357</p>
             </div>
           </CardContent>
         </Card>

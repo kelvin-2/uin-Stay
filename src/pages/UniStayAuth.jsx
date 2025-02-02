@@ -120,19 +120,19 @@ const UniStayAuth = () => {
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
       if (!validateForm()) {
         setLoading(false);
         return;
       }
-
+  
       // Fetch users from the mock API
       const response = await fetch('http://localhost:3000/users');
       const users = await response.json();
-
+  
       const existingUser = users.find(u => u.email === formData.email);
-
+  
       if (existingUser) {
         setErrors({
           email: 'Email already exists'
@@ -140,12 +140,12 @@ const UniStayAuth = () => {
         setLoading(false);
         return;
       }
-
+  
       const newUser = {
         ...formData,
         role: userType
       };
-
+  
       // Add new user to the mock API
       await fetch('http://localhost:3000/users', {
         method: 'POST',
@@ -154,12 +154,13 @@ const UniStayAuth = () => {
         },
         body: JSON.stringify(newUser),
       });
-
-      // First update the auth context
+  
+      // Update the auth context with the new user
       await login(newUser);
-      // Then navigate
+  
+      // Redirect based on user type
       const path = userType === 'student' ? '/' : '/landlord-dashboard';
-      setTimeout(() => navigate(path), 0);
+      navigate(path);
     } catch (error) {
       setErrors({
         auth: 'An error occurred during signup. Please try again.'
