@@ -53,14 +53,14 @@ function SearchBox({ onSearch }) {
     };
 
     try {
-      const response = await fetch('/propertyData.json');
+      const response = await fetch('http://localhost:3001/accommodations');
       if (!response.ok) {
         throw new Error('Failed to fetch properties');
       }
       const allProperties = await response.json();
 
       const filteredProperties = allProperties.filter((property) => {
-        const matchesLocation = !location || property.location.includes(location);
+        const matchesLocation = !location || property.address.includes(location);
         const matchesPayment =
           !paymentMethod ||
           (property.paymentMethods && property.paymentMethods.includes(paymentMethod));
@@ -127,15 +127,23 @@ function SearchBox({ onSearch }) {
               </div>
             </div>
           </button>
+
+          <button
+            onClick={handleSearchClick}
+            className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center"
+          >
+            <Search className="w-5 h-5 mr-2" />
+            <span>Search</span>
+          </button>
         </div>
 
-        {activePanel ? (
-          <div className="fixed inset-0 flex flex-col justify-end z-50">
-            <div 
-              className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        {activePanel && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
               onClick={() => setActivePanel(null)}
             />
-            <div className="relative bg-white rounded-t-2xl shadow-2xl border-t p-6 max-h-[80vh] overflow-y-auto">
+            <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl border-t p-6 z-40 max-h-[80vh] overflow-y-auto">
               {activePanel === "location" && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold mb-4">Where to Stay?</h3>
@@ -217,24 +225,8 @@ function SearchBox({ onSearch }) {
                   </div>
                 </div>
               )}
-
-              <button
-                onClick={handleSearchClick}
-                className="w-full mt-6 p-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
-              >
-                <Search className="w-5 h-5 mr-2" />
-                <span>Search</span>
-              </button>
             </div>
-          </div>
-        ) : (
-          <button
-            onClick={handleSearchClick}
-            className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center"
-          >
-            <Search className="w-5 h-5 mr-2" />
-            <span>Search</span>
-          </button>
+          </>
         )}
       </div>
     );
