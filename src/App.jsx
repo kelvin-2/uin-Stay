@@ -21,7 +21,8 @@ const AppContent = () => {
 
   return (
     <>
-      {currentUser?.userType === 'landlord' ? <LandlordNavbar /> : <Navbar />}
+   
+      {currentUser?.role === 'landlord' ? <LandlordNavbar /> : <Navbar />}
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />

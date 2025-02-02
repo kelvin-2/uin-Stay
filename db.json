@@ -61,6 +61,26 @@
       "phone": "",
       "location": "",
       "userType": "student"
+    },
+    {
+      "id": "e2d7",
+      "fullName": "john",
+      "email": "john@gmail.com",
+      "password": "12243546565",
+      "university": "",
+      "phone": "+27657120222",
+      "location": "Durban ",
+      "role": "landlord"
+    },
+    {
+      "id": "6f10",
+      "fullName": "Tichaona Kelvin Mudzingwa",
+      "email": "kelvinmudingwa@skiff.com",
+      "password": "uuuopuo",
+      "university": "",
+      "phone": "+27657120222",
+      "location": "port elizabirth",
+      "role": "landlord"
     }
   ],
   "landlords": [
