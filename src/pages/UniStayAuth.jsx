@@ -3,25 +3,6 @@ import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
 
-// Mock users for testing
-const mockUsers = [
-  {
-    email: 'student@test.com',
-    password: 'password123',
-    fullName: 'Test Student',
-    userType: 'student',
-    university: 'Test University'
-  },
-  {
-    email: 'landlord@test.com',
-    password: 'password123',
-    fullName: 'Test Landlord',
-    userType: 'landlord',
-    phone: '+44123456789',
-    location: 'London'
-  }
-];
-
 const UniStayAuth = () => {
   const [userType, setUserType] = useState('student');
   const [activeTab, setActiveTab] = useState('login');
@@ -37,8 +18,6 @@ const UniStayAuth = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
-
-  // Remove the useEffect for checking auth - it's now handled by the AuthContext
 
   const validateForm = () => {
     const newErrors = {};
@@ -105,16 +84,20 @@ const UniStayAuth = () => {
         return;
       }
   
-      const user = mockUsers.find(
+      // Fetch users from the mock API
+      const response = await fetch('http://localhost:3000/users');
+      const users = await response.json();
+  
+      const user = users.find(
         u => u.email === formData.email && 
             u.password === formData.password && 
-            u.userType === userType
+            u.role === userType
       );
   
       if (user) {
         await login(user);
         // Redirect based on user type
-        if (user.userType === 'landlord') {
+        if (user.role === 'landlord') {
           console.log("landlord");
           navigate('/landlord-dashboard');
         } else {
@@ -144,7 +127,11 @@ const UniStayAuth = () => {
         return;
       }
 
-      const existingUser = mockUsers.find(u => u.email === formData.email);
+      // Fetch users from the mock API
+      const response = await fetch('http://localhost:3000/users');
+      const users = await response.json();
+
+      const existingUser = users.find(u => u.email === formData.email);
 
       if (existingUser) {
         setErrors({
@@ -156,9 +143,17 @@ const UniStayAuth = () => {
 
       const newUser = {
         ...formData,
-        userType
+        role: userType
       };
-      mockUsers.push(newUser);
+
+      // Add new user to the mock API
+      await fetch('http://localhost:3000/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser),
+      });
 
       // First update the auth context
       await login(newUser);
@@ -173,7 +168,6 @@ const UniStayAuth = () => {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50">
