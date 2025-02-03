@@ -170,13 +170,7 @@ const Navbar = () => {
                       >
                         Landlord Guide
                       </Link>
-                      <Link 
-                        to="/pricing" 
-                        className="block px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Pricing
-                      </Link>
+                     
                     </div>
                   )}
                 </div>

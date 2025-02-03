@@ -46,6 +46,7 @@
       "name": "Cozy Apartment",
       "address": "123 Main St, Example City",
       "max_occupancy": 2,
+      "paymentMethods":"NSFAS",
       "room_type": "Studio",
       "availability": true,
       "price": 500,
