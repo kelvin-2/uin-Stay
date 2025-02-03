@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
+import supabase from '../supabaseClient';
 
 const UniStayAuth = () => {
   const [userType, setUserType] = useState('student');
@@ -76,42 +77,18 @@ const UniStayAuth = () => {
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
-  
     try {
-      if (!validateForm()) {
-        setLoading(false);
-        return;
-      }
-  
-      // Fetch users from the mock API
-      const response = await fetch('http://localhost:3000/users');
-      const users = await response.json();
-  
-      const user = users.find(
-        u => u.email === formData.email && 
-            u.password === formData.password && 
-            u.role === userType
-      );
-  
-      if (user) {
-        await login(user);
-        // Redirect based on user type
-        if (user.role === 'landlord') {
-          console.log("landlord");
-          navigate('/landlord-dashboard');
-        } else {
-          navigate('/');
-        }
-      } else {
-        setErrors({
-          auth: 'Invalid email or password'
-        });
-      }
-    } catch (error) {
-      setErrors({
-        auth: 'An error occurred during login. Please try again.'
+      const { user, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
+      if (error) throw error;
+      login(user);
+      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
+    } catch (error) {
+      setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
@@ -119,52 +96,28 @@ const UniStayAuth = () => {
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
-  
     try {
-      if (!validateForm()) {
-        setLoading(false);
-        return;
-      }
-  
-      // Fetch users from the mock API
-      const response = await fetch('http://localhost:3000/users');
-      const users = await response.json();
-  
-      const existingUser = users.find(u => u.email === formData.email);
-  
-      if (existingUser) {
-        setErrors({
-          email: 'Email already exists'
-        });
-        setLoading(false);
-        return;
-      }
-  
-      const newUser = {
-        ...formData,
-        role: userType
-      };
-  
-      // Add new user to the mock API
-      await fetch('http://localhost:3000/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newUser),
+      //added supabase like for authenticat
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
       });
-  
-      // Update the auth context with the new user
-      await login(newUser);
-  
-      // Redirect based on user type
-      const path = userType === 'student' ? '/' : '/landlord-dashboard';
-      navigate(path);
+      if (error) throw error;
+      await supabase.from('users').insert({
+        id: data.user.id,
+        full_name: formData.fullName,
+        email: formData.email,
+        role: userType,
+        university: formData.university,
+        phone: formData.phone,
+        location: formData.location,
+      });
+      login(data.user);
+      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
     } catch (error) {
-      setErrors({
-        auth: 'An error occurred during signup. Please try again.'
-      });
+      setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
