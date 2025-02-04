@@ -80,14 +80,16 @@ const UniStayAuth = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const { user, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
       if (error) throw error;
-      login(user);
+      console.log('User session:', data);
+      login(data.user); // Ensure `data.user` is used
       navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
     } catch (error) {
+      console.error('Login error:', error);
       setErrors({ auth: error.message });
     } finally {
       setLoading(false);
@@ -99,30 +101,50 @@ const UniStayAuth = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      //added supabase like for authenticat
+      // Step 1: Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       });
+  
       if (error) throw error;
-      await supabase.from('users').insert({
-        id: data.user.id,
-        full_name: formData.fullName,
-        email: formData.email,
-        role: userType,
-        university: formData.university,
-        phone: formData.phone,
-        location: formData.location,
-      });
-      login(data.user);
+      //wait a bit 
+      await new Promise(resolve => setTimeout(resolve, 1000));
+  
+      // Step 2: Wait for user session to confirm ID
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+  
+      if (!userId) {
+        throw new Error("User ID not available. Try logging in.");
+      }
+  
+      // Step 3: Insert user into database
+      const { error: insertError } = await supabase.from('users').insert([
+        {
+          id: userId, // Ensure we use the correct ID
+          full_name: formData.fullName,
+          email: formData.email,
+          role: userType,
+          university: formData.university || null,
+          phone: formData.phone || null,
+          location: formData.location || null,
+          created_at: new Date(),
+        },
+      ]);
+  
+      if (insertError) throw insertError;
+  
+      //login({ id: userId, email: formData.email });
       navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
+  
     } catch (error) {
       setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
