@@ -7,22 +7,25 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
-    
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setCurrentUser(parsedUser); // Set the parsed user if valid
+        if (parsedUser?.role) {
+          setCurrentUser(parsedUser); // Ensure it's an object
+        }
       } catch (error) {
-        console.error('Error parsing user data from localStorage:', error);
+        console.error('Error parsing user data:', error);
       }
     }
   }, []);
+  
 
   const login = (user) => {
-    setCurrentUser(user);
-    console.log(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    const userData = { role: user }; // Ensure it's an object
+    setCurrentUser(userData);
+    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
+  
 
   const logout = () => {
     setCurrentUser(null);

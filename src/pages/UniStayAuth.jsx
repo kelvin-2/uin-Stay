@@ -79,15 +79,39 @@ const UniStayAuth = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
+  
     try {
+      // Step 1: Sign in the user
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+  
       if (error) throw error;
       console.log('User session:', data);
-      login(data.user); // Ensure `data.user` is used
-      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
+  
+      // Step 2: Fetch the user's role from the database
+      const { data: userData, error: userError } = await supabase
+        .from('users') // Replace 'users' with your table name
+        .select('role') // Select the role column
+        .eq('id', data.user.id) // Match the user ID
+        .single(); // Ensure only one row is returned
+  
+      if (userError) throw userError;
+  
+      const userRole = userData?.role;
+      console.log('User role:', userRole);
+      login(userRole);
+  
+      // Step 3: Redirect based on the user's role
+      if (userRole === 'landlord') {
+        navigate('/landlord-dashboard');
+      } else if (userRole === 'student') {
+        navigate('/student-dashboard');
+      } else {
+        navigate('/'); // Default fallback
+      }
+  
     } catch (error) {
       console.error('Login error:', error);
       setErrors({ auth: error.message });
@@ -100,6 +124,7 @@ const UniStayAuth = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
+  
     try {
       // Step 1: Sign up the user
       const { data, error } = await supabase.auth.signUp({
@@ -108,26 +133,23 @@ const UniStayAuth = () => {
       });
   
       if (error) throw error;
-      //wait a bit 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("User session after signup:", data);
   
-      // Step 2: Wait for user session to confirm ID
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-  
+      // Step 2: Get the user ID
+      const userId = data?.user?.id;
       if (!userId) {
-        throw new Error("User ID not available. Try logging in.");
+        throw new Error("User ID not available. Please try logging in.");
       }
   
-      // Step 3: Insert user into database
+      // Step 3: Insert user details into database
       const { error: insertError } = await supabase.from('users').insert([
         {
-          id: userId, // Ensure we use the correct ID
+          id: userId,
           full_name: formData.fullName,
           email: formData.email,
           role: userType,
           university: formData.university || null,
-          phone: formData.phone || null,
+          phone_number: formData.phone || null,
           location: formData.location || null,
           created_at: new Date(),
         },
@@ -135,15 +157,36 @@ const UniStayAuth = () => {
   
       if (insertError) throw insertError;
   
-      //login({ id: userId, email: formData.email });
-      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/');
+      // Step 4: Fetch the user's role from the database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+  
+      if (userError) throw userError;
+  
+      const userRole = userData?.role;
+      console.log("User role after signup:", userRole);
+      //trying to pass the user role
+      login(userRole);
+  
+      // Step 5: Redirect based on role
+      if (userRole === 'landlord') {
+        navigate('/landlord-dashboard');
+      
+      } else {
+        navigate('/');
+      }
   
     } catch (error) {
+      console.error("Signup error:", error);
       setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
   };
+  
   
   return (
     <div className="min-h-screen bg-gray-50">
