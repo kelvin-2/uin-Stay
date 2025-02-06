@@ -41,6 +41,16 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const paymentOptions = [
     "NSFAS", "BUSARY", "PRIVATE"
   ];
+  const locationOptions = [
+    "Central",
+    "Town",
+    "Humewood",
+    "Summerstrand", 
+    "Forest Hill",
+    "Greenacres",
+    "Cape Road",
+    "Richmond Hill"
+  ]
 
   const houseRuleOptions = [
     "No Smoking",
@@ -159,6 +169,23 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Location
+            </label>
+            <select
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              required
+            >
+              <option value="">Select Location</option>
+              {locationOptions.map(location => (
+                <option key={location} value={location}>{location}</option>
+              ))}
+            </select>
           </div>
 
           {/* Room Type and Deposit Amount */}
