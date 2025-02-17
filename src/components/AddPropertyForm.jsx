@@ -172,37 +172,42 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   
       // Prepare data for Supabase
       const propertyData = {
-        address: formData.address || null, // Ensure required fields are not undefined
+        address: formData.address || null,
         location: formData.location || null,
         room_type: formData.roomType || null,
         distance_from_shuttle: formData.distanceFromShuttle || null,
-        amenities: formData.amenities || [], // Default to empty array if undefined
-        payment_accepted: formData.paymentAccepted || [],
-        image_url: imageUrls || [], // Ensure this is an array
+        amenities: formData.amenities || [],
+        payment_methods: formData.paymentAccepted || [],
+        image_url: imageUrls || [],
         lease_length: formData.leaseLength || null,
-        deposit_amount: parseFloat(formData.depositAmount) || 0, // Default to 0 if undefined
+        deposit_amount: parseFloat(formData.depositAmount) || 0,
       };
-      
+  
       console.log('Property Data:', propertyData);
-      
+  
       let response;
       if (formData.id) {
+        // Update existing property
         response = await supabase
           .from('accommodations')
           .update(propertyData)
           .eq('id', formData.id);
       } else {
+        // Insert new property
         response = await supabase.from('accommodations').insert([propertyData]);
       }
-      
+  
       const { data, error } = response;
-      
+  
       if (error) {
         console.error('Supabase Error:', error);
         return;
       }
-      
-      console.log('Property added/updated:', data);
+  
+      if (!data) {
+        console.error('Supabase returned null data. Full response:', response);
+        return;
+      }
   
       console.log('Property added/updated:', data);
       onSubmit(data);
@@ -213,7 +218,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     }
   };
   
-
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="p-6">
