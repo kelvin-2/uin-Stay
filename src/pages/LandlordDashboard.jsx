@@ -68,21 +68,26 @@ const LandlordDashboard = () => {
     const { data, error } = await supabase
       .from('accommodation')
       .update(updatedProperty)
-      .eq('id', updatedProperty.id);
+      .eq('acc_id', updatedProperty.id)
+      .select()
+      .single(); // Ensures a single updated record is returned
+  
     if (error) {
-      console.error('Error updating property:', error);
+      console.error('Error updating property:', error.message);
     } else {
-      fetchProperties();
+      console.log('Property updated:', data);
+      await fetchProperties(); // Ensure the state updates after a successful update
       setIsModalOpen(false);
       setIsEditing(false);
     }
   };
+  
 
   const handleDeleteProperty = async (id) => {
     const { error } = await supabase
       .from('accommodation')
       .delete()
-      .eq('id', id);
+      .eq('acc_id', id);
     if (error) {
       console.error('Error deleting property:', error);
     } else {
