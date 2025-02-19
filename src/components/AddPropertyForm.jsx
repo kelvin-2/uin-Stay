@@ -189,12 +189,12 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       if (formData.id) {
         // Update existing property
         response = await supabase
-          .from('accommodations')
+          .from('accommodation')
           .update(propertyData)
           .eq('id', formData.id);
       } else {
         // Insert new property
-        response = await supabase.from('accommodations').insert([propertyData]);
+        response = await supabase.from('accommodation').insert([propertyData]);
       }
   
       const { data, error } = response;

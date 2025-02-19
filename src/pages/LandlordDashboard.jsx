@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Eye, X } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
-import PropertyDetails from '../components/PropertyDetailsCard';
+import PropertyDetails from '../components/PropertyDetailsCard';//this shoulld be on the students side 
 import supabase  from '../supabaseClient';
 
 const LandlordDashboard = () => {
@@ -16,12 +16,29 @@ const LandlordDashboard = () => {
   }, []);
 
   const fetchProperties = async () => {
+    // Get the authenticated user's ID
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 sec delay
+  
+    if (userError) {
+      console.error("Error getting user:", userError.message);
+      return;
+    }
+  
+    const landlordId = user?.user?.id; // User's unique ID from Supabase Auth
+  
+    console.log("Fetching properties for landlord ID:", landlordId);
+  
+    // Fetch properties where landlord_id matches the authenticated user ID
     const { data, error } = await supabase
-      .from('accommodations')
-      .select('*');
+      .from("accommodation")
+      .select("*")
+      .eq("landlord_id", landlordId); // Ensure landlord_id exists in the table
+  
     if (error) {
-      console.error('Error fetching properties:', error);
+      console.error("Error fetching properties:", error.message);
     } else {
+      console.log("Properties fetched:", data);
       setProperties(data);
     }
   };
@@ -49,7 +66,7 @@ const LandlordDashboard = () => {
 
   const handleUpdateProperty = async (updatedProperty) => {
     const { data, error } = await supabase
-      .from('accommodations')
+      .from('accommodation')
       .update(updatedProperty)
       .eq('id', updatedProperty.id);
     if (error) {
@@ -63,7 +80,7 @@ const LandlordDashboard = () => {
 
   const handleDeleteProperty = async (id) => {
     const { error } = await supabase
-      .from('accommodations')
+      .from('accommodation')
       .delete()
       .eq('id', id);
     if (error) {
