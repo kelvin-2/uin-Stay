@@ -19,7 +19,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     images: [],
     houseRules: [],
     leaseLength: '',
-    depositAmount: ''
+    depositAmount: '',
+    monthlyRent: '' // Added new field for monthly rent
   });
 
   const [previewImages, setPreviewImages] = useState([]);
@@ -175,12 +176,13 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         address: formData.address || null,
         location: formData.location || null,
         room_type: formData.roomType || null,
-        distance_from_shuttle: formData.distanceFromShuttle || null,
+       // distance_from_shuttle: formData.distanceFromShuttle || null,
         amenities: formData.amenities || [],
         payment_methods: formData.paymentAccepted || [],
         image_url: imageUrls || [],
-        lease_length: formData.leaseLength || null,
-        deposit_amount: parseFloat(formData.depositAmount) || 0,
+        //lease_length: formData.leaseLength || null,
+        deposit: parseFloat(formData.depositAmount) || 0,
+        monthly_rent: parseFloat(formData.monthlyRent) || 0, // Added monthly rent to the data sent to Supabase
       };
   
       console.log('Property Data:', propertyData);
@@ -308,7 +310,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </select>
           </div>
 
-          {/* Room Type and Deposit Amount */}
+          {/* Room Type and Monthly Rent */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
@@ -329,19 +331,36 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
-                Deposit Amount (R)
+                Monthly Rent (R)
               </label>
               <input
                 type="number"
-                name="depositAmount"
-                value={formData.depositAmount}
+                name="monthlyRent"
+                value={formData.monthlyRent}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                 min="0"
-                placeholder="Enter deposit amount"
+                placeholder="Enter monthly rent"
                 required
               />
             </div>
+          </div>
+
+          {/* Deposit Amount */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Deposit Amount (R)
+            </label>
+            <input
+              type="number"
+              name="depositAmount"
+              value={formData.depositAmount}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              min="0"
+              placeholder="Enter deposit amount"
+              required
+            />
           </div>
 
           {/* Lease Length */}
@@ -363,38 +382,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </select>
           </div>
 
-          {/* Distances */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-blue-900">
-                Distance from Shuttle Stop (km)
-              </label>
-              <input
-                type="number"
-                name="distanceFromShuttle"
-                value={formData.distanceFromShuttle}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                min="0"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-blue-900">
-                Distance from School (km)
-              </label>
-              <input
-                type="number"
-                name="distanceFromSchool"
-                value={formData.distanceFromSchool}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-
           {/* Amenities */}
           <div className="space-y-3">
             <label className="block text-sm font-semibold text-blue-900">
@@ -414,9 +401,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               ))}
             </div>
           </div>
-
-          {/* House Rules */}
-          
 
           {/* Payment Methods */}
           <div className="space-y-3">
