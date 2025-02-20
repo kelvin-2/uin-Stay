@@ -62,8 +62,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     "Richmond Hill"
   ]
 
- 
-
   const leaseLengthOptions = [
     "6 months",
     "12 months",
@@ -168,6 +166,44 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     setIsSubmitting(true);
   
     try {
+      // Fetch the authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      console.log("user data:",user)
+      
+      if (authError || !user) {
+        console.error("Error fetching user:", authError);
+        setIsSubmitting(false);
+        return;
+      }
+  
+      console.log("Authenticated User ID:", user.id);
+  
+      // Fetch the user's role from the database
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("auth_id", user.id)
+        .maybeSingle(); 
+      console.log("userData: ",userData);
+  
+      if (userError) {
+        console.error("Error fetching user role:", userError);
+        setIsSubmitting(false);
+        return;
+      }
+  
+      console.log("Fetched User Data:", userData);
+
+      //console.log("userRole:",user.role);
+
+  
+      if (user.role !== 'authenticated') {
+        console.error("Only landlords can add properties.");
+        setIsSubmitting(false);
+        return;
+      }
+  
       // Upload images to Cloudinary
       const imageUrls = await uploadImagesToCloudinary(formData.images);
   
@@ -176,38 +212,36 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         address: formData.address || null,
         location: formData.location || null,
         room_type: formData.roomType || null,
-       // distance_from_shuttle: formData.distanceFromShuttle || null,
         amenities: formData.amenities || [],
         payment_methods: formData.paymentAccepted || [],
         image_url: imageUrls || [],
-        //lease_length: formData.leaseLength || null,
         deposit: parseFloat(formData.depositAmount) || 0,
-        monthly_rent: parseFloat(formData.monthlyRent) || 0, // Added monthly rent to the data sent to Supabase
+        monthly_rent: parseFloat(formData.monthlyRent) || 0,
+        landlord_id: user.id // Ensure the landlord_id is set
       };
   
       console.log('Property Data:', propertyData);
+
+      const timeout = setTimeout(() => {
+        console.error('Supabase request timed out');
+        setIsSubmitting(false);
+      }, 10000); // 10 seconds timeout
+      
   
       let response;
       if (formData.id) {
-        // Update existing property
         response = await supabase
           .from('accommodation')
           .update(propertyData)
-          .eq('id', formData.id);
+          .eq('acc_id', formData.id);
       } else {
-        // Insert new property
         response = await supabase.from('accommodation').insert([propertyData]);
       }
   
-      const { data, error } = response;
+      const { data, error: supabaseError } = response;
   
-      if (error) {
-        console.error('Supabase Error:', error);
-        return;
-      }
-  
-      if (!data) {
-        console.error('Supabase returned null data. Full response:', response);
+      if (supabaseError) {
+        console.error('Supabase Error:', supabaseError);
         return;
       }
   
@@ -216,9 +250,12 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     } catch (err) {
       console.error('Error submitting property:', err);
     } finally {
+      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };
+
+
   
   return (
     <div className="max-h-[80vh] overflow-y-auto">
