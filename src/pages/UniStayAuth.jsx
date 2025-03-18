@@ -88,38 +88,52 @@ const UniStayAuth = () => {
       });
   
       if (error) throw error;
-      console.log('User session:', data);
+      console.log("User session:", data);
+  
+      const userId = data?.user?.id;
+      if (!userId) {
+        console.error("Login successful, but no user ID returned!");
+        throw new Error("Unable to fetch user ID after login.");
+      }
   
       // Step 2: Fetch the user's role from the database
       const { data: userData, error: userError } = await supabase
-        .from('users') // Replace 'users' with your table name
-        .select('role') // Select the role column
-        .eq('auth_id', data.user.id) // Match the user ID
-        .single(); // Ensure only one row is returned
+        .from("users")
+        .select("role")
+        .eq("auth_id", userId)
+        .maybeSingle(); // Use maybeSingle to prevent errors if no row exists
   
       if (userError) throw userError;
   
-      const userRole = userData?.role;
-      console.log('User role:', userRole);
-      login(userRole);
-  
-      // Step 3: Redirect based on the user's role
-      if (userRole === 'landlord') {
-        navigate('/landlord-dashboard');
-      } else if (userRole === 'student') {
-        navigate('/student-dashboard');
-      } else {
-        navigate('/'); // Default fallback
+      // Step 3: Check if the user exists in the users table
+      if (!userData) {
+        console.error("User not found in the database. Ensure user is registered.");
+        throw new Error("No user data found. Please contact support.");
       }
   
+      const userRole = userData.role;
+      console.log("User role:", userRole);
+      
+      // Step 4: Store role in localStorage
+      localStorage.setItem("userRole", userRole);
+      login(userRole); // Assuming login() updates state
+  
+      // Step 5: Redirect based on role
+      if (userRole === "landlord") {
+        navigate("/landlord-dashboard");
+      } else if (userRole === "student") {
+        navigate("/student-dashboard");
+      } else {
+        navigate("/"); // Default fallback
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error.message);
       setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
   };
-
+  
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;

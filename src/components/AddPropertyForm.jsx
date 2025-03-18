@@ -164,6 +164,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   
     try {
       // Fetch the authenticated user
@@ -178,31 +180,35 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       }
   
       console.log("Authenticated User ID:", user.id);
+
+      await wait(3000);
   
       // Fetch the user's role from the database
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("auth_id", user.id)
-        .maybeSingle(); 
-      console.log("userData: ",userData);
-  
-      if (userError) {
-        console.error("Error fetching user role:", userError);
-        setIsSubmitting(false);
-        return;
-      }
-  
-      console.log("Fetched User Data:", userData);
+      // const { data: userData, error: userError } = await supabase
+      //   .from("users")
+      //   .select("role")
+      //   .eq("auth_id", user.id)
+      //   .maybeSingle(); 
 
-      //console.log("userRole:",user.role);
+
+      // console.log("userData: ",userData);
+  
+      // if (userError) {
+      //   console.error("Error fetching user role:", userError);
+      //   setIsSubmitting(false);
+      //   return;
+      // }
+  
+      // console.log("Fetched User Data:", userData);
+
+      // //console.log("userRole:",user.role);
 
   
-      if (user.role !== 'authenticated') {
-        console.error("Only landlords can add properties.");
-        setIsSubmitting(false);
-        return;
-      }
+      // if (!userData || userData.role !== 'landlord') {
+      //   console.error("Only landlords can add properties. Current role:", userData?.role);
+      //   setIsSubmitting(false);
+      //   return;
+      // }
   
       // Upload images to Cloudinary
       const imageUrls = await uploadImagesToCloudinary(formData.images);
@@ -221,12 +227,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       };
   
       console.log('Property Data:', propertyData);
-
-      const timeout = setTimeout(() => {
-        console.error('Supabase request timed out');
-        setIsSubmitting(false);
-      }, 10000); // 10 seconds timeout
-      
   
       let response;
       if (formData.id) {
@@ -235,22 +235,25 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           .update(propertyData)
           .eq('acc_id', formData.id);
       } else {
-        response = await supabase.from('accommodation').insert([propertyData]);
+        response = await supabase
+        .from('accommodation')
+        .insert([propertyData])
+        .select();
       }
   
       const { data, error: supabaseError } = response;
   
       if (supabaseError) {
-        console.error('Supabase Error:', supabaseError);
+        console.error('Supabase Error:', supabaseError.message);
+        setIsSubmitting(false);
         return;
       }
   
       console.log('Property added/updated:', data);
-      onSubmit(data);
+      onSubmit(data[0]);
     } catch (err) {
       console.error('Error submitting property:', err);
     } finally {
-      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };
