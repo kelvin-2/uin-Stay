@@ -1,47 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Eye, X } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
-import PropertyDetails from '../components/PropertyDetailsCard';
+import PropertyDetails from '../components/PropertyDetailsCard';//this shoulld be on the students side 
+import supabase  from '../supabaseClient';
 
 const LandlordDashboard = () => {
-  const [properties, setProperties] = useState([
-    { 
-      id: 1, 
-      address: "123 Main St", 
-      roomType: "Studio", 
-      views: 245,
-      distanceFromShuttle: "0.5",
-      distanceFromSchool: "1.0",
-      amenities: ["WiFi", "Parking"],
-      paymentAccepted: ["NSFAS", "PRIVATE"],
-      images: [],
-      leaseLength: "12 months",
-      depositAmount: "5000",
-      houseRules: ["No Smoking", "No Pets"]
-    },
-    { 
-      id: 2, 
-      address: "456 Oak Ave", 
-      roomType: "2 Bedroom", 
-      views: 187,
-      distanceFromShuttle: "0.3",
-      distanceFromSchool: "0.8",
-      amenities: ["WiFi", "Air Conditioning", "Parking"],
-      paymentAccepted: ["NSFAS", "BUSARY"],
-      images: [],
-      leaseLength: "6 months",
-      depositAmount: "4500",
-      houseRules: ["No Parties", "Quiet Hours"]
-    },
-  ]);
-
+  const [properties, setProperties] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'detail'
 
-  const totalProperties = properties.length;
-  const totalViews = properties.reduce((sum, property) => sum + property.views, 0);
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    // Get the authenticated user's ID
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 sec delay
+  
+    if (userError) {
+      console.error("Error getting user:", userError.message);
+      return;
+    }
+  
+    const landlordId = user?.user?.id; // User's unique ID from Supabase Auth
+  
+    console.log("Fetching properties for landlord ID:", landlordId);
+  
+    // Fetch properties where landlord_id matches the authenticated user ID
+    const { data, error } = await supabase
+      .from("accommodation")
+      .select("*")
+      .eq("landlord_id", landlordId); // Ensure landlord_id exists in the table
+  
+    if (error) {
+      console.error("Error fetching properties:", error.message);
+    } else {
+      console.log("Properties fetched:", data);
+      setProperties(data);
+    }
+  };
 
   const handleAddProperty = () => {
     setIsModalOpen(true);
@@ -64,14 +64,35 @@ const LandlordDashboard = () => {
     setIsModalOpen(true);
   };
 
-  const handleUpdateProperty = (updatedProperty) => {
-    const updatedProperties = properties.map(p => 
-      p.id === updatedProperty.id ? { ...updatedProperty, views: p.views } : p
-    );
-    setProperties(updatedProperties);
-    setSelectedProperty({ ...updatedProperty, views: selectedProperty.views });
-    setIsModalOpen(false);
-    setIsEditing(false);
+  const handleUpdateProperty = async (updatedProperty) => {
+    const { data, error } = await supabase
+      .from('accommodation')
+      .update(updatedProperty)
+      .eq('acc_id', updatedProperty.id)
+      .select()
+      .single(); // Ensures a single updated record is returned
+  
+    if (error) {
+      console.error('Error updating property:', error.message);
+    } else {
+      console.log('Property updated:', data);
+      await fetchProperties(); // Ensure the state updates after a successful update
+      setIsModalOpen(false);
+      setIsEditing(false);
+    }
+  };
+  
+
+  const handleDeleteProperty = async (id) => {
+    const { error } = await supabase
+      .from('accommodation')
+      .delete()
+      .eq('acc_id', id);
+    if (error) {
+      console.error('Error deleting property:', error);
+    } else {
+      fetchProperties();
+    }
   };
 
   const handleBackToList = () => {
@@ -80,6 +101,9 @@ const LandlordDashboard = () => {
     setIsEditing(false);
     setIsModalOpen(false);
   };
+
+  const totalProperties = properties.length;
+  const totalViews = properties.reduce((sum, property) => sum + (property.views || 0), 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 mt-20">
@@ -137,11 +161,11 @@ const LandlordDashboard = () => {
                     {properties.map(property => (
                       <tr key={property.id} className="border-b hover:bg-gray-50">
                         <td className="p-3 font-medium">{property.address}</td>
-                        <td className="p-3">{property.roomType}</td>
+                        <td className="p-3">{property.room_type}</td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center space-x-1 text-gray-600">
                             <Eye className="h-4 w-4" />
-                            <span>{property.views}</span>
+                            <span>{property.views || 0}</span>
                           </div>
                         </td>
                         <td className="p-3 text-right">
@@ -150,6 +174,12 @@ const LandlordDashboard = () => {
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
                             View Details
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProperty(property.id)}
+                            className="text-red-600 hover:text-red-800 font-medium ml-2"
+                          >
+                            Delete
                           </button>
                         </td>
                       </tr>
@@ -162,10 +192,10 @@ const LandlordDashboard = () => {
         </>
       ) : (
         <PropertyDetails 
-        property={selectedProperty}
-        onBackToList={handleBackToList}
-        onEditProperty={handleEditProperty}
-      />
+          property={selectedProperty}
+          onBackToList={handleBackToList}
+          onEditProperty={handleEditProperty}
+        />
       )}
 
       {/* Add/Edit Property Modal */}
@@ -182,12 +212,19 @@ const LandlordDashboard = () => {
             </div>
             <AddPropertyForm
               initialData={isEditing ? selectedProperty : null}
-              onSubmit={(propertyData) => {
+              onSubmit={async (propertyData) => {
                 if (isEditing) {
-                  handleUpdateProperty({ ...propertyData, id: selectedProperty.id });
+                  await handleUpdateProperty(propertyData);
                 } else {
-                  setProperties([...properties, { ...propertyData, id: properties.length + 1, views: 0 }]);
-                  handleCloseModal();
+                  const { data, error } = await supabase
+                    .from('accommodations')
+                    .insert([propertyData]);
+                  if (error) {
+                    console.error('Error adding property:', error);
+                  } else {
+                    fetchProperties();
+                    handleCloseModal();
+                  }
                 }
               }}
               onClose={handleCloseModal}

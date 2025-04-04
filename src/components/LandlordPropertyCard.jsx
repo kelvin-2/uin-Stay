@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pencil, Trash2, MoreVertical, X } from 'lucide-react';
 import AddPropertyForm from './AddPropertyForm';
+import supabase  from '../supabaseClient';
 
 const PropertyCard = ({ property, onDelete, onUpdate }) => {
   const [showEditForm, setShowEditForm] = useState(false);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
+import supabase from '../supabaseClient';
 
 const UniStayAuth = () => {
   const [userType, setUserType] = useState('student');
@@ -76,100 +77,285 @@ const UniStayAuth = () => {
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
-  
+    setErrors({});
+    
     try {
-      if (!validateForm()) {
-        setLoading(false);
-        return;
-      }
-  
-      // Fetch users from the mock API
-      const response = await fetch('http://localhost:3000/users');
-      const users = await response.json();
-  
-      const user = users.find(
-        u => u.email === formData.email && 
-            u.password === formData.password && 
-            u.role === userType
-      );
-  
-      if (user) {
-        await login(user);
-        // Redirect based on user type
-        if (user.role === 'landlord') {
-          console.log("landlord");
-          navigate('/landlord-dashboard');
-        } else {
-          navigate('/');
-        }
-      } else {
-        setErrors({
-          auth: 'Invalid email or password'
-        });
-      }
-    } catch (error) {
-      setErrors({
-        auth: 'An error occurred during login. Please try again.'
+      // Step 1: Sign in the user
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
+      
+      if (error) throw error;
+      
+      // Get user ID from the authentication response
+      const userId = data.user?.id;
+      if (!userId) {
+        throw new Error("Unable to retrieve user information after login.");
+      }
+      
+      console.log("Auth ID retrieved:", userId);
+      
+      await new Promise((resolve) => setTimeout(resolve,2000)); //await 2 seconds
+
+      // Add debugging step: Check auth session
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log("Current session:", sessionData);
+
+      
+      // Step 2: First try to fetch ANY users to see if database access works
+      // const { data: anyUsers, error: anyError } = await supabase
+      //   .from("users")
+      //   .select("*")
+      //   .limit(1);
+        
+      
+      // console.log("Database connectivity check:", anyUsers, anyError);
+      
+      // // Step 3: Now try to fetch directly with the auth_id
+      // // Log the exact query we're about to run
+      // console.log("Running query: SELECT * FROM users WHERE auth_id = '" + userId + "'");
+      
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("auth_id", userId)
+        .maybeSingle();
+      
+      console.log("Query result:", userData);
+      console.log("Query error:", userError);
+      
+      if (userError) {
+        console.error("Database query error:", userError);
+        throw new Error("Database error: " + userError.message);
+      }
+      
+      // Check if user data exists
+      if (!userData) {
+        // Try an alternative approach - fetch with email instead of auth_id
+        console.log("User not found with auth_id, trying email lookup");
+        const userEmail = data.user?.email;
+        
+        const { data: emailLookup, error: emailError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", userEmail)
+          .maybeSingle();
+          
+        console.log("Email lookup result:", emailLookup);
+        
+        if (emailLookup) {
+          console.log("Found user by email instead of auth_id!");
+          // This indicates a mismatch between auth_id in Auth and users table
+          // We should proceed with this user, but log the issue
+          console.warn("auth_id mismatch - Auth:", userId, "DB user:", emailLookup);
+          
+          // Option: Update the auth_id in the database to match
+          if (confirm("System detected a user account issue. Would you like to repair it?")) {
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ auth_id: userId })
+              .eq("email", userEmail);
+              
+            console.log("Auth ID update result:", updateError ? "Failed" : "Success");
+          }
+          
+          // Proceed with the email-found user data
+          userData = emailLookup;
+        } else {
+          console.error("User not found in database for auth_id:", userId);
+          throw new Error("User profile not found. Please sign up first.");
+        }
+      }
+      
+      // Ensure role exists
+      if (!userData.role) {
+        throw new Error("User role not defined. Please contact support.");
+      }
+      
+      // Step 3: Store user data and login
+      const userRole = userData.role;
+      localStorage.setItem("userRole", userRole);
+      localStorage.setItem("userName", userData.full_name || '');
+      
+      // Update auth context
+      login(userRole);
+      
+      // Step 4: Redirect based on role
+      if (userRole === "landlord") {
+        navigate("/landlord-dashboard");
+      } else if (userRole === "student") {
+        navigate("/student-dashboard");
+      } else {
+        navigate("/");
+      }
+      
+      console.log("Login successful:", userRole);
+      
+    } catch (error) {
+      console.error("Login error:", error.message);
+      setErrors({ auth: error.message || "Login failed. Please try again." });
+      
+      // Optionally sign out if login was partially successful but profile fetch failed
+      const { data } = await supabase.auth.getSession();
+      if (data && data.session) {
+        await supabase.auth.signOut();
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
+  //option 2 of the login
+
+//   const handleLoginSubmit=async (e) =>{
+//     e.preventDefault();
+//     if(!validateForm()) return;
+//     setLoading(true);
+
+//     try{
+//       const {data:authData,error:authErro}= await supabase.auth.signInWithPassword(
+//         {
+//           email:formData.email,
+//           password:formData.password
+//         }
+//       );
+//       if(authErro) throw authErro;
+
+//       await new Promise(resolve => setTimeout(resolve, 1000));
+
+//       //authenticating the session 
+//       const {data:{session}}=await supabase.auth.getSession();
+//       if(!session) throw new Error("Session not found");
+
+//       const userId = session.user.id ;
+//       console.log=("User ID from session:", userId);
+
+//       let retries=3;
+//       let userData;
+
+//       while(retries>0){
+//         const{data,error}=await supabase
+//         .from("users")
+//         .select("role")
+//         .eq("auth_id",userId)
+//         .maybeSingle();
+
+//         if(error) throw error;
+//         if(data) {
+//           userData=data;
+//           break;
+//       }
+//       retries--;
+//       await new Promise(resolve => setTimeout(resolve, 1000));
+//     }
+//     if(!userData) throw new Error("User not found");
+
+//     const userRole = userData.role;
+//     console.log("User role:",userRole);
+
+//     localStorage.setItem("userRole",userRole);
+//     login(userRole);
+
+//     const redirectPath = userRole === "landlord" 
+//       ? "/landlord-dashboard" 
+//       : userRole === "student" 
+//         ? "/student-dashboard" 
+//         : "/";
+//     navigate(redirectPath);
+//   }catch (error) {
+//     console.error("Login error:", error.message);
+//     setErrors({ auth: error.message });
+    
+//     // Optional: Sign out if login failed
+//     await supabase.auth.signOut();
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+  
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
   
     try {
-      if (!validateForm()) {
-        setLoading(false);
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+  
+      if (error) throw error;
+      console.log("User session after signup:", data);
+  
+      const userId = data?.user?.id;
+      if (!userId) {
+        console.error("No user ID returned after signup!");
         return;
       }
   
-      // Fetch users from the mock API
-      const response = await fetch('http://localhost:3000/users');
-      const users = await response.json();
+      console.log("Inserting user with ID:", userId, "Role:", userType);
   
-      const existingUser = users.find(u => u.email === formData.email);
-  
-      if (existingUser) {
-        setErrors({
-          email: 'Email already exists'
-        });
-        setLoading(false);
-        return;
-      }
-  
-      const newUser = {
-        ...formData,
-        role: userType
-      };
-  
-      // Add new user to the mock API
-      await fetch('http://localhost:3000/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          auth_id: userId,
+          full_name: formData.fullName,
+          email: formData.email,
+          role: userType, // Ensure role is inserted
+          university: formData.university || null,
+          phone_number: formData.phone || null,
+          location: formData.location || null,
+          created_at: new Date(),
         },
-        body: JSON.stringify(newUser),
-      });
+      ]);
   
-      // Update the auth context with the new user
-      await login(newUser);
+      if (insertError) {
+        console.error("Error inserting user:", insertError.message);
+        throw insertError;
+      }
   
-      // Redirect based on user type
-      const path = userType === 'student' ? '/' : '/landlord-dashboard';
-      navigate(path);
+      // Wait for role to be available
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 sec delay
+  
+      console.log("Fetching role after insert...");
+      let userRole = userType;
+  
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("auth_id", userId)
+        .single();
+  
+      if (userError) {
+        console.error("Error fetching role after signup:", userError.message);
+      } else {
+        console.log("Fetched role:", userData?.role);
+        userRole = userData?.role || userType;
+      }
+  
+      console.log("Final user role:", userRole);
+      login(userRole);
+  
+      if (userRole === "landlord") {
+        navigate("/landlord-dashboard");
+      } else if (userRole === "student") {
+        navigate("/student-dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
-      setErrors({
-        auth: 'An error occurred during signup. Please try again.'
-      });
+      console.error("Signup error:", error);
+      setErrors({ auth: error.message });
     } finally {
       setLoading(false);
     }
   };
-
+  
+  
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

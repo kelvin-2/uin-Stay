@@ -18,6 +18,7 @@ import ManageProperties from './pages/MyProperties'
 // Create a wrapper component to use useAuth hook
 const AppContent = () => {
   const { currentUser } = useAuth();
+  console.log("Current User:", currentUser);
 
   return (
     <>

@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import supabase  from '../supabaseClient';
+import { Loader2, CheckCircle } from 'lucide-react';
+
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+
+
 
 const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
@@ -12,10 +19,13 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     images: [],
     houseRules: [],
     leaseLength: '',
-    depositAmount: ''
+    depositAmount: '',
+    monthlyRent: '' // Added new field for monthly rent
   });
 
   const [previewImages, setPreviewImages] = useState([]);
+  const [uploadStatus, setUploadStatus] = useState([]); // Track upload status for each image
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roomTypes = [
     "Studio",
@@ -41,23 +51,20 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const paymentOptions = [
     "NSFAS", "BUSARY", "PRIVATE"
   ];
-
-  const houseRuleOptions = [
-    "No Smoking",
-    "No Pets",
-    "No Overnight Guests",
-    "No Parties",
-    "Quiet Hours",
-    "No Alcohol",
-    "Keep Common Areas Clean",
-    "No Cooking in Rooms"
-  ];
+  const locationOptions = [
+    "Central",
+    "Town",
+    "Humewood",
+    "Summerstrand", 
+    "Forest Hill",
+    "Greenacres",
+    "Cape Road",
+    "Richmond Hill"
+  ]
 
   const leaseLengthOptions = [
     "6 months",
     "12 months",
-    "18 months",
-    "24 months",
     "Month-to-month"
   ];
 
@@ -80,32 +87,179 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
-    // Create preview URLs for the images
     const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-    setPreviewImages(prev => [...prev, ...newPreviewUrls]);
     
-    // Add files to form data
+    // Initialize upload status for new images
+    const newUploadStatus = files.map(() => ({ 
+      uploading: false, 
+      uploaded: false, 
+      error: false 
+    }));
+
+    setPreviewImages(prev => [...prev, ...newPreviewUrls]);
+    setUploadStatus(prev => [...prev, ...newUploadStatus]);
+    
     setFormData(prev => ({
       ...prev,
       images: [...prev.images, ...files]
     }));
   };
 
-  const removeImage = (index) => {
-    // Remove from preview and form data
+  const uploadImagesToCloudinary = async (files) => {
+    const uploadPromises = files.map(async (file, index) => {
+      setUploadStatus(prev => {
+        const newStatus = [...prev];
+        newStatus[index] = { ...newStatus[index], uploading: true };
+        return newStatus;
+      });
+
+      //not sure what this line does 
+      const formData = new FormData();
+      formData.append('file', file);//append new file 
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);//append the uploaded presets 
+  
+      try {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!response.ok){
+          throw new Error(response.statusText);
+        }
+  
+        const data = await response.json();
+        setUploadStatus(prev => {
+          const newStatus = [...prev];
+          newStatus[index] = { uploading: false, uploaded: true, error: false };
+          return newStatus;
+        });
+  
+        return data.secure_url; // return the uploaded image url
+      } catch (error) {
+        setUploadStatus(prev => {
+          const newStatus = [...prev];
+          newStatus[index] = { uploading: false, uploaded: false, error: true };
+          return newStatus;
+        });
+        throw error;
+      }
+    });
+  
+    return Promise.all(uploadPromises);
+  };
+
+   const removeImage = (index) => {
+    // Remove from preview images
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Remove from form data images
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
-  };
 
-  const handleSubmit = (e) => {
+    // Remove from upload status
+    setUploadStatus(prev => prev.filter((_, i) => i !== index));
+  };
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsSubmitting(true);
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  
+    try {
+      // Fetch the authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      console.log("user data:",user)
+      
+      if (authError || !user) {
+        console.error("Error fetching user:", authError);
+        setIsSubmitting(false);
+        return;
+      }
+  
+      console.log("Authenticated User ID:", user.id);
+
+      await wait(3000);
+  
+      // Fetch the user's role from the database
+      // const { data: userData, error: userError } = await supabase
+      //   .from("users")
+      //   .select("role")
+      //   .eq("auth_id", user.id)
+      //   .maybeSingle(); 
+
+
+      // console.log("userData: ",userData);
+  
+      // if (userError) {
+      //   console.error("Error fetching user role:", userError);
+      //   setIsSubmitting(false);
+      //   return;
+      // }
+  
+      // console.log("Fetched User Data:", userData);
+
+      // //console.log("userRole:",user.role);
+
+  
+      // if (!userData || userData.role !== 'landlord') {
+      //   console.error("Only landlords can add properties. Current role:", userData?.role);
+      //   setIsSubmitting(false);
+      //   return;
+      // }
+  
+      // Upload images to Cloudinary
+      const imageUrls = await uploadImagesToCloudinary(formData.images);
+  
+      // Prepare data for Supabase
+      const propertyData = {
+        address: formData.address || null,
+        location: formData.location || null,
+        room_type: formData.roomType || null,
+        amenities: formData.amenities || [],
+        payment_methods: formData.paymentAccepted || [],
+        image_url: imageUrls || [],
+        deposit: parseFloat(formData.depositAmount) || 0,
+        monthly_rent: parseFloat(formData.monthlyRent) || 0,
+        landlord_id: user.id // Ensure the landlord_id is set
+      };
+  
+      console.log('Property Data:', propertyData);
+  
+      let response;
+      if (formData.id) {
+        response = await supabase
+          .from('accommodation')
+          .update(propertyData)
+          .eq('acc_id', formData.id);
+      } else {
+        response = await supabase
+        .from('accommodation')
+        .insert([propertyData])
+        .select();
+      }
+  
+      const { data, error: supabaseError } = response;
+  
+      if (supabaseError) {
+        console.error('Supabase Error:', supabaseError.message);
+        setIsSubmitting(false);
+        return;
+      }
+  
+      console.log('Property added/updated:', data);
+      onSubmit(data[0]);
+    } catch (err) {
+      console.error('Error submitting property:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+
+  
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="p-6">
@@ -118,11 +272,27 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             <div className="flex flex-wrap gap-4">
               {previewImages.map((url, index) => (
                 <div key={index} className="relative">
-                  <img
-                    src={url}
-                    alt={`Preview ${index + 1}`}
+                  <img 
+                    src={url} 
+                    alt={`Preview ${index + 1}`} 
                     className="w-24 h-24 object-cover rounded-lg"
                   />
+                  {/* Upload Status Indicators */}
+                  {uploadStatus[index]?.uploading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 text-white animate-spin" />
+                    </div>
+                  )}
+                  {uploadStatus[index]?.uploaded && (
+                    <div className="absolute top-0 right-0 bg-green-500 rounded-full">
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
+                  )}
+                  {uploadStatus[index]?.error && (
+                    <div className="absolute top-0 right-0 bg-red-500 rounded-full">
+                      <X className="h-6 w-6 text-white" />
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
@@ -135,16 +305,18 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
                 <ImageIcon className="h-8 w-8 text-blue-500" />
                 <span className="text-xs text-blue-500 mt-1">Add Image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleImageUpload} 
+                  className="hidden" 
+                  disabled={isSubmitting}
                 />
               </label>
             </div>
           </div>
+
 
           {/* Address */}
           <div className="space-y-2">
@@ -160,8 +332,25 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               required
             />
           </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Location
+            </label>
+            <select
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              required
+            >
+              <option value="">Select Location</option>
+              {locationOptions.map(location => (
+                <option key={location} value={location}>{location}</option>
+              ))}
+            </select>
+          </div>
 
-          {/* Room Type and Deposit Amount */}
+          {/* Room Type and Monthly Rent */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
@@ -182,19 +371,36 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
-                Deposit Amount (R)
+                Monthly Rent (R)
               </label>
               <input
                 type="number"
-                name="depositAmount"
-                value={formData.depositAmount}
+                name="monthlyRent"
+                value={formData.monthlyRent}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                 min="0"
-                placeholder="Enter deposit amount"
+                placeholder="Enter monthly rent"
                 required
               />
             </div>
+          </div>
+
+          {/* Deposit Amount */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Deposit Amount (R)
+            </label>
+            <input
+              type="number"
+              name="depositAmount"
+              value={formData.depositAmount}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              min="0"
+              placeholder="Enter deposit amount"
+              required
+            />
           </div>
 
           {/* Lease Length */}
@@ -216,38 +422,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </select>
           </div>
 
-          {/* Distances */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-blue-900">
-                Distance from Shuttle Stop (km)
-              </label>
-              <input
-                type="number"
-                name="distanceFromShuttle"
-                value={formData.distanceFromShuttle}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                min="0"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-blue-900">
-                Distance from School (km)
-              </label>
-              <input
-                type="number"
-                name="distanceFromSchool"
-                value={formData.distanceFromSchool}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-
           {/* Amenities */}
           <div className="space-y-3">
             <label className="block text-sm font-semibold text-blue-900">
@@ -263,26 +437,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-blue-900">{amenity}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* House Rules */}
-          <div className="space-y-3">
-            <label className="block text-sm font-semibold text-blue-900">
-              House Rules
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {houseRuleOptions.map(rule => (
-                <label key={rule} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.houseRules.includes(rule)}
-                    onChange={() => handleCheckboxChange('houseRules', rule)}
-                    className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-blue-900">{rule}</span>
                 </label>
               ))}
             </div>
@@ -310,18 +464,31 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
 
           {/* Submit Buttons */}
           <div className="flex justify-end space-x-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700 hover:bg-blue-50 transition-colors"
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            <button 
+              type="submit" 
+              className={`px-6 py-3 rounded-lg text-white ${
+                isSubmitting 
+                  ? 'bg-blue-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              disabled={isSubmitting}
             >
-              Add Property
+              {isSubmitting ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Adding Property...
+                </div>
+              ) : (
+                'Add Property'
+              )}
             </button>
           </div>
         </form>
