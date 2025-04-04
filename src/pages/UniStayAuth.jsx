@@ -79,60 +79,203 @@ const UniStayAuth = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-  
+    setErrors({});
+    
     try {
       // Step 1: Sign in the user
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
-  
+      
       if (error) throw error;
-      console.log("User session:", data);
-  
-      const userId = data?.user?.id;
+      
+      // Get user ID from the authentication response
+      const userId = data.user?.id;
       if (!userId) {
-        console.error("Login successful, but no user ID returned!");
-        throw new Error("Unable to fetch user ID after login.");
+        throw new Error("Unable to retrieve user information after login.");
       }
-  
-      // Step 2: Fetch the user's role from the database
+      
+      console.log("Auth ID retrieved:", userId);
+      
+      await new Promise((resolve) => setTimeout(resolve,2000)); //await 2 seconds
+
+      // Add debugging step: Check auth session
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log("Current session:", sessionData);
+      
+      await new Promise((resolve) => setTimeout(resolve,2000));
+      
+      // Step 2: First try to fetch ANY users to see if database access works
+      const { data: anyUsers, error: anyError } = await supabase
+        .from("users")
+        .select("*")
+        .limit(1);
+        
+      console.log("Database connectivity check:", anyUsers, anyError);
+      
+      // Step 3: Now try to fetch directly with the auth_id
+      // Log the exact query we're about to run
+      console.log("Running query: SELECT * FROM users WHERE auth_id = '" + userId + "'");
+      
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role")
+        .select("*")
         .eq("auth_id", userId)
-        .maybeSingle(); // Use maybeSingle to prevent errors if no row exists
-  
-      if (userError) throw userError;
-  
-      // Step 3: Check if the user exists in the users table
-      if (!userData) {
-        console.error("User not found in the database. Ensure user is registered.");
-        throw new Error("No user data found. Please contact support.");
-      }
-  
-      const userRole = userData.role;
-      console.log("User role:", userRole);
+        .maybeSingle();
       
-      // Step 4: Store role in localStorage
+      console.log("Query result:", userData);
+      console.log("Query error:", userError);
+      
+      if (userError) {
+        console.error("Database query error:", userError);
+        throw new Error("Database error: " + userError.message);
+      }
+      
+      // Check if user data exists
+      if (!userData) {
+        // Try an alternative approach - fetch with email instead of auth_id
+        console.log("User not found with auth_id, trying email lookup");
+        const userEmail = data.user?.email;
+        
+        const { data: emailLookup, error: emailError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", userEmail)
+          .maybeSingle();
+          
+        console.log("Email lookup result:", emailLookup);
+        
+        if (emailLookup) {
+          console.log("Found user by email instead of auth_id!");
+          // This indicates a mismatch between auth_id in Auth and users table
+          // We should proceed with this user, but log the issue
+          console.warn("auth_id mismatch - Auth:", userId, "DB user:", emailLookup);
+          
+          // Option: Update the auth_id in the database to match
+          if (confirm("System detected a user account issue. Would you like to repair it?")) {
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ auth_id: userId })
+              .eq("email", userEmail);
+              
+            console.log("Auth ID update result:", updateError ? "Failed" : "Success");
+          }
+          
+          // Proceed with the email-found user data
+          userData = emailLookup;
+        } else {
+          console.error("User not found in database for auth_id:", userId);
+          throw new Error("User profile not found. Please sign up first.");
+        }
+      }
+      
+      // Ensure role exists
+      if (!userData.role) {
+        throw new Error("User role not defined. Please contact support.");
+      }
+      
+      // Step 3: Store user data and login
+      const userRole = userData.role;
       localStorage.setItem("userRole", userRole);
-      login(userRole); // Assuming login() updates state
-  
-      // Step 5: Redirect based on role
+      localStorage.setItem("userName", userData.full_name || '');
+      
+      // Update auth context
+      login(userRole);
+      
+      // Step 4: Redirect based on role
       if (userRole === "landlord") {
         navigate("/landlord-dashboard");
       } else if (userRole === "student") {
         navigate("/student-dashboard");
       } else {
-        navigate("/"); // Default fallback
+        navigate("/");
       }
+      
+      console.log("Login successful:", userRole);
+      
     } catch (error) {
       console.error("Login error:", error.message);
-      setErrors({ auth: error.message });
+      setErrors({ auth: error.message || "Login failed. Please try again." });
+      
+      // Optionally sign out if login was partially successful but profile fetch failed
+      const { data } = await supabase.auth.getSession();
+      if (data && data.session) {
+        await supabase.auth.signOut();
+      }
     } finally {
       setLoading(false);
     }
   };
+
+
+  //option 2 of the login
+
+//   const handleLoginSubmit=async (e) =>{
+//     e.preventDefault();
+//     if(!validateForm()) return;
+//     setLoading(true);
+
+//     try{
+//       const {data:authData,error:authErro}= await supabase.auth.signInWithPassword(
+//         {
+//           email:formData.email,
+//           password:formData.password
+//         }
+//       );
+//       if(authErro) throw authErro;
+
+//       await new Promise(resolve => setTimeout(resolve, 1000));
+
+//       //authenticating the session 
+//       const {data:{session}}=await supabase.auth.getSession();
+//       if(!session) throw new Error("Session not found");
+
+//       const userId = session.user.id ;
+//       console.log=("User ID from session:", userId);
+
+//       let retries=3;
+//       let userData;
+
+//       while(retries>0){
+//         const{data,error}=await supabase
+//         .from("users")
+//         .select("role")
+//         .eq("auth_id",userId)
+//         .maybeSingle();
+
+//         if(error) throw error;
+//         if(data) {
+//           userData=data;
+//           break;
+//       }
+//       retries--;
+//       await new Promise(resolve => setTimeout(resolve, 1000));
+//     }
+//     if(!userData) throw new Error("User not found");
+
+//     const userRole = userData.role;
+//     console.log("User role:",userRole);
+
+//     localStorage.setItem("userRole",userRole);
+//     login(userRole);
+
+//     const redirectPath = userRole === "landlord" 
+//       ? "/landlord-dashboard" 
+//       : userRole === "student" 
+//         ? "/student-dashboard" 
+//         : "/";
+//     navigate(redirectPath);
+//   }catch (error) {
+//     console.error("Login error:", error.message);
+//     setErrors({ auth: error.message });
+    
+//     // Optional: Sign out if login failed
+//     await supabase.auth.signOut();
+//   } finally {
+//     setLoading(false);
+//   }
+// };
   
   const handleSignupSubmit = async (e) => {
     e.preventDefault();

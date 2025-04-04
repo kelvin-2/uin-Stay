@@ -4,7 +4,7 @@ import PropertyCard from './PropertyCard';
 import AddPropertyForm from './AddPropertyForm';
 import { Plus } from 'lucide-react';
 
-const LandlordProperties = ({ landlordId }) => {
+const LandlordProperties = ({ landlord_Id }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,9 +18,9 @@ const LandlordProperties = ({ landlordId }) => {
         
         // Query properties table for items with matching landlordId
         const { data, error } = await supabase
-          .from('properties')
+          .from('accommodation')
           .select('*')
-          .eq('landlordId', landlordId);
+          .eq('landlord_Id', landlord_Id);
         
         if (error) throw error;
         
@@ -33,7 +33,7 @@ const LandlordProperties = ({ landlordId }) => {
       }
     };
 
-    if (landlordId) {
+    if (landlord_Id) {
       fetchProperties();
     }
   }, [landlordId]);
@@ -60,9 +60,9 @@ const LandlordProperties = ({ landlordId }) => {
   const handleUpdateProperty = async (property, updatedData) => {
     try {
       const { error } = await supabase
-        .from('properties')
+        .from('accomodation')
         .update(updatedData)
-        .eq('id', property.id);
+        .eq('acc_id', property.id);
       
       if (error) throw error;
       
@@ -86,7 +86,7 @@ const LandlordProperties = ({ landlordId }) => {
       };
       
       const { data, error } = await supabase
-        .from('properties')
+        .from('accomodation')
         .insert(propertyWithLandlord)
         .select();
       
