@@ -103,20 +103,20 @@ const UniStayAuth = () => {
       // Add debugging step: Check auth session
       const { data: sessionData } = await supabase.auth.getSession();
       console.log("Current session:", sessionData);
-      
-      await new Promise((resolve) => setTimeout(resolve,2000));
+
       
       // Step 2: First try to fetch ANY users to see if database access works
-      const { data: anyUsers, error: anyError } = await supabase
-        .from("users")
-        .select("*")
-        .limit(1);
+      // const { data: anyUsers, error: anyError } = await supabase
+      //   .from("users")
+      //   .select("*")
+      //   .limit(1);
         
-      console.log("Database connectivity check:", anyUsers, anyError);
       
-      // Step 3: Now try to fetch directly with the auth_id
-      // Log the exact query we're about to run
-      console.log("Running query: SELECT * FROM users WHERE auth_id = '" + userId + "'");
+      // console.log("Database connectivity check:", anyUsers, anyError);
+      
+      // // Step 3: Now try to fetch directly with the auth_id
+      // // Log the exact query we're about to run
+      // console.log("Running query: SELECT * FROM users WHERE auth_id = '" + userId + "'");
       
       const { data: userData, error: userError } = await supabase
         .from("users")
