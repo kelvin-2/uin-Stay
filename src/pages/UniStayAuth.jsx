@@ -40,8 +40,17 @@ const UniStayAuth = () => {
         newErrors.fullName = 'Full name is required';
       }
 
-      if (userType === 'student' && !formData.university) {
-        newErrors.university = 'University is required';
+      if (userType === 'student') {
+        if (!formData.university) {
+          newErrors.university = 'University is required';
+        }
+        
+        // Add phone validation for students
+        if (!formData.phone) {
+          newErrors.phone = 'Phone number is required';
+        } else if (!/^\+?[0-9]{10,}$/.test(formData.phone)) {
+          newErrors.phone = 'Invalid phone number format';
+        }
       }
 
       if (userType === 'landlord') {
@@ -104,20 +113,6 @@ const UniStayAuth = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       console.log("Current session:", sessionData);
 
-      
-      // Step 2: First try to fetch ANY users to see if database access works
-      // const { data: anyUsers, error: anyError } = await supabase
-      //   .from("users")
-      //   .select("*")
-      //   .limit(1);
-        
-      
-      // console.log("Database connectivity check:", anyUsers, anyError);
-      
-      // // Step 3: Now try to fetch directly with the auth_id
-      // // Log the exact query we're about to run
-      // console.log("Running query: SELECT * FROM users WHERE auth_id = '" + userId + "'");
-      
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -208,153 +203,140 @@ const UniStayAuth = () => {
     }
   };
 
+  const [signupMessage, setSignupMessage] = useState('');
 
-  //option 2 of the login
-
-//   const handleLoginSubmit=async (e) =>{
-//     e.preventDefault();
-//     if(!validateForm()) return;
-//     setLoading(true);
-
-//     try{
-//       const {data:authData,error:authErro}= await supabase.auth.signInWithPassword(
-//         {
-//           email:formData.email,
-//           password:formData.password
-//         }
-//       );
-//       if(authErro) throw authErro;
-
-//       await new Promise(resolve => setTimeout(resolve, 1000));
-
-//       //authenticating the session 
-//       const {data:{session}}=await supabase.auth.getSession();
-//       if(!session) throw new Error("Session not found");
-
-//       const userId = session.user.id ;
-//       console.log=("User ID from session:", userId);
-
-//       let retries=3;
-//       let userData;
-
-//       while(retries>0){
-//         const{data,error}=await supabase
-//         .from("users")
-//         .select("role")
-//         .eq("auth_id",userId)
-//         .maybeSingle();
-
-//         if(error) throw error;
-//         if(data) {
-//           userData=data;
-//           break;
-//       }
-//       retries--;
-//       await new Promise(resolve => setTimeout(resolve, 1000));
-//     }
-//     if(!userData) throw new Error("User not found");
-
-//     const userRole = userData.role;
-//     console.log("User role:",userRole);
-
-//     localStorage.setItem("userRole",userRole);
-//     login(userRole);
-
-//     const redirectPath = userRole === "landlord" 
-//       ? "/landlord-dashboard" 
-//       : userRole === "student" 
-//         ? "/student-dashboard" 
-//         : "/";
-//     navigate(redirectPath);
-//   }catch (error) {
-//     console.error("Login error:", error.message);
-//     setErrors({ auth: error.message });
-    
-//     // Optional: Sign out if login failed
-//     await supabase.auth.signOut();
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-  
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-  
+    setErrors({});
+    setSignupMessage('');
+
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Check public.users table with proper headers
+      const { data: existingPublicUser, error: publicLookupError } = await supabase
+        .from('users')
+        .select('auth_id')
+        .eq('email', formData.email)
+        .maybeSingle();
+
+      if (publicLookupError) throw publicLookupError;
+      if (existingPublicUser) {
+        throw new Error('This email is already registered in our system');
+      }
+
+      // 2. Attempt signup
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            user_type: userType
+          }
+        }
       });
-  
-      if (error) throw error;
-      console.log("User session after signup:", data);
-  
-      const userId = data?.user?.id;
+
+      // 3. Handle user already exists case
+      if (signupError) {
+        if (signupError.message.includes('already registered')) {
+          // Try to sign in to verify
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (signInError) {
+            throw new Error('Account exists but password is incorrect. Try resetting your password.');
+          }
+
+          // Check if user exists in public.users
+          const { data: userInPublicTable } = await supabase
+            .from('users')
+            .select('auth_id')
+            .eq('email', formData.email)
+            .single();
+
+          if (!userInPublicTable) {
+            // Complete registration in public.users
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            await supabase.from('users').insert([{
+              auth_id: user.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              role: userType,
+              university: formData.university || null,
+              phone_number: formData.phone || null,
+              location: formData.location || null,
+              created_at: new Date().toISOString()
+            }]);
+
+            setSignupMessage('Registration completed successfully!');
+            login(userType);
+            navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
+            return;
+          }
+
+          throw new Error('This email is already fully registered');
+        }
+        throw signupError;
+      }
+
+      // 4. Handle new user creation
+      const userId = signupData.user?.id;
       if (!userId) {
-        console.error("No user ID returned after signup!");
+        throw new Error('User creation failed - no user ID returned');
+      }
+
+      // Insert into public.users
+      const { error: insertError } = await supabase.from('users').insert([{
+        auth_id: userId,
+        full_name: formData.fullName,
+        email: formData.email,
+        role: userType,
+        university: formData.university || null,
+        phone_number: formData.phone || null,
+        location: formData.location || null,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (insertError) throw insertError;
+
+      // 5. Handle email confirmation case
+      if (signupData.user && !signupData.session) {
+        setSignupMessage('Confirmation email sent! Please check your inbox.');
         return;
       }
-  
-      console.log("Inserting user with ID:", userId, "Role:", userType);
-  
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          auth_id: userId,
-          full_name: formData.fullName,
-          email: formData.email,
-          role: userType, // Ensure role is inserted
-          university: formData.university || null,
-          phone_number: formData.phone || null,
-          location: formData.location || null,
-          created_at: new Date(),
-        },
-      ]);
-  
-      if (insertError) {
-        console.error("Error inserting user:", insertError.message);
-        throw insertError;
-      }
-  
-      // Wait for role to be available
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 sec delay
-  
-      console.log("Fetching role after insert...");
-      let userRole = userType;
-  
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("auth_id", userId)
-        .single();
-  
-      if (userError) {
-        console.error("Error fetching role after signup:", userError.message);
-      } else {
-        console.log("Fetched role:", userData?.role);
-        userRole = userData?.role || userType;
-      }
-  
-      console.log("Final user role:", userRole);
-      login(userRole);
-  
-      if (userRole === "landlord") {
-        navigate("/landlord-dashboard");
-      } else if (userRole === "student") {
-        navigate("/student-dashboard");
-      } else {
-        navigate("/");
-      }
+
+      // 6. Login and redirect if no confirmation needed
+      login(userType);
+      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
+
     } catch (error) {
-      console.error("Signup error:", error);
-      setErrors({ auth: error.message });
+      console.error('Signup error:', error);
+      
+      // User-friendly error messages
+      let errorMessage = 'Signup failed. Please try again.';
+      
+      if (error.message.includes('already registered') || 
+          error.message.includes('already exists')) {
+        errorMessage = 'This email is already registered. Please log in.';
+      } else if (error.message.includes('password is incorrect')) {
+        errorMessage = 'Account exists but password is incorrect';
+      } else if (error.message.includes('406')) {
+        errorMessage = 'Invalid request format. Please contact support.';
+      } else if (error.message.includes('email')) {
+        errorMessage = 'Please enter a valid email address';
+      } else if (error.message.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters';
+      }
+      
+      setErrors({ auth: errorMessage });
     } finally {
       setLoading(false);
     }
   };
-  
-  
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -506,22 +488,40 @@ const UniStayAuth = () => {
                       </div>
 
                       {userType === 'student' && (
-                        <div className="space-y-2">
-                          <label htmlFor="university" className="block text-sm font-medium text-blue-900">
-                            University/College
-                          </label>
-                          <div className="relative">
-                            <BookOpen className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                            <input
-                              id="university"
-                              type="text"
-                              placeholder="Your University"
-                              value={formData.university}
-                              onChange={handleInputChange}
-                              className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                            />
+                        <>
+                          <div className="space-y-2">
+                            <label htmlFor="university" className="block text-sm font-medium text-blue-900">
+                              University/College
+                            </label>
+                            <div className="relative">
+                              <BookOpen className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="university"
+                                type="text"
+                                placeholder="Your University"
+                                value={formData.university}
+                                onChange={handleInputChange}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                              />
+                            </div>
                           </div>
-                        </div>
+                          <div className="space-y-2">
+                            <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
+                              Phone Number
+                            </label>
+                            <div className="relative">
+                              <Phone className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="phone"
+                                type="tel"
+                                placeholder="+44 123 456 7890"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                              />
+                            </div>
+                          </div>
+                        </>
                       )}
 
                       {userType === 'landlord' && (
@@ -577,6 +577,18 @@ const UniStayAuth = () => {
                           />
                         </div>
                       </div>
+
+                      {errors.auth && (
+                        <div className="p-3 text-sm bg-red-50 text-red-700 rounded-md">
+                          {errors.auth}
+                        </div>
+                      )}
+
+                      {signupMessage && (
+                        <div className="p-3 text-sm bg-green-50 text-green-700 rounded-md">
+                          {signupMessage}
+                        </div>
+                      )}
 
                       <button
                         type="submit"
