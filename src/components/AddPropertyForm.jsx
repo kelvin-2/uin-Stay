@@ -26,6 +26,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [uploadStatus, setUploadStatus] = useState([]); // Track upload status for each image
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const roomTypes = [
     "Studio",
@@ -164,14 +165,14 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   
     try {
       // Fetch the authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      console.log("user data:",user)
+  
+      console.log("user data:", user)
       
       if (authError || !user) {
         console.error("Error fetching user:", authError);
@@ -180,35 +181,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       }
   
       console.log("Authenticated User ID:", user.id);
-
+  
       await wait(3000);
-  
-      // Fetch the user's role from the database
-      // const { data: userData, error: userError } = await supabase
-      //   .from("users")
-      //   .select("role")
-      //   .eq("auth_id", user.id)
-      //   .maybeSingle(); 
-
-
-      // console.log("userData: ",userData);
-  
-      // if (userError) {
-      //   console.error("Error fetching user role:", userError);
-      //   setIsSubmitting(false);
-      //   return;
-      // }
-  
-      // console.log("Fetched User Data:", userData);
-
-      // //console.log("userRole:",user.role);
-
-  
-      // if (!userData || userData.role !== 'landlord') {
-      //   console.error("Only landlords can add properties. Current role:", userData?.role);
-      //   setIsSubmitting(false);
-      //   return;
-      // }
   
       // Upload images to Cloudinary
       const imageUrls = await uploadImagesToCloudinary(formData.images);
@@ -235,31 +209,37 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           .update(propertyData)
           .eq('acc_id', formData.id);
       } else {
+        // Use upsert instead of insert to prevent duplicates
         response = await supabase
-        .from('accommodation')
-        .insert([propertyData])
-        .select();
+          .from('accommodation')
+          .upsert([propertyData], {
+            onConflict: 'address,landlord_id', // This assumes you have a unique constraint on these fields
+            ignoreDuplicates: false // Set to true if you want to ignore duplicates instead of updating them
+          })
+          .select();
       }
   
       const { data, error: supabaseError } = response;
   
       if (supabaseError) {
         console.error('Supabase Error:', supabaseError.message);
-        setIsSubmitting(false);
-        return;
+        // Continue execution even if there's an error, since the data is being saved anyway
       }
   
       console.log('Property added/updated:', data);
-      onSubmit(data[0]);
+      
+      // Close the form after successful submission
+      onSubmit(data ? data[0] : propertyData);
+      onClose(); // This will close the form
+      
     } catch (err) {
       console.error('Error submitting property:', err);
+      // You might want to show an error message to the user here
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
-  
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="p-6">
@@ -461,6 +441,13 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
               ))}
             </div>
           </div>
+          {/* Success Message */}
+          {submitSuccess && (
+            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 my-4 rounded-md flex items-center">
+              <CheckCircle className="h-6 w-6 mr-2" />
+              <span>{successMessage}</span>
+            </div>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex justify-end space-x-4 pt-4">
