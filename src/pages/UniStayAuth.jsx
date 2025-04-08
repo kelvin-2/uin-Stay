@@ -14,7 +14,7 @@ const UniStayAuth = () => {
     password: '',
     university: '',
     phone: '',
-    location: '',
+   // location: '',
   });
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
@@ -60,9 +60,9 @@ const UniStayAuth = () => {
           newErrors.phone = 'Invalid phone number format';
         }
 
-        if (!formData.location) {
-          newErrors.location = 'Location is required';
-        }
+        // if (!formData.location) {
+        //   newErrors.location = 'Location is required';
+        // }
       }
     }
 
@@ -268,7 +268,6 @@ const UniStayAuth = () => {
               role: userType,
               university: formData.university || null,
               phone_number: formData.phone || null,
-              location: formData.location || null,
               created_at: new Date().toISOString()
             }]);
 
@@ -297,7 +296,6 @@ const UniStayAuth = () => {
         role: userType,
         university: formData.university || null,
         phone_number: formData.phone || null,
-        location: formData.location || null,
         created_at: new Date().toISOString()
       }]);
 
@@ -542,7 +540,7 @@ const UniStayAuth = () => {
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
+                          {/* <div className="space-y-2">
                             <label htmlFor="location" className="block text-sm font-medium text-blue-900">
                               Primary Location
                             </label>
@@ -557,7 +555,7 @@ const UniStayAuth = () => {
                                 className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                               />
                             </div>
-                          </div>
+                          </div> */}
                         </>
                       )}
 

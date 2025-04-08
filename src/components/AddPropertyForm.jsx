@@ -404,7 +404,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           </div>
 
           {/* Lease Length */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
               Lease Length
             </label>
@@ -420,7 +420,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
                 <option key={length} value={length}>{length}</option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Amenities */}
           <div className="space-y-3">
