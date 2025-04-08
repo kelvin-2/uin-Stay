@@ -1,30 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
 import PropertyCard from '../components/LandlordPropertyCard';
+import supabase from '../supabaseClient'; // Make sure this import path is correct
 
 const MyPropertiesPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch properties when component mounts
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data, error } = await supabase
+            .from('accommodation')
+            .select('*')
+            .eq('landlord_id', user.id);
+            
+          if (error) throw error;
+          setProperties(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   const handleAddProperty = (propertyData) => {
-    // Here you would typically make an API call to save the property
+    // Add the new property to the state
     setProperties(prev => [...prev, propertyData]);
     setShowAddForm(false);
   };
 
-  const handleDeleteProperty = (propertyToDelete) => {
-    // Here you would typically make an API call to delete the property
-    setProperties(prev => 
-      prev.filter(property => property !== propertyToDelete)
-    );
+  const handleDeleteProperty = async (propertyToDelete) => {
+    try {
+      const { error } = await supabase
+        .from('accommodation')
+        .delete()
+        .eq('acc_id', propertyToDelete.acc_id);
+        
+      if (error) throw error;
+      
+      // Update local state after successful deletion
+      setProperties(prev => 
+        prev.filter(property => property.acc_id !== propertyToDelete.acc_id)
+      );
+    } catch (error) {
+      console.error('Error deleting property:', error);
+    }
   };
 
   const handleUpdateProperty = (oldProperty, updatedProperty) => {
-    // Here you would typically make an API call to update the property
+    // Update local state after successful update
     setProperties(prev =>
       prev.map(property =>
-        property === oldProperty ? updatedProperty : property
+        property.acc_id === oldProperty.acc_id ? updatedProperty : property
       )
     );
   };
@@ -43,7 +81,7 @@ const MyPropertiesPage = () => {
       </div>
 
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-3xl">
             <AddPropertyForm
               onSubmit={handleAddProperty}
@@ -53,16 +91,24 @@ const MyPropertiesPage = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {properties.map((property, index) => (
-          <PropertyCard
-            key={index}
-            property={property}
-            onDelete={handleDeleteProperty}
-            onUpdate={handleUpdateProperty}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-8">Loading properties...</div>
+      ) : properties.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {properties.map((property) => (
+            <PropertyCard
+              key={property.acc_id}
+              property={property}
+              onDelete={handleDeleteProperty}
+              onUpdate={handleUpdateProperty}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          You haven't added any properties yet. Click "Add Property" to get started.
+        </div>
+      )}
     </div>
   );
 };

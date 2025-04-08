@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Eye, X } from 'lucide-react';
-import AddPropertyForm from '../components/AddPropertyForm';
-import PropertyDetails from '../components/PropertyDetailsCard';//this shoulld be on the students side 
-import supabase  from '../supabaseClient';
+import { Building2, Plus, Eye, X, Edit, Trash2, ArrowLeft } from 'lucide-react';
+// import AddPropertyForm from '../components/AddPropertyForm';
+import PropertyDetails from '../components/PropertyDetailsCard';
+import supabase from '../supabaseClient';
 
 const LandlordDashboard = () => {
   const [properties, setProperties] = useState([]);
@@ -82,7 +82,6 @@ const LandlordDashboard = () => {
     }
   };
   
-
   const handleDeleteProperty = async (id) => {
     const { error } = await supabase
       .from('accommodation')
@@ -106,47 +105,49 @@ const LandlordDashboard = () => {
   const totalViews = properties.reduce((sum, property) => sum + (property.views || 0), 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 mt-20">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 mt-16 md:mt-20">
       {viewMode === 'list' ? (
         <>
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">My Properties</h1>
-            <button 
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h1 className="text-2xl md:text-3xl font-bold">My Properties</h1>
+            {/* <button 
               onClick={handleAddProperty}
-              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto justify-center"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               <span>Add Property</span>
-            </button>
+            </button> */}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center space-x-4">
-                <Building2 className="h-8 w-8 text-blue-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <Building2 className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-500">Total Properties</p>
-                  <p className="text-2xl font-bold">{totalProperties}</p>
+                  <p className="text-xs md:text-sm text-gray-500">Total Properties</p>
+                  <p className="text-xl md:text-2xl font-bold">{totalProperties}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center space-x-4">
-                <Eye className="h-8 w-8 text-blue-500" />
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <Eye className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-500">Total Property Views</p>
-                  <p className="text-2xl font-bold">{totalViews}</p>
+                  <p className="text-xs md:text-sm text-gray-500">Total Property Views</p>
+                  <p className="text-xl md:text-2xl font-bold">{totalViews}</p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow">
-            <div className="p-4 border-b">
-              <h2 className="text-xl font-semibold">Properties Overview</h2>
+            <div className="p-3 md:p-4 border-b">
+              <h2 className="text-lg md:text-xl font-semibold">Properties Overview</h2>
             </div>
-            <div className="p-4">
+            
+            {/* Desktop table view - hidden on mobile */}
+            <div className="hidden md:block p-4">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -173,11 +174,11 @@ const LandlordDashboard = () => {
                             onClick={() => handleViewDetails(property)}
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            View Details
+                            View
                           </button>
                           <button 
                             onClick={() => handleDeleteProperty(property.id)}
-                            className="text-red-600 hover:text-red-800 font-medium ml-2"
+                            className="text-red-600 hover:text-red-800 font-medium ml-3"
                           >
                             Delete
                           </button>
@@ -188,47 +189,101 @@ const LandlordDashboard = () => {
                 </table>
               </div>
             </div>
+            
+            {/* Mobile card view - shown only on mobile */}
+            <div className="md:hidden">
+              {properties.length > 0 ? (
+                <div className="divide-y">
+                  {properties.map(property => (
+                    <div key={property.id} className="p-4 hover:bg-gray-50">
+                      <p className="font-medium truncate">{property.address}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-sm text-gray-600">{property.room_type}</span>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Eye className="h-4 w-4 mr-1" />
+                          <span>{property.views || 0}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between mt-3 pt-2 border-t">
+                        <button 
+                          onClick={() => handleViewDetails(property)}
+                          className="flex items-center text-blue-600 text-sm font-medium"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteProperty(property.id)}
+                          className="flex items-center text-red-600 text-sm font-medium"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  No properties found. Add your first property!
+                </div>
+              )}
+            </div>
           </div>
         </>
       ) : (
-        <PropertyDetails 
-          property={selectedProperty}
-          onBackToList={handleBackToList}
-          onEditProperty={handleEditProperty}
-        />
+        <div className="bg-white rounded-lg shadow p-4">
+          <button 
+            onClick={handleBackToList}
+            className="flex items-center text-blue-600 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Properties
+          </button>
+          <PropertyDetails 
+            property={selectedProperty}
+            onBackToList={handleBackToList}
+            onEditProperty={handleEditProperty}
+          />
+        </div>
       )}
 
-      {/* Add/Edit Property Modal */}
+      {/* Add/Edit Property Modal - With responsive adjustments */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow p-6 w-full max-w-3xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+              <h2 className="text-lg md:text-xl font-bold">
                 {isEditing ? 'Edit Property' : 'Add New Property'}
               </h2>
-              <button onClick={handleCloseModal}>
-                <X className="h-6 w-6 text-gray-500 hover:text-gray-800" />
+              <button 
+                onClick={handleCloseModal}
+                className="rounded-full p-1 hover:bg-gray-100"
+              >
+                <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
-            <AddPropertyForm
-              initialData={isEditing ? selectedProperty : null}
-              onSubmit={async (propertyData) => {
-                if (isEditing) {
-                  await handleUpdateProperty(propertyData);
-                } else {
-                  const { data, error } = await supabase
-                    .from('accommodations')
-                    .insert([propertyData]);
-                  if (error) {
-                    console.error('Error adding property:', error);
+            {/* <div className="p-4">
+              <AddPropertyForm
+                initialData={isEditing ? selectedProperty : null}
+                onSubmit={async (propertyData) => {
+                  if (isEditing) {
+                    await handleUpdateProperty(propertyData);
                   } else {
-                    fetchProperties();
-                    handleCloseModal();
+                    const { data, error } = await supabase
+                      .from('accommodations')
+                      .insert([propertyData]);
+                    if (error) {
+                      console.error('Error adding property:', error);
+                    } else {
+                      fetchProperties();
+                      handleCloseModal();
+                    }
                   }
-                }
-              }}
-              onClose={handleCloseModal}
-            />
+                }}
+                onClose={handleCloseModal}
+              />
+            </div> */}
           </div>
         </div>
       )}
