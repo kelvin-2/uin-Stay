@@ -45,7 +45,6 @@ const LandlordNavbar = () => {
   const navLinks = [
     { path: "/landlord-dashboard", label: "Dashboard" },
     { path: "/landlord-properties", label: "My Properties" },
-    { path: "/support", label: "Support" },
     { path: "/help", label: "FAQs / Help" },
   ];
 
