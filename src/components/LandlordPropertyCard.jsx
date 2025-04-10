@@ -56,10 +56,10 @@ const PropertyCard = ({ property, onDelete, onUpdate }) => {
         {/* Images Carousel/Grid */}
         <div className="relative">
           <div className="flex gap-2 overflow-x-auto">
-            {property.images.map((image, imgIndex) => (
+            {property.image_url && property.image_url.map((image, imgIndex) => (
               <div key={imgIndex} className="relative">
                 <img
-                  src={URL.createObjectURL(image)}
+                  src={image}
                   alt={`Property ${imgIndex + 1}`}
                   className="w-24 h-24 object-cover rounded-lg"
                 />
@@ -79,28 +79,28 @@ const PropertyCard = ({ property, onDelete, onUpdate }) => {
             <p>Distance from school: {property.distanceFromSchool}m</p>
           </div>
 
-          {/* Amenities */}
+         {/* Amenities */}
           <div className="flex flex-wrap gap-2">
-            {property.amenities.map((amenity, amenityIndex) => (
+            {Array.isArray(property.amenities) ? property.amenities.map((amenity, amenityIndex) => (
               <span
                 key={amenityIndex}
                 className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full"
               >
                 {amenity}
               </span>
-            ))}
+            )) : null}
           </div>
 
           {/* Payment Methods */}
           <div className="flex flex-wrap gap-2 mt-2">
-            {property.paymentAccepted.map((payment, index) => (
+            {Array.isArray(property.payment_methods) ? property.payment_methods.map((payment, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full"
               >
                 {payment}
               </span>
-            ))}
+            )) : null}
           </div>
         </div>
       </div>

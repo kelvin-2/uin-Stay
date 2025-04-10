@@ -203,19 +203,25 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         landlord_id: user.id
       };
   
+      const { data: existingProperty } = await supabase
+      .from('accommodation')
+      .select('acc_id')
+      .eq('address', formData.address)
+      .eq('landlord_id', user.id)
+      .single();
+
       let response;
-      if (formData.id) {
+      if (existingProperty) {
+        // Update existing property
         response = await supabase
           .from('accommodation')
           .update(propertyData)
-          .eq('acc_id', formData.id);
+          .eq('acc_id', existingProperty.acc_id);
       } else {
+        // Insert new property
         response = await supabase
           .from('accommodation')
-          .upsert([propertyData], {
-            onConflict: 'address,landlord_id',
-            ignoreDuplicates: false
-          })
+          .insert([propertyData])
           .select();
       }
   
