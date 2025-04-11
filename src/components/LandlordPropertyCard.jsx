@@ -74,10 +74,10 @@ const PropertyCard = ({ property, onDelete, onUpdate }) => {
           <p className="text-sm text-gray-600">{property.roomType}</p>
           
           {/* Distance Information */}
-          <div className="text-sm text-gray-600">
+          {/* <div className="text-sm text-gray-600">
             <p>Distance from shuttle: {property.distanceFromShuttle}m</p>
             <p>Distance from school: {property.distanceFromSchool}m</p>
-          </div>
+          </div> */}
 
          {/* Amenities */}
           <div className="flex flex-wrap gap-2">
