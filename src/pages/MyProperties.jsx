@@ -9,9 +9,17 @@ const MyPropertiesPage = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  let propertyCache=null;
+
   // Fetch properties when component mounts
   useEffect(() => {
     const fetchProperties = async () => {
+      //if already cached 
+      if(propertyCache){
+        setProperties(propertyCache);
+        setLoading(false);
+        return;
+      }
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -23,6 +31,8 @@ const MyPropertiesPage = () => {
             
           if (error) throw error;
           setProperties(data || []);
+          propertyCache = data || [];
+
         }
       } catch (error) {
         console.error('Error fetching properties:', error);
@@ -37,6 +47,7 @@ const MyPropertiesPage = () => {
   const handleAddProperty = (propertyData) => {
     // Add the new property to the state
     setProperties(prev => [...prev, propertyData]);
+    propertyCache = updated;
     setShowAddForm(false);
   };
 
@@ -48,24 +59,28 @@ const MyPropertiesPage = () => {
         .eq('acc_id', propertyToDelete.acc_id);
         
       if (error) throw error;
-      
-      // Update local state after successful deletion
-      setProperties(prev => 
-        prev.filter(property => property.acc_id !== propertyToDelete.acc_id)
-      );
+  
+      setProperties(prev => {
+        const updated = prev.filter(property => property.acc_id !== propertyToDelete.acc_id);
+        propertyCache = updated;
+        return updated;
+      });
     } catch (error) {
       console.error('Error deleting property:', error);
     }
   };
+  
 
   const handleUpdateProperty = (oldProperty, updatedProperty) => {
-    // Update local state after successful update
-    setProperties(prev =>
-      prev.map(property =>
+    setProperties(prev => {
+      const updated = prev.map(property =>
         property.acc_id === oldProperty.acc_id ? updatedProperty : property
-      )
-    );
+      );
+      propertyCache = updated;
+      return updated;
+    });
   };
+  
 
   return (
     <div className="container mx-auto px-4 pt-16 pb-8">
