@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi } from 'lucide-react';
+import supabase from '../supabaseClient'; 
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -8,22 +9,25 @@ const Properties = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/accommodations')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch properties');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setProperties(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error loading properties:', error);
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('accommodation')
+          .select('*');
+          
+        if (error) throw error;
+        setProperties(data || []);
+      }
+      catch(error) {
+        console.error('Error fetching properties', error);
         setError(error.message);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    
+    fetchProperties();
   }, []);
 
   if (loading) {
@@ -79,9 +83,13 @@ const Properties = () => {
           {/* Image Container */}
           <div className="relative overflow-hidden">
             <img
-              src={accommodation.image_url}
-              alt={accommodation.name}
+              src={accommodation.image_url || '/images/placeholder.jpg'}
+              alt={accommodation.name || 'Property'}
               className="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-300 cursor-pointer"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/images/placeholder.jpg';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-lg">
@@ -97,7 +105,9 @@ const Properties = () => {
             {/* Price and Features */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold text-gray-900">R{accommodation.price.toLocaleString()}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  R{accommodation.price ? accommodation.price.toLocaleString() : 'N/A'}
+                </span>
                 <span className="text-gray-500 text-sm">/month</span>
               </div>
               <div className="flex gap-2">
@@ -107,18 +117,24 @@ const Properties = () => {
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">{accommodation.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
+              {accommodation.name || 'Property'}
+            </h3>
 
             {/* Location */}
             <div className="flex items-center gap-1.5 text-gray-500 mb-4">
               <MapPin className="w-4 h-4" />
-              <span className="text-sm line-clamp-1">{accommodation.address}</span>
+              <span className="text-sm line-clamp-1">{accommodation.address || 'Location not specified'}</span>
             </div>
 
             {/* Walking Time */}
             <div className="flex items-center gap-1.5 text-gray-500 mb-4">
               <Clock className="w-4 h-4" />
-              <span className="text-sm">{Math.round(accommodation.distance_from_varsity * 10)} min walk to campus</span>
+              <span className="text-sm">
+                {accommodation.distance_from_varsity 
+                  ? `${Math.round(accommodation.distance_from_varsity * 10)} min walk to campus`
+                  : 'Distance not specified'}
+              </span>
             </div>
 
             {/* Divider */}
