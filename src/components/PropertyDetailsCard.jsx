@@ -265,7 +265,6 @@ const PropertyDetail = () => {
             </div>
             <div className="bg-blue-50 p-3 md:p-4 rounded-xl w-full md:w-auto mt-2 md:mt-0">
               <div className="flex items-center mb-1">
-                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600 mr-1" />
                 <span className="text-xl md:text-2xl font-bold text-blue-700">
                   R{property.monthly_rent ? property.monthly_rent.toLocaleString() : 'N/A'}
                 </span>
