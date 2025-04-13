@@ -189,7 +189,7 @@ function FeaturedProperties() {
                     Available Now
                   </span>
                 </div>
-                
+
                 {/* Image Container */}
                 <div className="relative overflow-hidden">
                   {/* Images */}
@@ -225,9 +225,6 @@ function FeaturedProperties() {
                   {/* Price with Deposit Badge */}
                   <div className="flex items-center justify-between mb-3 md:mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 md:p-2 bg-blue-50 rounded-full">
-                        <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-                      </div>
                       <div>
                         <span className="text-base md:text-lg font-bold text-gray-900">
                           R{accommodation.monthly_rent ? accommodation.monthly_rent.toLocaleString() : 'N/A'}
