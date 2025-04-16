@@ -182,7 +182,7 @@ const UniStayAuth = () => {
       if (userRole === "landlord") {
         navigate("/landlord-dashboard");
       } else if (userRole === "student") {
-        navigate("/student-dashboard");
+        navigate("/");
       } else {
         navigate("/");
       }
