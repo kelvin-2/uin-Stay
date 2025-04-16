@@ -24,7 +24,8 @@ import {
   GraduationCap,
   BadgeDollarSign,
   Wallet,
-  ArrowLeft
+  ArrowLeft,
+  Mail
 } from 'lucide-react';
 import supabase from '../supabaseClient';
 
@@ -32,6 +33,7 @@ const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
+  const [landlord, setLandlord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -45,56 +47,96 @@ const PropertyDetail = () => {
     : ['/images/placeholder.jpg'];
   
   useEffect(() => {
-    const fetchPropertyDetails = async () => {
+    
+  const fetchPropertyDetails = async () => {
+    try {
+    setLoading(true);
+    
+    console.log("Fetching property with ID:", id); // Add debug log
+    
+    // Fetch property data with explicit headers
+    const { data: propertyData, error: propertyError } = await supabase
+      .from('accommodation')
+      .select('*')
+      .eq('acc_id', id)
+      .single();
+    
+    if (propertyError) {
+      console.error('Property Error Details:', propertyError);
+      throw propertyError;
+    }
+    
+    if (!propertyData) {
+      throw new Error('No property data found');
+    }
+    
+    console.log("Retrieved property data:", propertyData); // Add debug log
+    
+    // Process property data safely
+    let parsedAmenities = [];
+    if (propertyData.amenities) {
       try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('accommodation')
+        // Try to parse if it's a JSON string
+        parsedAmenities = typeof propertyData.amenities === 'string' ? 
+          JSON.parse(propertyData.amenities) : 
+          propertyData.amenities;
+      } catch (e) {
+        console.warn("Error parsing amenities:", e);
+        // If it's not JSON, split by commas
+        parsedAmenities = String(propertyData.amenities).split(',').map(item => item.trim());
+      }
+    }
+    
+    // Parse payment methods if available
+    let parsedPaymentMethods = [];
+    if (propertyData.payment_methods) {
+      try {
+        parsedPaymentMethods = typeof propertyData.payment_methods === 'string' ?
+          JSON.parse(propertyData.payment_methods) :
+          propertyData.payment_methods;
+      } catch (e) {
+        console.warn("Error parsing payment methods:", e);
+        parsedPaymentMethods = String(propertyData.payment_methods).split(',').map(item => item.trim());
+      }
+    }
+    
+    // Set property data first
+    setProperty({
+      ...propertyData,
+      parsedAmenities,
+      parsedPaymentMethods
+    });
+    
+    // Fetch landlord data 
+    if (propertyData.landlord_id) {
+      try {
+        console.log("Fetching landlord with ID:", propertyData.landlord_id);
+        // Remove .single() and handle the possibly empty array manually
+        const { data: landlordData, error: landlordError } = await supabase
+          .from('users')
           .select('*')
-          .eq('acc_id', id)
-          .single();
+          .eq('auth_id', propertyData.landlord_id);
           
-        if (error) throw error;
-        
-        // Process property data
-        let parsedAmenities = [];
-        if (data.amenities) {
-          try {
-            // Try to parse if it's a JSON string
-            parsedAmenities = typeof data.amenities === 'string' ? 
-              JSON.parse(data.amenities) : 
-              data.amenities;
-          } catch (e) {
-            // If it's not JSON, split by commas
-            parsedAmenities = data.amenities.split(',').map(item => item.trim());
-          }
+        if (landlordError) {
+          console.warn('Landlord Error:', landlordError);
+        } else if (landlordData && landlordData.length > 0) {
+          console.log("Retrieved landlord data:", landlordData[0]);
+          setLandlord(landlordData[0]);
+        } else {
+          console.log("No landlord found with ID:", propertyData.landlord_id);
         }
-        
-        // Parse payment methods if available
-        let parsedPaymentMethods = [];
-        if (data.payment_methods) {
-          try {
-            parsedPaymentMethods = typeof data.payment_methods === 'string' ?
-              JSON.parse(data.payment_methods) :
-              data.payment_methods;
-          } catch (e) {
-            parsedPaymentMethods = data.payment_methods.split(',').map(item => item.trim());
-          }
-        }
-        
-        setProperty({
-          ...data,
-          parsedAmenities,
-          parsedPaymentMethods
-        });
+      } catch (landlordFetchError) {
+        console.error('Error fetching landlord details:', landlordFetchError);
       }
-      catch(error) {
-        console.error('Error fetching property details', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    }
+  }
+  catch(error) {
+    console.error('Error fetching property details:', error);
+    setError(error.message || 'Unknown error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
     
     if (id) {
       fetchPropertyDetails();
@@ -114,8 +156,18 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsAppContact = () => {
+    const phoneNumber = landlord?.phone_number || property.landlord_contact || '';
+    const formattedPhone = phoneNumber.replace(/\D/g, '');
+    
+    if (!formattedPhone) {
+      alert("Sorry, landlord contact information is not available.");
+      return;
+    }
+    
     const message = `Hey there! I saw your property "${property.location || 'Student Accommodation'}" at ${property.address || 'Address not specified'} on uinStay, and it looks perfect for me. Could you share any updates on its availability? Looking forward to your response!`;
-    const whatsappUrl = `https://wa.me/${property.landlord_contact || ''}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    
+    // Open WhatsApp in a new tab
     window.open(whatsappUrl, '_blank');
   };
 
@@ -139,10 +191,10 @@ const PropertyDetail = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24"> {/* Added responsive top margin */}
+      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse">
-          <div className="h-64 md:h-96 bg-gray-200" /> {/* Responsive height */}
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6"> {/* Responsive padding */}
+          <div className="h-64 md:h-96 bg-gray-200" />
+          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start mb-4 md:mb-6 gap-4">
               <div className="space-y-2 w-full md:w-auto">
                 <div className="h-8 bg-gray-200 rounded-full w-full md:w-64" />
@@ -164,7 +216,7 @@ const PropertyDetail = () => {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24"> {/* Added responsive top margin */}
+      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 text-center">
             <div className="bg-red-50 p-4 md:p-6 rounded-2xl inline-block shadow-sm">
@@ -184,7 +236,7 @@ const PropertyDetail = () => {
 
   if (!property) {
     return (
-      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24"> {/* Added responsive top margin */}
+      <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 text-center">
             <div className="bg-yellow-50 p-4 md:p-6 rounded-2xl inline-block shadow-sm">
@@ -201,9 +253,13 @@ const PropertyDetail = () => {
       </div>
     );
   }
+  
+  const landlordName = landlord?.full_name || property.landlord_name || 'Property Owner';
+  const landlordContact = landlord?.phone_number || property.landlord_contact;
+  const landlordEmail = landlord?.email || property.landlord_email;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24"> {/* Added responsive top margin and top padding */}
+    <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24">
       {/* Back Button */}
       <button 
         onClick={() => navigate(-1)}
@@ -215,7 +271,7 @@ const PropertyDetail = () => {
       
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Image Gallery */}
-        <div className="relative h-64 md:h-96"> {/* Responsive height */}
+        <div className="relative h-64 md:h-96">
           <img 
             src={images[currentImageIndex]}
             alt={`Property view ${currentImageIndex + 1}`}
@@ -392,7 +448,7 @@ const PropertyDetail = () => {
             <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Contact Landlord</h2>
             <div className="flex flex-col md:flex-row items-start justify-between gap-4">
               <div>
-                <h3 className="font-medium text-sm md:text-base">{property.landlord_name || 'Property Owner'}</h3>
+                <h3 className="font-medium text-sm md:text-base">{landlordName}</h3>
                 <div className="text-xs md:text-sm text-gray-600 mt-1">Usually responds within 24 hours</div>
                 {property.landlord_rating && (
                   <div className="flex items-center mt-2">
@@ -403,21 +459,27 @@ const PropertyDetail = () => {
                 )}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto mt-2 md:mt-0">
-                {property.landlord_contact && (
-                  <button
-                    onClick={handleWhatsAppContact}
-                    className="flex items-center justify-center px-3 md:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 w-full text-sm md:text-base"
-                  >
-                    <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
-                    Contact via WhatsApp
-                  </button>
-                )}
-                {property.landlord_email && (
+                {/* WhatsApp button */}
+                <button
+                  onClick={handleWhatsAppContact}
+                  disabled={!landlordContact}
+                  className={`flex items-center justify-center px-3 md:px-4 py-2 ${
+                    landlordContact 
+                      ? 'bg-green-500 hover:bg-green-600' 
+                      : 'bg-green-300 cursor-not-allowed'
+                  } text-white rounded-lg w-full text-sm md:text-base`}
+                >
+                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+                  Contact via WhatsApp
+                </button>
+                
+                {/* Email button */}
+                {landlordEmail && (
                   <a
-                    href={`mailto:${property.landlord_email}?subject=Inquiry about ${property.location || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
+                    href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
                     className="flex items-center justify-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full text-sm md:text-base mt-2 sm:mt-0"
                   >
-                    <Phone className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+                    <Mail className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                     Email Landlord
                   </a>
                 )}
