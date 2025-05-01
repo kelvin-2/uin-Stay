@@ -13,7 +13,7 @@ function HeroSection() {
           Find your perfect student accommodation easily. Join thousands of students who've found their ideal home away from home.
         </p>
         
-        {/* Stats Section 
+        {/* Stats Section  */}
         <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 max-w-4xl mx-auto">
           {[
             { icon: Building2, label: "Properties", value: "500+" },
@@ -28,7 +28,7 @@ function HeroSection() {
             </div>
           ))}
         </div>
-        */}
+       
       </div>
     </div>
   </div>
