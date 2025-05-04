@@ -14,7 +14,7 @@ function HeroSection() {
         </p>
         
         {/* Stats Section  */}
-        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 max-w-4xl mx-auto">
+        {/* <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 max-w-4xl mx-auto">
           {[
             { icon: Building2, label: "Properties", value: "500+" },
             { icon: Users, label: "Happy Students", value: "2000+" },
@@ -27,7 +27,7 @@ function HeroSection() {
               <div className="text-sm text-gray-600">{stat.label}</div>
             </div>
           ))}
-        </div>
+        </div> */}
        
       </div>
     </div>
