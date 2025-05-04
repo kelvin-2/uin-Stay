@@ -16,7 +16,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     houseRules: [],
     leaseLength: '',
     depositAmount: '',
-    monthlyRent: ''
+    monthlyRent: '',
+    accDetails: '' // Added new field for accommodation details
   });
 
   const [previewImages, setPreviewImages] = useState([]);
@@ -191,7 +192,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         image_url: imageUrls || [],
         deposit: parseFloat(formData.depositAmount) || 0,
         monthly_rent: parseFloat(formData.monthlyRent) || 0,
-        landlord_id: user.id
+        landlord_id: user.id,
+        acc_details: formData.accDetails || null // Added accommodation details
       };
   
       const { data: existingProperty } = await supabase
@@ -325,6 +327,22 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
                 <option key={location} value={location}>{location}</option>
               ))}
             </select>
+          </div>
+
+          {/* Property Details */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Property Details
+            </label>
+            <textarea
+              name="accDetails"
+              value={formData.accDetails}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              placeholder="Describe your property, including features, environment, nearby facilities, and any important information for potential tenants."
+              rows={5}
+              required
+            />
           </div>
 
           {/* Room Type and Monthly Rent */}

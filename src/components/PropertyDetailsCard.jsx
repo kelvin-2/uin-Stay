@@ -207,7 +207,11 @@ const PropertyDetail = () => {
       return;
     }
     
-    const message = `Hey there! I saw your property "${property.location || 'Student Accommodation'}" at ${property.address || 'Address not specified'} on uinStay, and it looks perfect for me. Could you share any updates on its availability? Looking forward to your response!`;
+    const message = `Hi there,
+
+    I came across your property in ${property.location || 'Student Accommodation'} at ${property.address || 'Address not specified'} on uinStay, and it looks like a great fit for me. I’d love to know if it’s still available.
+    
+    If possible, I’d also like to arrange a viewing at your convenience. Looking forward to your response!`;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
     
     // Open WhatsApp in a new tab
