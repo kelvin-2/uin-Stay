@@ -14,8 +14,6 @@ import {
   Sofa,
   Phone,
   Camera,
-  ChevronLeft,
-  ChevronRight,
   MessageCircle,
   Star,
   DollarSign,
@@ -28,6 +26,7 @@ import {
   Mail
 } from 'lucide-react';
 import supabase from '../supabaseClient';
+import PropertyImageGrid from '../components/PropertyImageGrid'; // Import the PropertyImageGrid component
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -36,7 +35,6 @@ const PropertyDetail = () => {
   const [landlord, setLandlord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showRatingMessage, setShowRatingMessage] = useState(false);
@@ -51,7 +49,7 @@ const PropertyDetail = () => {
       try {
         setLoading(true);
         
-        console.log("Fetching property with ID:", id);
+       
         
         // Fetch property data with explicit headers
         const { data: propertyData, error: propertyError } = await supabase
@@ -69,7 +67,7 @@ const PropertyDetail = () => {
           throw new Error('No property data found');
         }
         
-        console.log("Retrieved property data:", propertyData);
+    
         
         // Process property data safely
         let parsedAmenities = [];
@@ -113,8 +111,7 @@ const PropertyDetail = () => {
         // Fetch landlord data 
         if (propertyData.landlord_id) {
           try {
-            console.log("Fetching landlord with ID:", propertyData.landlord_id);
-            // Remove .single() and handle the possibly empty array manually
+          
             const { data: landlordData, error: landlordError } = await supabase
               .from('users')
               .select('*')
@@ -126,7 +123,7 @@ const PropertyDetail = () => {
               console.log("Retrieved landlord data:", landlordData[0]);
               setLandlord(landlordData[0]);
             } else {
-              console.log("No landlord found with ID:", propertyData.landlord_id);
+              console.log("No landlord found ");
             }
           } catch (landlordFetchError) {
             console.error('Error fetching landlord details:', landlordFetchError);
@@ -199,32 +196,6 @@ const PropertyDetail = () => {
     }
     
     return url;
-  };
-
-  const handleImageError = (e) => {
-    console.log("Image failed to load, using fallback");
-    e.target.onerror = null; // Prevent infinite loop
-    
-    // Try the default placeholder first
-    e.target.src = defaultPlaceholder;
-    
-    // If the placeholder also fails, use the base64 fallback
-    e.target.onerror = () => {
-      console.log("Placeholder also failed, using base64 fallback");
-      e.target.src = fallbackImage;
-    };
-  };
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? images.length - 1 : prev - 1
-    );
   };
 
   const handleWhatsAppContact = () => {
@@ -342,40 +313,20 @@ const PropertyDetail = () => {
       </button>
       
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Image Gallery */}
-        <div className="relative h-64 md:h-96">
-          <img 
-            src={images[currentImageIndex]}
-            alt={`Property view ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover"
-            onError={handleImageError}
-          />
-          {images.length > 1 && (
-            <>
-              <button 
-                onClick={prevImage}
-                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-white/80 p-1 md:p-2 rounded-full shadow hover:bg-white"
-              >
-                <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
-              </button>
-              <button 
-                onClick={nextImage}
-                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-white/80 p-1 md:p-2 rounded-full shadow hover:bg-white"
-              >
-                <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
-              </button>
-              <div className="absolute bottom-2 md:bottom-4 right-2 md:right-4 bg-white/80 px-2 py-1 rounded-lg text-xs md:text-sm">
-                {currentImageIndex + 1} / {images.length}
-              </div>
-            </>
-          )}
-          
+        {/* Image Gallery using PropertyImageGrid */}
+        <div className="relative">
           {/* Status Badge */}
           <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10">
             <span className="bg-blue-600 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">
               Available Now
             </span>
           </div>
+          
+          <PropertyImageGrid 
+            images={images} 
+            defaultPlaceholder={defaultPlaceholder}
+            fallbackImage={fallbackImage}
+          />
         </div>
 
         <div className="p-4 md:p-6">
