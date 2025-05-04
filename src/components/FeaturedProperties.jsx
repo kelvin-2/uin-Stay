@@ -10,6 +10,12 @@ function FeaturedProperties() {
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  
+  // Default placeholder image with multiple fallback options
+  const defaultPlaceholder = '/images/placeholder.jpg'; 
+  
+  // Built-in SVG fallback that's guaranteed to work (as base64)
+  const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNMTUwLjUgOTZDMTIzLjcgOTYgMTAyIDExNy43IDEwMiAxNDQuNUMxMDIgMTcxLjMgMTIzLjcgMTkzIDE1MC41IDE5M0MxNzcuMyAxOTMgMTk5IDE3MS4zIDE5OSAxNDQuNUMxOTkgMTE3LjcgMTc3LjMgOTYgMTUwLjUgOTZaTTE1MC41IDE4NC4zQzEyOC41IDE4NC4zIDExMC43IDE2Ni41IDExMC43IDE0NC41QzExMC43IDEyMi41IDEyOC41IDEwNC43IDE1MC41IDEwNC43QzE3Mi41IDEwNC43IDE5MC4zIDEyMi41IDE5MC4zIDE0NC41QzE5MC4zIDE2Ni41IDE3Mi41IDE4NC4zIDE1MC41IDE4NC4zWk0xNTYuMyAxNjcuNEgxNDQuOFYxNTMuMkgxMzAuNlYxNDEuN0gxNDQuOFYxMjcuNUgxNTYuM1YxNDEuN0gxNzAuNVYxNTMuMkgxNTYuM1YxNjcuNFoiIGZpbGw9IiM5Q0EzQUYiLz48L3N2Zz4=';
 
   useEffect(() => {
     const fetchFeaturedProperties = async () => {
@@ -21,7 +27,12 @@ function FeaturedProperties() {
           .limit(4);
           
         if (error) throw error;
-        console.log(data);
+        console.log("Fetched data:", data);
+        
+        // Debug log to inspect image URLs in the raw data
+        data.forEach(prop => {
+          console.log(`Property ${prop.acc_id} raw image_url:`, prop.image_url, `(type: ${typeof prop.image_url})`);
+        });
         // Initialize the current image index for each property
         const initialImageIndices = {};
         data.forEach(prop => {
@@ -29,7 +40,7 @@ function FeaturedProperties() {
         });
         setCurrentImageIndex(initialImageIndices);
         
-        // Process property data
+        // Process property data and validate image URLs
         const processedData = data.map(prop => {
           // Parse amenities if it's a string
           let parsedAmenities = [];
@@ -57,12 +68,34 @@ function FeaturedProperties() {
             }
           }
           
+          // Validate image URL
+          let validatedImageUrl = prop.image_url;
+          
+          // First check if it's null or undefined and set default if so
+          if (!validatedImageUrl) {
+            validatedImageUrl = defaultPlaceholder;
+          } 
+          // Only try string operations if it's actually a string
+          else if (typeof validatedImageUrl === 'string') {
+            // Check if image_url is a relative path that needs a prefix
+            if (!validatedImageUrl.startsWith('http') && !validatedImageUrl.startsWith('/')) {
+              // Add a leading slash if needed
+              validatedImageUrl = `/${validatedImageUrl}`;
+            }
+          } else {
+            // If it's not a string (could be an object or something else), use placeholder
+            console.warn(`Property ${prop.acc_id} has a non-string image URL:`, validatedImageUrl);
+            validatedImageUrl = defaultPlaceholder;
+          }
+          
+          // Log for debugging
+          console.log(`Property ${prop.acc_id} image URL: ${validatedImageUrl}`);
+          
           return {
             ...prop,
             parsedAmenities,
             parsedPaymentMethods,
-            // If there's no image_url, use a placeholder
-            image_url: prop.image_url || '/images/placeholder.jpg'
+            image_url: validatedImageUrl
           };
         });
         
@@ -98,6 +131,19 @@ function FeaturedProperties() {
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  // Function to handle image loading errors
+  const handleImageError = (e) => {
+    console.log("Image failed to load, using placeholder");
+    e.target.onerror = null; // Prevent infinite loop
+    e.target.src = defaultPlaceholder;
+    
+    // If the placeholder also fails, use a base64 encoded minimal image
+    e.target.onerror = () => {
+      console.log("Placeholder also failed, using fallback base64 image");
+      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNMTUwLjUgOTZDMTIzLjcgOTYgMTAyIDExNy43IDEwMiAxNDQuNUMxMDIgMTcxLjMgMTIzLjcgMTkzIDE1MC41IDE5M0MxNzcuMyAxOTMgMTk5IDE3MS4zIDE5OSAxNDQuNUMxOTkgMTE3LjcgMTc3LjMgOTYgMTUwLjUgOTZaTTE1MC41IDE4NC4zQzEyOC41IDE4NC4zIDExMC43IDE2Ni41IDExMC43IDE0NC41QzExMC43IDEyMi41IDEyOC41IDEwNC43IDE1MC41IDEwNC43QzE3Mi41IDEwNC43IDE5MC4zIDEyMi41IDE5MC4zIDE0NC41QzE5MC4zIDE2Ni41IDE3Mi41IDE4NC4zIDE1MC41IDE4NC4zWk0xNTYuMyAxNjcuNEgxNDQuOFYxNTMuMkgxMzAuNlYxNDEuN0gxNDQuOFYxMjcuNUgxNTYuM1YxNDEuN0gxNzAuNVYxNTMuMkgxNTYuM1YxNjcuNFoiIGZpbGw9IiM5Q0EzQUYiLz48L3N2Zz4=';
+    };
   };
 
   if (loading) {
@@ -198,10 +244,7 @@ function FeaturedProperties() {
                       src={accommodation.image_url}
                       alt={`${accommodation.address || 'Property'}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/images/placeholder.jpg';
-                      }}
+                      onError={handleImageError}
                     />
                     
                     {/* Overlay gradient */}
