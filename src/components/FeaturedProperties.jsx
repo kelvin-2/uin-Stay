@@ -21,7 +21,8 @@ function FeaturedProperties() {
           .limit(4);
           
         if (error) throw error;
-        console.log(data);
+        console.log("Fetched property data:", data);
+        
         // Initialize the current image index for each property
         const initialImageIndices = {};
         data.forEach(prop => {
@@ -57,12 +58,32 @@ function FeaturedProperties() {
             }
           }
           
+          // Fix image URL if it's a Cloudinary URL
+          let imageUrl = prop.image_url || '/images/placeholder.jpg';
+          
+          // Check if URL is from Cloudinary but needs secure protocol
+          if (imageUrl && typeof imageUrl === 'string') {
+            // Convert http to https for Cloudinary URLs if needed
+            if (imageUrl.includes('cloudinary.com') && imageUrl.startsWith('http:')) {
+              imageUrl = imageUrl.replace('http:', 'https:');
+            }
+            
+            // Check for and handle relative URLs that might be missing base path
+            if (imageUrl.startsWith('/')) {
+              // Keep as is - relative URL will be resolved by the browser
+            } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+              // Add leading slash if missing for relative URLs
+              imageUrl = '/' + imageUrl;
+            }
+            
+            console.log(`Property ${prop.acc_id} image URL: ${imageUrl}`);
+          }
+          
           return {
             ...prop,
             parsedAmenities,
             parsedPaymentMethods,
-            // If there's no image_url, use a placeholder
-            image_url: prop.image_url || '/images/placeholder.jpg'
+            image_url: imageUrl
           };
         });
         
@@ -98,6 +119,26 @@ function FeaturedProperties() {
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  // Helper function to safely display images with fallback and logging
+  const renderPropertyImage = (accommodation) => {
+    return (
+      <div className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden">
+        <img
+          src={accommodation.image_url}
+          alt={`${accommodation.address || 'Property'}`}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          onError={(e) => {
+            console.error(`Image failed to load: ${accommodation.image_url}`);
+            e.target.onerror = null;
+            e.target.src = '/images/placeholder.jpg';
+          }}
+        />
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </div>
+    );
   };
 
   if (loading) {
@@ -192,21 +233,8 @@ function FeaturedProperties() {
 
                 {/* Image Container */}
                 <div className="relative overflow-hidden">
-                  {/* Images */}
-                  <div className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden">
-                    <img
-                      src={accommodation.image_url}
-                      alt={`${accommodation.address || 'Property'}`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/images/placeholder.jpg';
-                      }}
-                    />
-                    
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
+                  {/* Render image with the helper function */}
+                  {renderPropertyImage(accommodation)}
                 </div>
 
                 {/* Content Container */}
