@@ -1,4 +1,3 @@
-// components/HeroSection.jsx
 import React from "react";
 
 function HeroSection() {

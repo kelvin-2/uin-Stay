@@ -53,6 +53,7 @@ const Navbar = () => {
     logout(); // Use the logout function from AuthContext
     navigate('/', { replace: true });
     setProfileDropdownOpen(false);
+    setIsOpen(false); // Close mobile menu when logging out
   };
 
   // Check if a path is active
@@ -63,15 +64,12 @@ const Navbar = () => {
     { path: "/", label: "Home" },
     { path: "/Properties", label: "Properties" },
     { path: "/ContactUs", label: "Contact Us" },
-    { path: "/Support", label: "Support" },
     { path: "/Help", label: "FAQs / Help" },
   ];
 
   // Render auth button (Sign In or User Profile)
   const renderAuthButton = () => {
     if (currentUser) {
-      
-   
       return (
         <div className="relative" ref={profileDropdownRef}>
           <button 
@@ -112,6 +110,7 @@ const Navbar = () => {
       <Link
         to="/signin"
         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
+        onClick={() => setIsOpen(false)} // Close mobile menu when clicking Sign In
       >
         <User className="h-4 w-4" />
         <span>Sign In</span>
@@ -178,7 +177,6 @@ const Navbar = () => {
             </div>
 
             <div className="hidden md:flex items-center space-x-6">
-             
               {renderAuthButton()}
             </div>
 
@@ -212,14 +210,25 @@ const Navbar = () => {
                 <div className="border-t border-gray-100 pt-4">
                   <div className="text-gray-600 font-medium mb-2">Landlords</div>
                   <div className="flex flex-col space-y-2 pl-4">
-                    <Link to="/landlord-guide" className="text-gray-600 hover:text-blue-600">Landlord Guide</Link>
-                    <Link to="/pricing" className="text-gray-600 hover:text-blue-600">Pricing</Link>
+                    <Link 
+                      to="/landlord-guide" 
+                      className="text-gray-600 hover:text-blue-600"
+                      onClick={() => setIsOpen(false)} // Close mobile menu when clicking link
+                    >
+                      Landlord Guide
+                    </Link>
+                    <Link 
+                      to="/pricing" 
+                      className="text-gray-600 hover:text-blue-600"
+                      onClick={() => setIsOpen(false)} // Close mobile menu when clicking link
+                    >
+                      Pricing
+                    </Link>
                   </div>
                 </div>
               )}
               
               <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
-               
                 {renderAuthButton()}
               </div>
             </div>

@@ -6,7 +6,7 @@ import { Loader2, CheckCircle } from 'lucide-react';
 const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
     address: '',
-    location: '', // Added this field which was missing initialization
+    location: '',
     roomType: '',
     distanceFromShuttle: '',
     distanceFromSchool: '',
@@ -22,10 +22,9 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [uploadStatus, setUploadStatus] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false); // Added missing state
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Rest of the component remains the same...
   const roomTypes = [
     "Studio",
     "Single",
@@ -60,12 +59,6 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     "Greenacres",
     "Cape Road",
     "Richmond Hill"
-  ];
-
-  const leaseLengthOptions = [
-    "6 months",
-    "12 months",
-    "Month-to-month"
   ];
 
   const handleInputChange = (e) => {
@@ -105,17 +98,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
     }));
   };
 
-  const uploadImagesToCloudinary = async (files) => {
-    // Check if there are environment variables
-    const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    
-    if (!CLOUDINARY_UPLOAD_PRESET || !CLOUDINARY_CLOUD_NAME) {
-      console.error('Cloudinary environment variables are not set');
-      // Return placeholder URLs for testing
-      return files.map(() => 'https://placeholder.com/image.jpg');
-    }
-    
+  // New function to upload images to Supabase storage
+  const uploadImagesToSupabase = async (files, userId) => {
     const uploadPromises = files.map(async (file, index) => {
       setUploadStatus(prev => {
         const newStatus = [...prev];
@@ -123,28 +107,33 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         return newStatus;
       });
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
       try {
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (!response.ok) {
-          throw new Error(response.statusText);
+        // Create a unique file name to avoid collisions
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // Upload the file to Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('properties')
+          .upload(filePath, file);
+
+        if (error) {
+          throw error;
         }
-  
-        const data = await response.json();
+
+        // Get the public URL for the uploaded file
+        const { data: { publicUrl } } = supabase.storage
+          .from('properties')
+          .getPublicUrl(filePath);
+
         setUploadStatus(prev => {
           const newStatus = [...prev];
           newStatus[index] = { uploading: false, uploaded: true, error: false };
           return newStatus;
         });
-  
-        return data.secure_url;
+
+        return publicUrl;
       } catch (error) {
         console.error('Image upload error:', error);
         setUploadStatus(prev => {
@@ -152,8 +141,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           newStatus[index] = { uploading: false, uploaded: false, error: true };
           return newStatus;
         });
-        // Return a placeholder URL on error so the form can still submit
-        return 'https://placeholder.com/error-image.jpg';
+        // Return an empty string on error
+        return '';
       }
     });
   
@@ -184,10 +173,12 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         return;
       }
   
-      // Upload images to Cloudinary if there are any
+      // Upload images to Supabase if there are any
       let imageUrls = [];
       if (formData.images.length > 0) {
-        imageUrls = await uploadImagesToCloudinary(formData.images);
+        imageUrls = await uploadImagesToSupabase(formData.images, user.id);
+        // Filter out any failed uploads
+        imageUrls = imageUrls.filter(url => url);
       }
   
       // Prepare data for Supabase
