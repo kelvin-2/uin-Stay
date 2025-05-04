@@ -40,108 +40,180 @@ const PropertyDetail = () => {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showRatingMessage, setShowRatingMessage] = useState(false);
+  const [images, setImages] = useState([]);
   
-  // Get the images array from the property or use a placeholder
-  const images = property?.image_url 
-    ? [property.image_url] 
-    : ['/images/placeholder.jpg'];
+  // Define default placeholder image
+  const defaultPlaceholder = '/images/placeholder.jpg';
+  const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjOTA5MDkwIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
   
   useEffect(() => {
-    
-  const fetchPropertyDetails = async () => {
-    try {
-    setLoading(true);
-    
-    console.log("Fetching property with ID:", id); // Add debug log
-    
-    // Fetch property data with explicit headers
-    const { data: propertyData, error: propertyError } = await supabase
-      .from('accommodation')
-      .select('*')
-      .eq('acc_id', id)
-      .single();
-    
-    if (propertyError) {
-      console.error('Property Error Details:', propertyError);
-      throw propertyError;
-    }
-    
-    if (!propertyData) {
-      throw new Error('No property data found');
-    }
-    
-    console.log("Retrieved property data:", propertyData); // Add debug log
-    
-    // Process property data safely
-    let parsedAmenities = [];
-    if (propertyData.amenities) {
+    const fetchPropertyDetails = async () => {
       try {
-        // Try to parse if it's a JSON string
-        parsedAmenities = typeof propertyData.amenities === 'string' ? 
-          JSON.parse(propertyData.amenities) : 
-          propertyData.amenities;
-      } catch (e) {
-        console.warn("Error parsing amenities:", e);
-        // If it's not JSON, split by commas
-        parsedAmenities = String(propertyData.amenities).split(',').map(item => item.trim());
-      }
-    }
-    
-    // Parse payment methods if available
-    let parsedPaymentMethods = [];
-    if (propertyData.payment_methods) {
-      try {
-        parsedPaymentMethods = typeof propertyData.payment_methods === 'string' ?
-          JSON.parse(propertyData.payment_methods) :
-          propertyData.payment_methods;
-      } catch (e) {
-        console.warn("Error parsing payment methods:", e);
-        parsedPaymentMethods = String(propertyData.payment_methods).split(',').map(item => item.trim());
-      }
-    }
-    
-    // Set property data first
-    setProperty({
-      ...propertyData,
-      parsedAmenities,
-      parsedPaymentMethods
-    });
-    
-    // Fetch landlord data 
-    if (propertyData.landlord_id) {
-      try {
-        console.log("Fetching landlord with ID:", propertyData.landlord_id);
-        // Remove .single() and handle the possibly empty array manually
-        const { data: landlordData, error: landlordError } = await supabase
-          .from('users')
+        setLoading(true);
+        
+        console.log("Fetching property with ID:", id);
+        
+        // Fetch property data with explicit headers
+        const { data: propertyData, error: propertyError } = await supabase
+          .from('accommodation')
           .select('*')
-          .eq('auth_id', propertyData.landlord_id);
-          
-        if (landlordError) {
-          console.warn('Landlord Error:', landlordError);
-        } else if (landlordData && landlordData.length > 0) {
-          console.log("Retrieved landlord data:", landlordData[0]);
-          setLandlord(landlordData[0]);
-        } else {
-          console.log("No landlord found with ID:", propertyData.landlord_id);
+          .eq('acc_id', id)
+          .single();
+        
+        if (propertyError) {
+          console.error('Property Error Details:', propertyError);
+          throw propertyError;
         }
-      } catch (landlordFetchError) {
-        console.error('Error fetching landlord details:', landlordFetchError);
+        
+        if (!propertyData) {
+          throw new Error('No property data found');
+        }
+        
+        console.log("Retrieved property data:", propertyData);
+        
+        // Process property data safely
+        let parsedAmenities = [];
+        if (propertyData.amenities) {
+          try {
+            // Try to parse if it's a JSON string
+            parsedAmenities = typeof propertyData.amenities === 'string' ? 
+              JSON.parse(propertyData.amenities) : 
+              propertyData.amenities;
+          } catch (e) {
+            console.warn("Error parsing amenities:", e);
+            // If it's not JSON, split by commas
+            parsedAmenities = String(propertyData.amenities).split(',').map(item => item.trim());
+          }
+        }
+        
+        // Parse payment methods if available
+        let parsedPaymentMethods = [];
+        if (propertyData.payment_methods) {
+          try {
+            parsedPaymentMethods = typeof propertyData.payment_methods === 'string' ?
+              JSON.parse(propertyData.payment_methods) :
+              propertyData.payment_methods;
+          } catch (e) {
+            console.warn("Error parsing payment methods:", e);
+            parsedPaymentMethods = String(propertyData.payment_methods).split(',').map(item => item.trim());
+          }
+        }
+        
+        // Process and validate image URLs
+        const processedImages = processPropertyImages(propertyData);
+        setImages(processedImages);
+        
+        // Set property data first
+        setProperty({
+          ...propertyData,
+          parsedAmenities,
+          parsedPaymentMethods
+        });
+        
+        // Fetch landlord data 
+        if (propertyData.landlord_id) {
+          try {
+            console.log("Fetching landlord with ID:", propertyData.landlord_id);
+            // Remove .single() and handle the possibly empty array manually
+            const { data: landlordData, error: landlordError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('auth_id', propertyData.landlord_id);
+              
+            if (landlordError) {
+              console.warn('Landlord Error:', landlordError);
+            } else if (landlordData && landlordData.length > 0) {
+              console.log("Retrieved landlord data:", landlordData[0]);
+              setLandlord(landlordData[0]);
+            } else {
+              console.log("No landlord found with ID:", propertyData.landlord_id);
+            }
+          } catch (landlordFetchError) {
+            console.error('Error fetching landlord details:', landlordFetchError);
+          }
+        }
       }
-    }
-  }
-  catch(error) {
-    console.error('Error fetching property details:', error);
-    setError(error.message || 'Unknown error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
+      catch(error) {
+        console.error('Error fetching property details:', error);
+        setError(error.message || 'Unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
     
     if (id) {
       fetchPropertyDetails();
     }
   }, [id]);
+
+  // Helper function to process property images
+  const processPropertyImages = (propertyData) => {
+    if (!propertyData || !propertyData.image_url) {
+      return [defaultPlaceholder];
+    }
+    
+    let imageUrls = [];
+    
+    // Handle array of image URLs
+    if (Array.isArray(propertyData.image_url)) {
+      imageUrls = propertyData.image_url.map(url => validateImageUrl(url));
+    }
+    // Handle JSON string array
+    else if (typeof propertyData.image_url === 'string') {
+      try {
+        // Try to parse as JSON if it starts with '[' or '{'
+        if (propertyData.image_url.trim().startsWith('[') || propertyData.image_url.trim().startsWith('{')) {
+          const parsedImages = JSON.parse(propertyData.image_url);
+          imageUrls = Array.isArray(parsedImages) ? 
+            parsedImages.map(url => validateImageUrl(url)) : 
+            [validateImageUrl(propertyData.image_url)];
+        } else {
+          // Just a regular string URL
+          imageUrls = [validateImageUrl(propertyData.image_url)];
+        }
+      } catch (e) {
+        console.warn("Error parsing image URL as JSON:", e);
+        imageUrls = [validateImageUrl(propertyData.image_url)];
+      }
+    }
+    
+    // If no valid images, use placeholder
+    if (imageUrls.length === 0) {
+      imageUrls = [defaultPlaceholder];
+    }
+    
+    return imageUrls;
+  };
+
+  const validateImageUrl = (url) => {
+    if (!url) return defaultPlaceholder;
+    
+    if (typeof url !== 'string') {
+      console.warn(`Invalid image URL (not a string):`, url);
+      return defaultPlaceholder;
+    }
+    
+    // Check if image_url is a relative path that needs a prefix
+    if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('/')) {
+      return `/${url}`;
+    }
+    
+    return url;
+  };
+
+  const handleImageError = (e) => {
+    console.log("Image failed to load, using fallback");
+    e.target.onerror = null; // Prevent infinite loop
+    
+    // Try the default placeholder first
+    e.target.src = defaultPlaceholder;
+    
+    // If the placeholder also fails, use the base64 fallback
+    e.target.onerror = () => {
+      console.log("Placeholder also failed, using base64 fallback");
+      e.target.src = fallbackImage;
+    };
+  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
@@ -156,7 +228,7 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsAppContact = () => {
-    const phoneNumber = landlord?.phone_number || property.landlord_contact || '';
+    const phoneNumber = landlord?.phone_number || property?.landlord_contact || '';
     const formattedPhone = phoneNumber.replace(/\D/g, '');
     
     if (!formattedPhone) {
@@ -276,10 +348,7 @@ const PropertyDetail = () => {
             src={images[currentImageIndex]}
             alt={`Property view ${currentImageIndex + 1}`}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/images/placeholder.jpg';
-            }}
+            onError={handleImageError}
           />
           {images.length > 1 && (
             <>
