@@ -9,7 +9,7 @@ function HeroSection() {
           Welcome to UniStay
         </h1>
         <p className="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-          Find your perfect student accommodation easily. Join thousands of students who've found their ideal home away from home.
+          Find your perfect student accommodation in Port Elizabeth easily. Join thousands of students who've found their ideal home away from home.
         </p>
         
         {/* Stats Section  */}
