@@ -386,7 +386,7 @@ const PropertyDetail = () => {
           <div className="mb-6">
             <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">About this property</h2>
             <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-              {property.description || 'No description provided for this property. Please contact the landlord for more information about this accommodation.'}
+              {property.acc_details || 'No description provided for this property. Please contact the landlord for more information about this accommodation.'}
             </p>
           </div>
 
