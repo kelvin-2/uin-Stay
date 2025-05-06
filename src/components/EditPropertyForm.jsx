@@ -80,12 +80,16 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
   };
 
   const handleCheckboxChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
-    }));
+    setFormData(prev => {
+      const currentValue = Array.isArray(prev[field]) ? prev[field] : [];
+      
+      return {
+        ...prev,
+        [field]: currentValue.includes(value)
+          ? currentValue.filter(item => item !== value)
+          : [...currentValue, value]
+      };
+    });
   };
 
   const handleImageUpload = (e) => {
@@ -218,18 +222,17 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
       }
   
       // Prepare data for Supabase
-      const propertyData = {
-        address: formData.address || null,
-        location: formData.location || null,
-        room_type: formData.roomType || null,
-        amenities: formData.amenities || [],
-        payment_methods: formData.paymentAccepted || [],
-        image_url: imageUrls || [],
-        deposit: parseFloat(formData.depositAmount) || 0,
-        monthly_rent: parseFloat(formData.monthlyRent) || 0,
-        acc_details: formData.accDetails || null,
-        updated_at: new Date()
-      };
+      const [formData, setFormData] = useState({
+        address: property.address || '',
+        location: property.location || '',
+        roomType: property.room_type || '',
+        amenities: Array.isArray(property.amenities) ? property.amenities : [],
+        paymentAccepted: Array.isArray(property.payment_methods) ? property.payment_methods : [],
+        images: [],
+        depositAmount: property.deposit || '',
+        monthlyRent: property.monthly_rent || '',
+        accDetails: property.acc_details || ''
+      });
   
       // Update existing property
       const { data, error: supabaseError } = await supabase
