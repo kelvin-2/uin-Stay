@@ -196,7 +196,6 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
     setSubmitSuccess(false);
   
     try {
-      // Fetch the authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
   
       if (authError || !user) {
@@ -207,34 +206,31 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
   
       // Start with any existing image URLs
       let imageUrls = [...(property.image_url || [])];
-      
+  
       // Filter out removed existing images
-      imageUrls = imageUrls.filter((_, i) => 
+      imageUrls = imageUrls.filter((_, i) =>
         i < previewImages.length && previewImages[i] === imageUrls[i]
       );
-      
+  
       // Upload new images to Supabase if there are any
       if (formData.images.length > 0) {
         const newImageUrls = await uploadImagesToSupabase(formData.images, user.id);
-        // Filter out any failed uploads
         const validNewUrls = newImageUrls.filter(url => url);
         imageUrls = [...imageUrls, ...validNewUrls];
       }
+      
+      const propertyData = {
+        address: formData.address,
+        location: formData.location,
+        room_type: formData.roomType,
+        amenities: formData.amenities,
+        payment_methods: formData.paymentAccepted,
+        deposit: formData.depositAmount,
+        monthly_rent: formData.monthlyRent,
+        acc_details: formData.accDetails,
+        image_url: imageUrls
+      };
   
-      // Prepare data for Supabase
-      const [formData, setFormData] = useState({
-        address: property.address || '',
-        location: property.location || '',
-        roomType: property.room_type || '',
-        amenities: Array.isArray(property.amenities) ? property.amenities : [],
-        paymentAccepted: Array.isArray(property.payment_methods) ? property.payment_methods : [],
-        images: [],
-        depositAmount: property.deposit || '',
-        monthlyRent: property.monthly_rent || '',
-        accDetails: property.acc_details || ''
-      });
-  
-      // Update existing property
       const { data, error: supabaseError } = await supabase
         .from('accommodation')
         .update(propertyData)
@@ -247,9 +243,7 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
       } else {
         setSuccessMessage('Property updated successfully!');
         setSubmitSuccess(true);
-        
-        // Call onSubmit with the updated data
-        onSubmit(property, data ? data[0] : {...property, ...propertyData});
+        onSubmit(property, data ? data[0] : { ...property, ...propertyData });
       }
     } catch (err) {
       console.error('Error updating property:', err);
@@ -258,6 +252,7 @@ const EditPropertyForm = ({ property, onSubmit, onClose }) => {
       setIsSubmitting(false);
     }
   };
+  
 
   return (
     <div className="max-h-[80vh] overflow-y-auto">
