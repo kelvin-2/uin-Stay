@@ -43,7 +43,7 @@ const LandlordNavbar = () => {
 
   // Landlord-specific navigation links
   const navLinks = [
-    { path: "/landlord-dashboard", label: "Dashboard" },
+    
     { path: "/landlord-properties", label: "My Properties" },
     { path: "/help", label: "FAQs / Help" },
   ];
