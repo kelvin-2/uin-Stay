@@ -49,7 +49,7 @@ const AppContent = () => {
         <Route
           path="/landlord-dashboard"
           element={
-              <ManageProperties />
+           <ManageProperties />
           }
         />
         
