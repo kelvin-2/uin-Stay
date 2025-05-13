@@ -7,6 +7,7 @@ function SearchBox({ onSearch }) {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -15,8 +16,8 @@ function SearchBox({ onSearch }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const towns = ["Summerstrand", "Central", "Humewood", "Forest Hill", "Walmer"];
-  const paymentMethods = ["Cash", "Bursary", "NSFAS"];
+  const towns = ["Summerstrand", "Central", "Humewood", "Town"];
+  const paymentMethods = ["Private", "Bursary", "NSFAS"];
 
   const handlePanelClick = (panel) => {
     setActivePanel(activePanel === panel ? null : panel);
@@ -45,45 +46,51 @@ function SearchBox({ onSearch }) {
     setPriceRange((prev) => [prev[0], value]);
   };
 
-  const handleSearchClick = async () => {
+  const handleSearchClick = () => {
+    setIsLoading(true);
+    
+    // Create the search parameters object
     const searchParams = {
       location,
       paymentMethod,
-      priceRange,
+      priceMin: priceRange[0],
+      priceMax: priceRange[1],
+      // Include timestamp for tracking/debugging
+      timestamp: new Date().toISOString()
     };
-
-    try {
-      const response = await fetch('/propertyData.json');
-      if (!response.ok) {
-        throw new Error('Failed to fetch properties');
-      }
-      const allProperties = await response.json();
-
-      const filteredProperties = allProperties.filter((property) => {
-        const matchesLocation = !location || property.location.includes(location);
-        const matchesPayment =
-          !paymentMethod ||
-          (property.paymentMethods && property.paymentMethods.includes(paymentMethod));
-        const matchesPrice =
-          property.price >= priceRange[0] && property.price <= priceRange[1];
-
-        return matchesLocation && matchesPayment && matchesPrice;
-      });
-
-      onSearch({
-        results: filteredProperties,
-        searchParams: searchParams,
-      });
-    } catch (error) {
-      onSearch({
-        results: [],
-        error: error.message,
-        searchParams: searchParams,
-      });
+    
+    // Log the parameters being sent (for debugging)
+    console.log('Search parameters:', searchParams);
+    
+    // Pass parameters to parent component
+    if (typeof onSearch === 'function') {
+      onSearch(searchParams);
     }
-
+    
+    // Reset UI state
+    setIsLoading(false);
     setActivePanel(null);
   };
+
+  // Debug function to help visualize parameters
+  const logCurrentParameters = () => {
+    console.log('Current search parameters:', {
+      location,
+      paymentMethod,
+      priceMin: priceRange[0],
+      priceMax: priceRange[1]
+    });
+  };
+  
+  // Add this debug button to your UI when developing
+  const debugButton = process.env.NODE_ENV === 'development' && (
+    <button 
+      onClick={logCurrentParameters}
+      className="text-sm text-gray-500 underline mt-2"
+    >
+      Debug: Show Current Parameters
+    </button>
+  );
 
   if (isMobile) {
     return (
@@ -220,27 +227,44 @@ function SearchBox({ onSearch }) {
 
               <button
                 onClick={handleSearchClick}
-                className="w-full mt-6 p-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                disabled={isLoading}
+                className="w-full mt-6 p-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center disabled:bg-blue-300"
               >
-                <Search className="w-5 h-5 mr-2" />
-                <span>Search</span>
+                {isLoading ? (
+                  "Searching..."
+                ) : (
+                  <>
+                    <Search className="w-5 h-5 mr-2" />
+                    <span>Search</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={handleSearchClick}
-            className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center"
-          >
-            <Search className="w-5 h-5 mr-2" />
-            <span>Search</span>
-          </button>
+          <>
+            <button
+              onClick={handleSearchClick}
+              disabled={isLoading}
+              className="w-full p-4 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition-colors flex items-center justify-center disabled:bg-blue-300"
+            >
+              {isLoading ? (
+                "Searching..."
+              ) : (
+                <>
+                  <Search className="w-5 h-5 mr-2" />
+                  <span>Search</span>
+                </>
+              )}
+            </button>
+            {debugButton}
+          </>
         )}
       </div>
     );
   }
 
-  // Desktop version remains unchanged
+  // Desktop version
   return (
     <div className="relative w-full max-w-4xl mx-auto p-4">
       {activePanel && (
@@ -299,9 +323,14 @@ function SearchBox({ onSearch }) {
 
           <button
             onClick={handleSearchClick}
-            className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors"
+            disabled={isLoading}
+            className="px-6 h-full rounded-r-full bg-blue-500 hover:bg-blue-600 transition-colors disabled:bg-blue-300 flex items-center"
           >
-            <Search className="w-5 h-5 text-white" />
+            {isLoading ? (
+              <span className="text-white text-sm">Searching...</span>
+            ) : (
+              <Search className="w-5 h-5 text-white" />
+            )}
           </button>
         </div>
       </div>
@@ -393,6 +422,7 @@ function SearchBox({ onSearch }) {
           </div>
         </div>
       )}
+      {debugButton}
     </div>
   );
 }

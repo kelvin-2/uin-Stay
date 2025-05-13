@@ -1,134 +1,235 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Wallet, Home, Heart, Clock, Shield, Wifi } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import PropertyCard from "./PropertyCard";
+import supabase from "../supabaseClient";
+import { Home, AlertCircle } from 'lucide-react';
 
-const SearchResults = ({ results = [], loading = false, error = null }) => {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6">
-        {[1, 2, 3, 4].map((index) => (
-          <div key={index} className="bg-white rounded-2xl overflow-hidden animate-pulse shadow-sm">
-            <div className="h-52 bg-gray-200" />
-            <div className="p-5 space-y-4">
-              <div className="h-6 bg-gray-200 rounded-full w-3/4" />
-              <div className="h-4 bg-gray-200 rounded-full w-1/2" />
-              <div className="h-4 bg-gray-200 rounded-full w-full" />
-              <div className="flex gap-2">
-                <div className="h-8 bg-gray-200 rounded-full w-1/3" />
-                <div className="h-8 bg-gray-200 rounded-full w-1/3" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+function SearchResults({ searchParams }) {
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [favorites, setFavorites] = useState({});
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [searchPerformed, setSearchPerformed] = useState(false);
 
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <div className="bg-red-50 p-6 rounded-2xl inline-block shadow-sm">
-          <p className="text-red-600 font-medium">Error: {error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-3 px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
+  const defaultPlaceholder = '/images/placeholder.jpg';
+  const fallbackImage = 'data:image/svg+xml;base64,...'; // shortened for readability
+
+  useEffect(() => {
+    if (searchParams) {
+      handleSearch(searchParams);
+    } else {
+      loadAllProperties(); // default
+    }
+  }, [searchParams]);
+  
+  const loadAllProperties = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('accommodation')
+        .select('*')
+        .limit(50);
+
+      if (error) throw error;
+
+      const processedData = (data || []).map(processPropertyData);
+
+      setSearchResults(processedData);
+      setCurrentImageIndex(initializeImageIndices(processedData));
+    } catch (err) {
+      console.error("Error loading properties:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = async (searchParams) => {
+    setIsLoading(true);
+    setError(null);
+    setSearchPerformed(true);
+
+    try {
+      let query = supabase.from('accommodation').select('*');
+
+      if (searchParams.location?.trim()) {
+        query = query.ilike('location', `%${searchParams.location.trim()}%`);
+      }
+      if (searchParams.paymentMethod?.trim()) {
+        query = query.ilike('payment_methods', `%${searchParams.paymentMethod.trim()}%`);
+      }
+      if (
+        Array.isArray(searchParams.priceRange) &&
+        (searchParams.priceRange[0] != null || searchParams.priceRange[1] != null)
+      ) {
+        if (searchParams.priceRange[0] != null) {
+          query = query.gte('monthly_rent', searchParams.priceRange[0]);
+        }
+        if (searchParams.priceRange[1] != null) {
+          query = query.lte('monthly_rent', searchParams.priceRange[1]);
+        }
+      }
+
+      const { data, error: queryError } = await query;
+      if (queryError) throw new Error(`Search error: ${queryError.message}`);
+
+      const processedData = (data || []).map(processPropertyData);
+      setSearchResults(processedData);
+      setCurrentImageIndex(initializeImageIndices(processedData));
+    } catch (err) {
+      console.error("Error searching properties:", err);
+      setError(err.message);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeImageIndices = (properties) => {
+    const indices = {};
+    properties.forEach((prop) => {
+      indices[prop.id] = 0;
+    });
+    return indices;
+  };
+
+  const validateImageUrl = (url) => {
+    if (!url) return defaultPlaceholder;
+    if (typeof url !== 'string') return defaultPlaceholder;
+    if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('/')) {
+      return `/${url}`;
+    }
+    return url;
+  };
+
+  const processPropertyData = (rawProp) => {
+    let parsedAmenities = [];
+    if (rawProp.amenities) {
+      try {
+        parsedAmenities = typeof rawProp.amenities === 'string'
+          ? JSON.parse(rawProp.amenities)
+          : rawProp.amenities;
+      } catch {
+        parsedAmenities = rawProp.amenities.split(',').map((a) => a.trim());
+      }
+    }
+
+    let parsedPaymentMethods = [];
+    if (rawProp.payment_methods) {
+      try {
+        parsedPaymentMethods = typeof rawProp.payment_methods === 'string'
+          ? JSON.parse(rawProp.payment_methods)
+          : rawProp.payment_methods;
+      } catch {
+        parsedPaymentMethods = rawProp.payment_methods.split(',').map((p) => p.trim());
+      }
+    }
+
+    let imageUrls = [];
+    if (Array.isArray(rawProp.image_url)) {
+      imageUrls = rawProp.image_url.map(validateImageUrl);
+    } else if (typeof rawProp.image_url === 'string') {
+      try {
+        const parsed = JSON.parse(rawProp.image_url);
+        imageUrls = Array.isArray(parsed)
+          ? parsed.map(validateImageUrl)
+          : [validateImageUrl(rawProp.image_url)];
+      } catch {
+        imageUrls = rawProp.image_url.includes(',')
+          ? rawProp.image_url.split(',').map((url) => validateImageUrl(url.trim()))
+          : [validateImageUrl(rawProp.image_url)];
+      }
+    }
+
+    if (imageUrls.length === 0) {
+      imageUrls = [defaultPlaceholder];
+    }
+
+    return {
+      ...rawProp,
+      id: rawProp.acc_id,
+      parsedAmenities,
+      parsedPaymentMethods,
+      imageUrls,
+    };
+  };
+
+  const handleImageChange = (propertyId, direction) => {
+    setCurrentImageIndex((prev) => {
+      const property = searchResults.find((p) => p.id === propertyId);
+      if (!property?.imageUrls || property.imageUrls.length <= 1) return prev;
+
+      const currentIndex = prev[propertyId] || 0;
+      const totalImages = property.imageUrls.length;
+      const newIndex = direction === 'next'
+        ? (currentIndex + 1) % totalImages
+        : (currentIndex - 1 + totalImages) % totalImages;
+
+      return { ...prev, [propertyId]: newIndex };
+    });
+  };
+
+  const handleImageError = (propertyId) => {
+    setCurrentImageIndex((prev) => ({ ...prev, [propertyId]: 0 }));
+    setSearchResults((prev) =>
+      prev.map((prop) =>
+        prop.id === propertyId
+          ? { ...prop, imageUrls: [fallbackImage] }
+          : prop
+      )
     );
-  }
+  };
+
+  const toggleFavorite = (propertyId) => {
+    setFavorites((prev) => ({ ...prev, [propertyId]: !prev[propertyId] }));
+  };
 
   return (
-    <div className="w-full mx-auto">
-      {/* Search Results Header */}
-      <div className="bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Search Results</h2>
-          <p className="text-gray-600">Showing {results.length} properties</p>
-        </div>
-      </div>
+    <div className="relative -mt-10 mb-10">
+      <div className="mx-auto max-w-6xl px-4">
+        {isLoading && (
+          <div className="text-center py-8">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-r-transparent" />
+            <p className="mt-2 text-gray-600">Loading properties...</p>
+          </div>
+        )}
 
-      {/* Search Results Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6 mt-11">
-        {results.map((property) => (
-          <Link 
-            to={`/property/${property.id}`}
-            key={property.id} 
-            className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 relative group transform hover:-translate-y-1 cursor-pointer"
-          >
-            {/* Favorite Button */}
-            <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300 opacity-0 group-hover:opacity-100 z-10">
-              <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
-            </button>
+        {error && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-lg mt-4 flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium">Error searching properties</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
 
-            {/* Image Container */}
-            <div className="relative overflow-hidden">
-              <img
-                src={property.image}
-                alt={property.name}
-                className="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-300 cursor-pointer"
+        {!isLoading && !error && searchResults.length === 0 && searchPerformed && (
+          <div className="text-center py-8 text-gray-500">
+            <Home className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">No Properties Found</h3>
+            <p>Try adjusting your search criteria.</p>
+          </div>
+        )}
+
+        {!isLoading && searchResults.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchResults.map((property) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                currentImageIndex={currentImageIndex[property.id] || 0}
+                isFavorite={favorites[property.id] || false}
+                onImageChange={handleImageChange}
+                onFavoriteToggle={toggleFavorite}
+                onImageError={() => handleImageError(property.id)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-lg">
-                <div className="flex items-center gap-1.5">
-                  <Home className="w-4 h-4" />
-                  {property.type || 'Accommodation'}
-                </div>
-              </div>
-            </div>
-
-            {/* Content Container */}
-            <div className="p-5 cursor-pointer">
-              {/* Price and Features */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg font-bold text-gray-900">R{property.price.toLocaleString()}</span>
-                  <span className="text-gray-500 text-sm">/month</span>
-                </div>
-                <div className="flex gap-2">
-                  <Wifi className="w-4 h-4 text-blue-500" title="WiFi Available" />
-                  <Shield className="w-4 h-4 text-blue-500" title="24/7 Security" />
-                </div>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">{property.name}</h3>
-
-              {/* Location */}
-              <div className="flex items-center gap-1.5 text-gray-500 mb-4">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm line-clamp-1">{property.location}</span>
-              </div>
-
-              {/* Walking Time */}
-              <div className="flex items-center gap-1.5 text-gray-500 mb-4">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm">10 min walk to campus</span>
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-100 my-4" />
-
-              {/* Payment Methods */}
-              <div className="flex flex-wrap gap-3">
-                {property.paymentMethods?.map((method, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-full"
-                  >
-                    <Wallet className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm text-blue-700 font-medium">{method}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Link>
-        ))}
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
-};
+}
 
 export default SearchResults;
