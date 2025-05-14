@@ -46,31 +46,49 @@ function SearchBox({ onSearch }) {
     setPriceRange((prev) => [prev[0], value]);
   };
 
-  const handleSearchClick = () => {
-    setIsLoading(true);
-    
-    // Create the search parameters object
+  
+
+  const handleSearchClick = async () => {
     const searchParams = {
       location,
       paymentMethod,
-      priceMin: priceRange[0],
-      priceMax: priceRange[1],
-      // Include timestamp for tracking/debugging
-      timestamp: new Date().toISOString()
+      priceRange,
     };
-    
-    // Log the parameters being sent (for debugging)
-    console.log('Search parameters:', searchParams);
-    
-    // Pass parameters to parent component
-    if (typeof onSearch === 'function') {
-      onSearch(searchParams);
+  
+    try {
+      let query = supabase
+        .from('accommodation')
+        .select('*')
+        .gte('monthly_rent', priceRange[0])
+        .lte('monthly_rent', priceRange[1]);
+  
+      if (location) {
+        query = query.ilike('location', `%${location}%`);
+      }
+  
+      if (paymentMethod) {
+        query = query.ilike('payment_methods', `%${paymentMethod}%`);
+      }
+  
+      const { data, error } = await query;
+  
+      if (error) throw error;
+  
+      onSearch({
+        results: data,
+        searchParams: searchParams,
+      });
+    } catch (error) {
+      onSearch({
+        results: [],
+        error: error.message,
+        searchParams: searchParams,
+      });
     }
-    
-    // Reset UI state
-    setIsLoading(false);
+  
     setActivePanel(null);
   };
+  
 
   // Debug function to help visualize parameters
   const logCurrentParameters = () => {

@@ -25,7 +25,7 @@ function HomePage() {
   return (
     <div className="w-full mx-auto">
       <HeroSection/>
-      <div className="relative -mt-6 sm:-mt-10 mb-8 sm:mb-10">
+      {/* <div className="relative -mt-6 sm:-mt-10 mb-8 sm:mb-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="bg-blue rounded-xl shadow-xl p-3 sm:p-4">
             <SearchBox 
@@ -36,7 +36,7 @@ function HomePage() {
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {searchResults ? (
