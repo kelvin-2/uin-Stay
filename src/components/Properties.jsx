@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi, 
-  CreditCard, GraduationCap, BadgeDollarSign, ImageOff,
-  ChevronLeft, ChevronRight
+  MapPin, Home, Heart, Clock, Shield, Wifi, 
+  ImageOff, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import supabase from '../supabaseClient'; 
+import SearchBox from './SearchBox';
+import { PaymentOptions } from './property-card/PaymentOptions';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -134,20 +135,6 @@ const Properties = () => {
     }
     
     return url;
-  };
-
-  const getPaymentMethodIcon = (method) => {
-    if (!method) return <DollarSign className="w-3 h-3 text-gray-600" />;
-    
-    const methodLower = method.toLowerCase();
-    if (methodLower.includes('cash')) return <Wallet className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) 
-      return <CreditCard className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('bursary')) 
-      return <GraduationCap className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('nsfas')) 
-      return <BadgeDollarSign className="w-3 h-3 text-gray-600" />;
-    return <DollarSign className="w-3 h-3 text-gray-600" />;
   };
 
   const toggleFavorite = (e, id) => {
@@ -435,32 +422,8 @@ const Properties = () => {
                     )}
                   </div>
 
-                  {/* Payment Methods */}
-                  {accommodation.parsedPaymentMethods && accommodation.parsedPaymentMethods.length > 0 && (
-                    <>
-                      {/* Payment Methods Header */}
-                      <div className="mb-2">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Options</span>
-                      </div>
-
-                      {/* Payment Methods List */}
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {accommodation.parsedPaymentMethods.slice(0, 3).map((method, index) => (
-                          <div key={`payment-${index}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full">
-                            {getPaymentMethodIcon(method)}
-                            <span className="text-xs text-gray-700">{method}</span>
-                          </div>
-                        ))}
-                        
-                        {/* Show additional payment methods count if more than 3 */}
-                        {accommodation.parsedPaymentMethods.length > 3 && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full">
-                            <span className="text-xs text-gray-700">+{accommodation.parsedPaymentMethods.length - 3} more</span>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                  {/* Payment Methods - Using the PaymentOptions component */}
+                  <PaymentOptions methods={accommodation.parsedPaymentMethods} />
 
                   {/* CTA Button */}
                   <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2 rounded-lg transition-colors duration-300 mt-1">
