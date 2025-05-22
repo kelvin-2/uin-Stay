@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MapPin, Home, Heart, Clock, Shield, Wifi, 
-  ImageOff, ChevronLeft, ChevronRight
+  ImageOff
 } from 'lucide-react';
 import supabase from '../supabaseClient'; 
 import SearchBox from './SearchBox';
 import { PaymentOptions } from './property-card/PaymentOptions';
+import { ImageSection } from './property-card/ImageSection';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -173,18 +174,8 @@ const Properties = () => {
   };
 
   // Function to handle image loading errors
-  const handleImageError = (e, propertyId) => {
+  const handleImageError = (propertyId) => {
     console.log("Image failed to load, using fallback");
-    e.target.onerror = null; // Prevent infinite loop
-    
-    // Try the default placeholder first
-    e.target.src = defaultPlaceholder;
-    
-    // If the placeholder also fails, use the base64 fallback
-    e.target.onerror = () => {
-      console.log("Placeholder also failed, using base64 fallback");
-      e.target.src = fallbackImage;
-    };
     
     // Reset the current image index for this property
     setCurrentImageIndex(prev => ({
@@ -311,55 +302,12 @@ const Properties = () => {
 
                 {/* Image Container */}
                 <div className="relative overflow-hidden">
-                  {/* Images */}
-                  <div className="relative w-full h-48 overflow-hidden">
-                    {accommodation.imageUrls && accommodation.imageUrls.length > 0 ? (
-                      <>
-                        <img
-                          src={accommodation.imageUrls[currentImageIndex[accommodation.acc_id] || 0]}
-                          alt={`${accommodation.address || 'Property'}`}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          onError={(e) => handleImageError(e, accommodation.acc_id)}
-                        />
-                        
-                        {/* Image navigation buttons (only if multiple images) */}
-                        {accommodation.imageUrls.length > 1 && (
-                          <>
-                            {/* Image counter */}
-                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                              {(currentImageIndex[accommodation.acc_id] || 0) + 1}/{accommodation.imageUrls.length}
-                            </div>
-                            
-                            {/* Previous button */}
-                            <button 
-                              onClick={(e) => navigateImages(e, accommodation.acc_id, 'prev')}
-                              className="absolute top-1/2 left-2 transform -translate-y-1/2 p-1 bg-black/30 hover:bg-black/50 rounded-full transition-colors"
-                            >
-                              <ChevronLeft className="w-4 h-4 text-white" />
-                            </button>
-                            
-                            {/* Next button */}
-                            <button 
-                              onClick={(e) => navigateImages(e, accommodation.acc_id, 'next')}
-                              className="absolute top-1/2 right-2 transform -translate-y-1/2 p-1 bg-black/30 hover:bg-black/50 rounded-full transition-colors"
-                            >
-                              <ChevronRight className="w-4 h-4 text-white" />
-                            </button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <div className="text-center p-4">
-                          <ImageOff className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500">No image available</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
+                  <ImageSection 
+                    imageUrls={accommodation.imageUrls}
+                    currentIndex={currentImageIndex[accommodation.acc_id] || 0}
+                    onNavigate={(e, direction) => navigateImages(e, accommodation.acc_id, direction)}
+                    onError={() => handleImageError(accommodation.acc_id)}
+                  />
                 </div>
 
                 {/* Content */}
