@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  MapPin, Wallet, Home, DollarSign, Heart, Clock, Shield, Wifi, 
-  CreditCard, GraduationCap, BadgeDollarSign, ImageOff,
-  ChevronLeft, ChevronRight
+  MapPin, Home, Heart, Clock, Shield, Wifi, 
+  ImageOff
 } from 'lucide-react';
 import supabase from '../supabaseClient'; 
+import SearchBox from './SearchBox';
+import SearchFilter from './SearchFilter'; // Import the new SearchFilter component
+import { PaymentOptions } from './property-card/PaymentOptions';
+import { ImageSection } from './property-card/ImageSection';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [activeFilters, setActiveFilters] = useState({});
   
   // Default placeholder - ensure this asset exists in your public directory
   const defaultPlaceholder = '/images/placeholder.jpg'; 
@@ -107,6 +112,7 @@ const Properties = () => {
         });
         
         setProperties(processedData || []);
+        setFilteredProperties(processedData || []);
       }
       catch(error) {
         console.error('Error fetching properties', error);
@@ -118,6 +124,41 @@ const Properties = () => {
     
     fetchProperties();
   }, []);
+
+  // Filter properties based on active filters
+  useEffect(() => {
+    let filtered = [...properties];
+
+    // Filter by payment method
+    if (activeFilters.paymentMethod) {
+      filtered = filtered.filter(property => {
+        if (!property.parsedPaymentMethods || property.parsedPaymentMethods.length === 0) {
+          return false;
+        }
+        return property.parsedPaymentMethods.some(method => 
+          method.toLowerCase().includes(activeFilters.paymentMethod.toLowerCase())
+        );
+      });
+    }
+
+    // Filter by location
+    if (activeFilters.location) {
+      filtered = filtered.filter(property => {
+        const location = property.location || '';
+        return location.toLowerCase().includes(activeFilters.location.toLowerCase());
+      });
+    }
+
+    // Filter by price range
+    if (activeFilters.priceRange) {
+      filtered = filtered.filter(property => {
+        const rent = property.monthly_rent || 0;
+        return rent >= activeFilters.priceRange.min && rent <= activeFilters.priceRange.max;
+      });
+    }
+
+    setFilteredProperties(filtered);
+  }, [properties, activeFilters]);
   
   // Helper function to validate and format image URLs
   const validateImageUrl = (url) => {
@@ -134,20 +175,6 @@ const Properties = () => {
     }
     
     return url;
-  };
-
-  const getPaymentMethodIcon = (method) => {
-    if (!method) return <DollarSign className="w-3 h-3 text-gray-600" />;
-    
-    const methodLower = method.toLowerCase();
-    if (methodLower.includes('cash')) return <Wallet className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) 
-      return <CreditCard className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('bursary')) 
-      return <GraduationCap className="w-3 h-3 text-gray-600" />;
-    if (methodLower.includes('nsfas')) 
-      return <BadgeDollarSign className="w-3 h-3 text-gray-600" />;
-    return <DollarSign className="w-3 h-3 text-gray-600" />;
   };
 
   const toggleFavorite = (e, id) => {
@@ -186,18 +213,8 @@ const Properties = () => {
   };
 
   // Function to handle image loading errors
-  const handleImageError = (e, propertyId) => {
+  const handleImageError = (propertyId) => {
     console.log("Image failed to load, using fallback");
-    e.target.onerror = null; // Prevent infinite loop
-    
-    // Try the default placeholder first
-    e.target.src = defaultPlaceholder;
-    
-    // If the placeholder also fails, use the base64 fallback
-    e.target.onerror = () => {
-      console.log("Placeholder also failed, using base64 fallback");
-      e.target.src = fallbackImage;
-    };
     
     // Reset the current image index for this property
     setCurrentImageIndex(prev => ({
@@ -213,6 +230,11 @@ const Properties = () => {
           : prop
       )
     );
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters) => {
+    setActiveFilters(newFilters);
   };
 
   if (loading) {
@@ -295,196 +317,160 @@ const Properties = () => {
         </Link>
       </div>
       
-      {properties.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((accommodation) => (
-            <div key={accommodation.acc_id} className="group relative">
-              <Link 
-                to={`/property/${accommodation.acc_id}`}
-                className="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 relative transform hover:-translate-y-1"
-              >
-                {/* Status Badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                    {accommodation.status === 'booked' ? 'Booked' : 'Available Now'}
-                  </span>
-                </div>
-
-                {/* Favorite Button */}
-                <button 
-                  onClick={(e) => toggleFavorite(e, accommodation.acc_id)}
-                  className="absolute top-3 right-3 z-10 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-300"
+      {/* Search Filter Component */}
+      <SearchFilter 
+        onFilterChange={handleFilterChange} 
+        activeFilters={activeFilters}
+      />
+      
+      {filteredProperties.length > 0 ? (
+        <>
+          {/* Results Count */}
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Showing {filteredProperties.length} of {properties.length} properties
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProperties.map((accommodation) => (
+              <div key={accommodation.acc_id} className="group relative">
+                <Link 
+                  to={`/property/${accommodation.acc_id}`}
+                  className="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 relative transform hover:-translate-y-1"
                 >
-                  <Heart 
-                    className={`w-4 h-4 ${
-                      favorites[accommodation.acc_id] ? 'fill-red-500 text-red-500' : 'text-gray-600'
-                    }`} 
-                  />
-                </button>
-
-                {/* Image Container */}
-                <div className="relative overflow-hidden">
-                  {/* Images */}
-                  <div className="relative w-full h-48 overflow-hidden">
-                    {accommodation.imageUrls && accommodation.imageUrls.length > 0 ? (
-                      <>
-                        <img
-                          src={accommodation.imageUrls[currentImageIndex[accommodation.acc_id] || 0]}
-                          alt={`${accommodation.address || 'Property'}`}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          onError={(e) => handleImageError(e, accommodation.acc_id)}
-                        />
-                        
-                        {/* Image navigation buttons (only if multiple images) */}
-                        {accommodation.imageUrls.length > 1 && (
-                          <>
-                            {/* Image counter */}
-                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                              {(currentImageIndex[accommodation.acc_id] || 0) + 1}/{accommodation.imageUrls.length}
-                            </div>
-                            
-                            {/* Previous button */}
-                            <button 
-                              onClick={(e) => navigateImages(e, accommodation.acc_id, 'prev')}
-                              className="absolute top-1/2 left-2 transform -translate-y-1/2 p-1 bg-black/30 hover:bg-black/50 rounded-full transition-colors"
-                            >
-                              <ChevronLeft className="w-4 h-4 text-white" />
-                            </button>
-                            
-                            {/* Next button */}
-                            <button 
-                              onClick={(e) => navigateImages(e, accommodation.acc_id, 'next')}
-                              className="absolute top-1/2 right-2 transform -translate-y-1/2 p-1 bg-black/30 hover:bg-black/50 rounded-full transition-colors"
-                            >
-                              <ChevronRight className="w-4 h-4 text-white" />
-                            </button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <div className="text-center p-4">
-                          <ImageOff className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500">No image available</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  {/* Title */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                    {accommodation.location || 'Town'}
-                  </h3>
-
-                  {/* Address */}
-                  <div className="flex items-start gap-1.5 text-gray-600 mb-3">
-                    <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs line-clamp-2">{accommodation.address || 'Address not specified'}</span>
+                  {/* Status Badge */}
+                  <div className="absolute top-3 left-3 z-10">
+                    <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                      {accommodation.status === 'booked' ? 'Booked' : 'Available Now'}
+                    </span>
                   </div>
 
-                  {/* Price with Deposit Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <span className="text-lg font-bold text-gray-900">
-                        R{accommodation.monthly_rent ? accommodation.monthly_rent.toLocaleString() : '2,500'}
-                      </span>
-                      <span className="text-sm text-gray-500">/month</span>
-                    </div>
-                    
-                    {/* Deposit Badge */}
-                    {accommodation.deposit > 0 && (
-                      <div className="bg-amber-50 text-amber-700 text-xs font-medium px-2 py-1 rounded-lg border border-amber-200">
-                        R{accommodation.deposit.toLocaleString()} deposit
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Features */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
-                      <Home className="w-5 h-5 text-gray-700 mb-1" />
-                      <span className="text-xs text-gray-700">{accommodation.room_type || 'Studio'}</span>
-                    </div>
-                    {accommodation.parsedAmenities && accommodation.parsedAmenities.includes('Security') ? (
-                      <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
-                        <Shield className="w-5 h-5 text-gray-700 mb-1" />
-                        <span className="text-xs text-gray-700">Secure</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
-                        <Clock className="w-5 h-5 text-gray-700 mb-1" />
-                        <span className="text-xs text-gray-700">24/7</span>
-                      </div>
-                    )}
-                    {accommodation.parsedAmenities && accommodation.parsedAmenities.includes('Wi-Fi') ? (
-                      <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
-                        <Wifi className="w-5 h-5 text-gray-700 mb-1" />
-                        <span className="text-xs text-gray-700">WiFi</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
-                        <Wifi className="w-5 h-5 text-gray-700 mb-1" />
-                        <span className="text-xs text-gray-700">WiFi</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment Methods */}
-                  {accommodation.parsedPaymentMethods && accommodation.parsedPaymentMethods.length > 0 && (
-                    <>
-                      {/* Payment Methods Header */}
-                      <div className="mb-2">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Options</span>
-                      </div>
-
-                      {/* Payment Methods List */}
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {accommodation.parsedPaymentMethods.slice(0, 3).map((method, index) => (
-                          <div key={`payment-${index}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full">
-                            {getPaymentMethodIcon(method)}
-                            <span className="text-xs text-gray-700">{method}</span>
-                          </div>
-                        ))}
-                        
-                        {/* Show additional payment methods count if more than 3 */}
-                        {accommodation.parsedPaymentMethods.length > 3 && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full">
-                            <span className="text-xs text-gray-700">+{accommodation.parsedPaymentMethods.length - 3} more</span>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {/* CTA Button */}
-                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2 rounded-lg transition-colors duration-300 mt-1">
-                    View Details
+                  {/* Favorite Button */}
+                  <button 
+                    onClick={(e) => toggleFavorite(e, accommodation.acc_id)}
+                    className="absolute top-3 right-3 z-10 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all duration-300"
+                  >
+                    <Heart 
+                      className={`w-4 h-4 ${
+                        favorites[accommodation.acc_id] ? 'fill-red-500 text-red-500' : 'text-gray-600'
+                      }`} 
+                    />
                   </button>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+
+                  {/* Image Container */}
+                  <div className="relative overflow-hidden">
+                    <ImageSection 
+                      imageUrls={accommodation.imageUrls}
+                      currentIndex={currentImageIndex[accommodation.acc_id] || 0}
+                      onNavigate={(e, direction) => navigateImages(e, accommodation.acc_id, direction)}
+                      onError={() => handleImageError(accommodation.acc_id)}
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4">
+                    {/* Title */}
+                    <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      {accommodation.location || 'Town'}
+                    </h3>
+
+                    {/* Address */}
+                    <div className="flex items-start gap-1.5 text-gray-600 mb-3">
+                      <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs line-clamp-2">{accommodation.address || 'Address not specified'}</span>
+                    </div>
+
+                    {/* Price with Deposit Badge */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <span className="text-lg font-bold text-gray-900">
+                          R{accommodation.monthly_rent ? accommodation.monthly_rent.toLocaleString() : '2,500'}
+                        </span>
+                        <span className="text-sm text-gray-500">/month</span>
+                      </div>
+                      
+                      {/* Deposit Badge */}
+                      {accommodation.deposit > 0 && (
+                        <div className="bg-amber-50 text-amber-700 text-xs font-medium px-2 py-1 rounded-lg border border-amber-200">
+                          R{accommodation.deposit.toLocaleString()} deposit
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Features */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
+                        <Home className="w-5 h-5 text-gray-700 mb-1" />
+                        <span className="text-xs text-gray-700">{accommodation.room_type || 'Studio'}</span>
+                      </div>
+                      {accommodation.parsedAmenities && accommodation.parsedAmenities.includes('Security') ? (
+                        <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
+                          <Shield className="w-5 h-5 text-gray-700 mb-1" />
+                          <span className="text-xs text-gray-700">Secure</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
+                          <Clock className="w-5 h-5 text-gray-700 mb-1" />
+                          <span className="text-xs text-gray-700">24/7</span>
+                        </div>
+                      )}
+                      {accommodation.parsedAmenities && accommodation.parsedAmenities.includes('Wi-Fi') ? (
+                        <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
+                          <Wifi className="w-5 h-5 text-gray-700 mb-1" />
+                          <span className="text-xs text-gray-700">WiFi</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg">
+                          <Wifi className="w-5 h-5 text-gray-700 mb-1" />
+                          <span className="text-xs text-gray-700">WiFi</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Payment Methods - Using the PaymentOptions component */}
+                    <PaymentOptions methods={accommodation.parsedPaymentMethods} />
+
+                    {/* CTA Button */}
+                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2 rounded-lg transition-colors duration-300 mt-1">
+                      View Details
+                    </button>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="text-center py-12 rounded-lg bg-gray-50 shadow-sm">
           <Home className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No Properties Available</h3>
-          <p className="text-gray-500">We don't have any featured properties at the moment.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-6 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors inline-flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">
+            {Object.keys(activeFilters).length > 0 ? 'No Properties Match Your Filters' : 'No Properties Available'}
+          </h3>
+          <p className="text-gray-500 mb-4">
+            {Object.keys(activeFilters).length > 0 
+              ? 'Try adjusting your filter criteria to see more results.' 
+              : 'We don\'t have any featured properties at the moment.'
+            }
+          </p>
+          {Object.keys(activeFilters).length > 0 ? (
+            <button 
+              onClick={() => setActiveFilters({})}
+              className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors inline-flex items-center gap-2"
+            >
+              Clear Filters
+            </button>
+          ) : (
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors inline-flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          )}
         </div>
       )}
     </div>
