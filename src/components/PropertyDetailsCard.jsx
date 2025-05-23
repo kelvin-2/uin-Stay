@@ -26,7 +26,9 @@ import {
   Mail
 } from 'lucide-react';
 import supabase from '../supabaseClient';
-import PropertyImageGrid from '../components/PropertyImageGrid'; // Import the PropertyImageGrid component
+import PropertyImageGrid from '../components/PropertyImageGrid';
+import ReactGA from 'react-ga4';
+
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -207,11 +209,30 @@ const PropertyDetail = () => {
       return;
     }
     
+    // Track WhatsApp button click with Google Analytics
+    ReactGA.event({
+      action: 'whatsapp_contact_click',
+      category: 'Property Interaction',
+      label: `Property ID: ${property.acc_id}`,
+      custom_dimension_1: property.acc_id, // property_id
+      custom_dimension_2: property.location || 'Unknown Location', // property_location
+      value: property.monthly_rent || 0
+    });
+    
+    // Also track as conversion if this is a key action
+    ReactGA.event({
+      action: 'contact_landlord',
+      category: 'Conversion',
+      label: `WhatsApp - ${property.location}`,
+      custom_dimension_1: property.acc_id,
+      custom_dimension_2: property.location || 'Unknown Location'
+    });
+    
     const message = `Hi there,
 
-    I came across your property in ${property.location || 'Student Accommodation'} at ${property.address || 'Address not specified'} on uinStay, and it looks like a great fit for me. I’d love to know if it’s still available.
+    I came across your property in ${property.location || 'Student Accommodation'} at ${property.address || 'Address not specified'} on uinStay, and it looks like a great fit for me. I'd love to know if it's still available.
     
-    If possible, I’d also like to arrange a viewing at your convenience. Looking forward to your response!`;
+    If possible, I'd also like to arrange a viewing at your convenience. Looking forward to your response!`;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
     
     // Open WhatsApp in a new tab
