@@ -15,15 +15,28 @@ import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordNavbar from './components/LandlordNavbar';
 import ManageProperties from './pages/MyProperties'
 import PropertyDetail from './components/PropertyDetailsCard';
+import ReactGA from 'react-ga4';
+import { useEffect } from 'react';
 
 // Create a wrapper component to use useAuth hook
 const AppContent = () => {
   const { currentUser } = useAuth();
+  
+  // Initialize Google Analytics
+  useEffect(() => {
+    ReactGA.initialize('G-XDP6NK28JN');
+    ReactGA.set({
+      custom_map: {
+        custom_dimension_1: 'property_id',
+        custom_dimension_2: 'property_location'
+      }
+    });
+  }, []);
+
   console.log("Current User:", currentUser);
 
   return (
     <>
-   
       {currentUser?.role === 'landlord' ? <LandlordNavbar /> : <Navbar />}
       <Routes>
         {/* Public Routes */}
@@ -49,7 +62,9 @@ const AppContent = () => {
         <Route
           path="/landlord-dashboard"
           element={
-           <ManageProperties />
+            <ProtectedRoute>
+              <LandlordDashboard />
+            </ProtectedRoute>
           }
         />
         
@@ -57,10 +72,11 @@ const AppContent = () => {
         <Route
           path="/landlord-properties"
           element={
-            <ManageProperties/>
+            <ProtectedRoute>
+              <ManageProperties/>
+            </ProtectedRoute>
           }
         />
-      
       </Routes>
     </>
   );
