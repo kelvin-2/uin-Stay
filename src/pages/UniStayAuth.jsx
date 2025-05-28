@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
 import supabase from '../supabaseClient';
@@ -14,20 +14,11 @@ const UniStayAuth = () => {
     password: '',
     university: '',
     phone: '',
+   // location: '',
   });
   const [errors, setErrors] = useState({});
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-
-
-  // Clear feedback when switching tabs or user types
-  const clearFeedback = () => {
-    setFeedback({ type: '', message: '' });
-    setErrors({});
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -54,6 +45,7 @@ const UniStayAuth = () => {
           newErrors.university = 'University is required';
         }
         
+        // Add phone validation for students
         if (!formData.phone) {
           newErrors.phone = 'Phone number is required';
         } else if (!/^\+?[0-9]{10,}$/.test(formData.phone)) {
@@ -67,69 +59,17 @@ const UniStayAuth = () => {
         } else if (!/^\+?[0-9]{10,}$/.test(formData.phone)) {
           newErrors.phone = 'Invalid phone number format';
         }
+
+        // if (!formData.location) {
+        //   newErrors.location = 'Location is required';
+        // }
       }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    
-    if (!resetEmail) {
-      setFeedback({ type: 'error', message: 'Please enter your email address' });
-      return;
-    }
-  
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
-      setFeedback({ type: 'error', message: 'Please enter a valid email address' });
-      return;
-    }
-  
-    setLoading(true);
-    clearFeedback();
-  
-    try {
-      setFeedback({ type: 'info', message: 'Sending password reset email...' });
-  
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`, // You'll need this page
-      });
-  
-      if (error) {
-        if (error.message.includes('rate limit')) {
-          throw new Error('Too many requests. Please wait before trying again.');
-        }
-        throw error;
-      }
-  
-      setFeedback({ 
-        type: 'success', 
-        message: 'Password reset email sent! Check your inbox and follow the instructions.' 
-      });
-      
-      // Clear the email field
-      setResetEmail('');
-      
-      // Switch back to login after 3 seconds
-      setTimeout(() => {
-        setShowForgotPassword(false);
-        setActiveTab('login');
-        setFeedback({ type: 'info', message: 'Check your email for reset instructions' });
-      }, 3000);
-  
-    } catch (error) {
-      console.error('Password reset error:', error);
-      setFeedback({ 
-        type: 'error', 
-        message: error.message || 'Failed to send reset email. Please try again.' 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({
@@ -142,38 +82,22 @@ const UniStayAuth = () => {
         [id]: ''
       }));
     }
-    // Clear feedback when user starts typing
-    if (feedback.message) {
-      setFeedback({ type: '', message: '' });
-    }
   };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
     setLoading(true);
-    clearFeedback();
+    setErrors({});
     
     try {
-      setFeedback({ type: 'info', message: 'Signing you in...' });
-      
       // Step 1: Sign in the user
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
       
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before signing in.');
-        } else if (error.message.includes('Too many requests')) {
-          throw new Error('Too many login attempts. Please wait a moment before trying again.');
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       // Get user ID from the authentication response
       const userId = data.user?.id;
@@ -181,18 +105,22 @@ const UniStayAuth = () => {
         throw new Error("Unable to retrieve user information after login.");
       }
       
-      setFeedback({ type: 'info', message: 'Verifying your account...' });
+      console.log("Auth ID retrieved:", userId);
       
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Brief pause for better UX
+      await new Promise((resolve) => setTimeout(resolve,2000)); //await 2 seconds
 
       // Add debugging step: Check auth session
       const { data: sessionData } = await supabase.auth.getSession();
+      console.log("Current session:", sessionData);
 
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
         .eq("auth_id", userId)
         .maybeSingle();
+      
+      console.log("Query result:", userData);
+      console.log("Query error:", userError);
       
       if (userError) {
         console.error("Database query error:", userError);
@@ -201,6 +129,7 @@ const UniStayAuth = () => {
       
       // Check if user data exists
       if (!userData) {
+        // Try an alternative approach - fetch with email instead of auth_id
         console.log("User not found with auth_id, trying email lookup");
         const userEmail = data.user?.email;
         
@@ -210,23 +139,29 @@ const UniStayAuth = () => {
           .eq("email", userEmail)
           .maybeSingle();
           
+        console.log("Email lookup result:", emailLookup);
+        
         if (emailLookup) {
           console.log("Found user by email instead of auth_id!");
+          // This indicates a mismatch between auth_id in Auth and users table
+          // We should proceed with this user, but log the issue
+          console.warn("auth_id mismatch - Auth:", userId, "DB user:", emailLookup);
           
-          // Update the auth_id in the database to match
-          const { error: updateError } = await supabase
-            .from("users")
-            .update({ auth_id: userId })
-            .eq("email", userEmail);
-            
-          if (updateError) {
-            console.error("Failed to update auth_id:", updateError);
+          // Option: Update the auth_id in the database to match
+          if (confirm("System detected a user account issue. Would you like to repair it?")) {
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ auth_id: userId })
+              .eq("email", userEmail);
+              
+            console.log("Auth ID update result:", updateError ? "Failed" : "Success");
           }
           
-          // Use the email-found user data
+          // Proceed with the email-found user data
           userData = emailLookup;
         } else {
-          throw new Error("User profile not found. Please sign up first or contact support.");
+          console.error("User not found in database for auth_id:", userId);
+          throw new Error("User profile not found. Please sign up first.");
         }
       }
       
@@ -235,8 +170,6 @@ const UniStayAuth = () => {
         throw new Error("User role not defined. Please contact support.");
       }
       
-      setFeedback({ type: 'success', message: `Welcome back, ${userData.full_name || 'User'}!` });
-      
       // Step 3: Store user data and login
       const userRole = userData.role;
       localStorage.setItem("userRole", userRole);
@@ -244,9 +177,6 @@ const UniStayAuth = () => {
       
       // Update auth context
       login(userRole);
-      
-      // Brief delay to show success message
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       
       // Step 4: Redirect based on role
       if (userRole === "landlord") {
@@ -257,12 +187,11 @@ const UniStayAuth = () => {
         navigate("/");
       }
       
+      console.log("Login successful:", userRole);
+      
     } catch (error) {
       console.error("Login error:", error.message);
-      setFeedback({ 
-        type: 'error', 
-        message: error.message || "Login failed. Please try again." 
-      });
+      setErrors({ auth: error.message || "Login failed. Please try again." });
       
       // Optionally sign out if login was partially successful but profile fetch failed
       const { data } = await supabase.auth.getSession();
@@ -274,16 +203,16 @@ const UniStayAuth = () => {
     }
   };
 
+  const [signupMessage, setSignupMessage] = useState('');
+
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
     setLoading(true);
-    clearFeedback();
+    setErrors({});
+    setSignupMessage('');
 
     try {
-      setFeedback({ type: 'info', message: 'Creating your account...' });
-      
       // 1. Check public.users table with proper headers
       const { data: existingPublicUser, error: publicLookupError } = await supabase
         .from('users')
@@ -293,10 +222,8 @@ const UniStayAuth = () => {
 
       if (publicLookupError) throw publicLookupError;
       if (existingPublicUser) {
-        throw new Error('This email is already registered. Please try logging in instead.');
+        throw new Error('This email is already registered in our system');
       }
-
-      setFeedback({ type: 'info', message: 'Setting up your authentication...' });
 
       // 2. Attempt signup
       const { data: signupData, error: signupError } = await supabase.auth.signUp({
@@ -313,8 +240,6 @@ const UniStayAuth = () => {
       // 3. Handle user already exists case
       if (signupError) {
         if (signupError.message.includes('already registered')) {
-          setFeedback({ type: 'info', message: 'Account exists, trying to complete setup...' });
-          
           // Try to sign in to verify
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email: formData.email,
@@ -322,7 +247,7 @@ const UniStayAuth = () => {
           });
 
           if (signInError) {
-            throw new Error('An account with this email exists but the password is incorrect. Please try logging in or reset your password.');
+            throw new Error('Account exists but password is incorrect. Try resetting your password.');
           }
 
           // Check if user exists in public.users
@@ -346,26 +271,14 @@ const UniStayAuth = () => {
               created_at: new Date().toISOString()
             }]);
 
-            setFeedback({ type: 'success', message: 'Account setup completed successfully! Redirecting...' });
+            setSignupMessage('Registration completed successfully!');
             login(userType);
-            
-            await new Promise((resolve) => setTimeout(resolve, 1500));
             navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
             return;
           }
 
-          throw new Error('This email is already fully registered. Please log in instead.');
+          throw new Error('This email is already fully registered');
         }
-        
-        // Handle other signup errors
-        if (signupError.message.includes('Password should be at least')) {
-          throw new Error('Password must be at least 6 characters long.');
-        } else if (signupError.message.includes('Unable to validate email')) {
-          throw new Error('Please enter a valid email address.');
-        } else if (signupError.message.includes('rate limit')) {
-          throw new Error('Too many requests. Please wait a moment before trying again.');
-        }
-        
         throw signupError;
       }
 
@@ -374,8 +287,6 @@ const UniStayAuth = () => {
       if (!userId) {
         throw new Error('User creation failed - no user ID returned');
       }
-
-      setFeedback({ type: 'info', message: 'Finalizing your profile...' });
 
       // Insert into public.users
       const { error: insertError } = await supabase.from('users').insert([{
@@ -388,40 +299,16 @@ const UniStayAuth = () => {
         created_at: new Date().toISOString()
       }]);
 
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        throw new Error('Failed to create user profile. Please try again.');
-      }
+      if (insertError) throw insertError;
 
       // 5. Handle email confirmation case
       if (signupData.user && !signupData.session) {
-        setFeedback({ 
-          type: 'success', 
-          message: 'Account created successfully! Please check your email for a confirmation link before signing in.' 
-        });
-        
-        // Clear the form
-        setFormData({
-          fullName: '',
-          email: '',
-          password: '',
-          university: '',
-          phone: '',
-        });
-        
-        // Switch to login tab after showing success message
-        setTimeout(() => {
-          setActiveTab('login');
-          setFeedback({ type: 'info', message: 'Please confirm your email, then log in.' });
-        }, 3000);
+        setSignupMessage('Confirmation email sent! Please check your inbox.');
         return;
       }
 
       // 6. Login and redirect if no confirmation needed
-      setFeedback({ type: 'success', message: `Welcome to UniStay, ${formData.fullName}! Redirecting...` });
       login(userType);
-      
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
 
     } catch (error) {
@@ -432,63 +319,21 @@ const UniStayAuth = () => {
       
       if (error.message.includes('already registered') || 
           error.message.includes('already exists')) {
-        errorMessage = 'This email is already registered. Please log in instead.';
+        errorMessage = 'This email is already registered. Please log in.';
       } else if (error.message.includes('password is incorrect')) {
-        errorMessage = 'An account exists with this email but the password is incorrect. Try logging in or reset your password.';
+        errorMessage = 'Account exists but password is incorrect';
       } else if (error.message.includes('406')) {
         errorMessage = 'Invalid request format. Please contact support.';
       } else if (error.message.includes('email')) {
-        errorMessage = 'Please enter a valid email address.';
+        errorMessage = 'Please enter a valid email address';
       } else if (error.message.includes('Password')) {
-        errorMessage = 'Password must be at least 6 characters long.';
-      } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = 'Password must be at least 6 characters';
       }
       
-      setFeedback({ type: 'error', message: errorMessage });
+      setErrors({ auth: errorMessage });
     } finally {
       setLoading(false);
     }
-  };
-
-  // Feedback component
-  const FeedbackMessage = ({ type, message, onClose }) => {
-    if (!message) return null;
-
-    const bgColor = {
-      success: 'bg-green-50 border-green-200',
-      error: 'bg-red-50 border-red-200',
-      info: 'bg-blue-50 border-blue-200'
-    };
-
-    const textColor = {
-      success: 'text-green-800',
-      error: 'text-red-800',
-      info: 'text-blue-800'
-    };
-
-    const Icon = {
-      success: CheckCircle,
-      error: AlertCircle,
-      info: AlertCircle
-    };
-
-    const IconComponent = Icon[type];
-
-    return (
-      <div className={`p-3 rounded-lg border flex items-start gap-3 ${bgColor[type]}`}>
-        <IconComponent className={`h-5 w-5 mt-0.5 flex-shrink-0 ${textColor[type]}`} />
-        <p className={`text-sm flex-1 ${textColor[type]}`}>{message}</p>
-        {onClose && type !== 'info' && (
-          <button 
-            onClick={onClose}
-            className={`${textColor[type]} hover:opacity-70`}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    );
   };
   
   return (
@@ -512,10 +357,7 @@ const UniStayAuth = () => {
                 {/* User Type Selection */}
                 <div className="flex gap-4 justify-center mb-6">
                   <button
-                    onClick={() => {
-                      setUserType('student');
-                      clearFeedback();
-                    }}
+                    onClick={() => setUserType('student')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'student'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -526,10 +368,7 @@ const UniStayAuth = () => {
                     Student
                   </button>
                   <button
-                    onClick={() => {
-                      setUserType('landlord');
-                      clearFeedback();
-                    }}
+                    onClick={() => setUserType('landlord')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'landlord'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -545,10 +384,7 @@ const UniStayAuth = () => {
                 <div className="w-full">
                   <div className="flex rounded-lg bg-blue-50 p-1">
                     <button
-                      onClick={() => {
-                        setActiveTab('login');
-                        clearFeedback();
-                      }}
+                      onClick={() => setActiveTab('login')}
                       className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
                         activeTab === 'login' ? 'bg-blue-600 text-white' : 'text-blue-600'
                       }`}
@@ -556,10 +392,7 @@ const UniStayAuth = () => {
                       Login
                     </button>
                     <button
-                      onClick={() => {
-                        setActiveTab('signup');
-                        clearFeedback();
-                      }}
+                      onClick={() => setActiveTab('signup')}
                       className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
                         activeTab === 'signup' ? 'bg-blue-600 text-white' : 'text-blue-600'
                       }`}
@@ -568,138 +401,51 @@ const UniStayAuth = () => {
                     </button>
                   </div>
 
-                  {/* Feedback Message */}
-                  {feedback.message && (
-                    <div className="mt-4">
-                      <FeedbackMessage 
-                        type={feedback.type} 
-                        message={feedback.message}
-                        onClose={() => setFeedback({ type: '', message: '' })}
-                      />
-                    </div>
-                  )}
-
                   {/* Login Form */}
                   {activeTab === 'login' && (
-                    <div className="mt-4">
-                      {showForgotPassword ? (
-                        <form onSubmit={handleForgotPassword} className="space-y-4">
-                          <div className="text-center mb-4">
-                            <h3 className="text-lg font-medium text-blue-900">Reset Password</h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Enter your email address and we'll send you a reset link
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label htmlFor="resetEmail" className="block text-sm font-medium text-blue-900">
-                              Email
-                            </label>
-                            <div className="relative">
-                              <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                              <input
-                                id="resetEmail"
-                                type="email"
-                                placeholder="name@example.com"
-                                value={resetEmail}
-                                onChange={(e) => setResetEmail(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <button
-                              type="submit"
-                              disabled={loading}
-                              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {loading ? "Sending..." : "Send Reset Email"}
-                            </button>
-                            
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowForgotPassword(false);
-                                setResetEmail('');
-                                clearFeedback();
-                              }}
-                              className="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                            >
-                              Back to Login
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <form onSubmit={handleLoginSubmit} className="space-y-4">
-                          <div className="space-y-2">
-                            <label htmlFor="email" className="block text-sm font-medium text-blue-900">
-                              Email
-                            </label>
-                            <div className="relative">
-                              <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                              <input
-                                id="email"
-                                type="email"
-                                placeholder="name@example.com"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.email ? 'border-red-300' : 'border-blue-200'
-                                }`}
-                              />
-                              {errors.email && (
-                                <p className="text-red-600 text-xs mt-1">{errors.email}</p>
-                              )}
-                            </div>
-                          </div>
+                    <form onSubmit={handleLoginSubmit} className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="block text-sm font-medium text-blue-900">
+                          Email
+                        </label>
+                        <div className="relative">
+                          <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                          <input
+                            id="email"
+                            type="email"
+                            placeholder="name@example.com"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
 
-                          <div className="space-y-2">
-                            <label htmlFor="password" className="block text-sm font-medium text-blue-900">
-                              Password
-                            </label>
-                            <div className="relative">
-                              <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                              <input
-                                id="password"
-                                type="password"
-                                placeholder="Enter your password"
-                                value={formData.password}
-                                onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.password ? 'border-red-300' : 'border-blue-200'
-                                }`}
-                              />
-                              {errors.password && (
-                                <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                              )}
-                            </div>
-                          </div>
+                      <div className="space-y-2">
+                        <label htmlFor="password" className="block text-sm font-medium text-blue-900">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                          <input
+                            id="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
 
-                          <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {loading ? "Signing in..." : "Sign in"}
-                          </button>
-                          
-                          {/* Forgot Password Link */}
-                          <div className="mt-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowForgotPassword(true);
-                                clearFeedback();
-                              }}
-                              className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
-                            >
-                              Forgot your password?
-                            </button>
-                          </div>
-                        </form>
-                      )}
-                    </div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
+                      >
+                        {loading ? "Signing in..." : "Sign in"}
+                      </button>
+                    </form>
                   )}
 
                   {/* Signup Form */}
@@ -717,13 +463,8 @@ const UniStayAuth = () => {
                             placeholder="John Doe"
                             value={formData.fullName}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.fullName ? 'border-red-300' : 'border-blue-200'
-                            }`}
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                           />
-                          {errors.fullName && (
-                            <p className="text-red-600 text-xs mt-1">{errors.fullName}</p>
-                          )}
                         </div>
                       </div>
 
@@ -739,13 +480,8 @@ const UniStayAuth = () => {
                             placeholder="name@example.com"
                             value={formData.email}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.email ? 'border-red-300' : 'border-blue-200'
-                            }`}
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                           />
-                          {errors.email && (
-                            <p className="text-red-600 text-xs mt-1">{errors.email}</p>
-                          )}
                         </div>
                       </div>
 
@@ -763,13 +499,8 @@ const UniStayAuth = () => {
                                 placeholder="Your University"
                                 value={formData.university}
                                 onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.university ? 'border-red-300' : 'border-blue-200'
-                                }`}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                               />
-                              {errors.university && (
-                                <p className="text-red-600 text-xs mt-1">{errors.university}</p>
-                              )}
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -784,40 +515,48 @@ const UniStayAuth = () => {
                                 placeholder="+44 123 456 7890"
                                 value={formData.phone}
                                 onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.phone ? 'border-red-300' : 'border-blue-200'
-                                }`}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                               />
-                              {errors.phone && (
-                                <p className="text-red-600 text-xs mt-1">{errors.phone}</p>
-                              )}
                             </div>
                           </div>
                         </>
                       )}
 
                       {userType === 'landlord' && (
-                        <div className="space-y-2">
-                          <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
-                            Phone Number (WhatsApp)
-                          </label>
-                          <div className="relative">
-                            <Phone className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                            <input
-                              id="phone"
-                              type="tel"
-                              placeholder="+44 123 456 7890"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                              className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                errors.phone ? 'border-red-300' : 'border-blue-200'
-                              }`}
-                            />
-                            {errors.phone && (
-                              <p className="text-red-600 text-xs mt-1">{errors.phone}</p>
-                            )}
+                        <>
+                          <div className="space-y-2">
+                            <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
+                              Phone Number (WhatsApp)
+                            </label>
+                            <div className="relative">
+                              <Phone className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="phone"
+                                type="tel"
+                                placeholder="+44 123 456 7890"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                              />
+                            </div>
                           </div>
-                        </div>
+                          {/* <div className="space-y-2">
+                            <label htmlFor="location" className="block text-sm font-medium text-blue-900">
+                              Primary Location
+                            </label>
+                            <div className="relative">
+                              <MapPin className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="location"
+                                type="text"
+                                placeholder="City"
+                                value={formData.location}
+                                onChange={handleInputChange}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                              />
+                            </div>
+                          </div> */}
+                        </>
                       )}
 
                       <div className="space-y-2">
@@ -832,20 +571,27 @@ const UniStayAuth = () => {
                             placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.password ? 'border-red-300' : 'border-blue-200'
-                            }`}
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                           />
-                          {errors.password && (
-                            <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                          )}
                         </div>
                       </div>
+
+                      {errors.auth && (
+                        <div className="p-3 text-sm bg-red-50 text-red-700 rounded-md">
+                          {errors.auth}
+                        </div>
+                      )}
+
+                      {signupMessage && (
+                        <div className="p-3 text-sm bg-green-50 text-green-700 rounded-md">
+                          {signupMessage}
+                        </div>
+                      )}
 
                       <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
                       >
                         {loading ? "Creating account..." : "Create account"}
                       </button>
