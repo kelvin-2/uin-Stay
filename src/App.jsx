@@ -65,7 +65,7 @@ const AppContent = () => {
           path="/landlord-dashboard"
           element={
             <ProtectedRoute>
-              <LandlordDashboard />
+              <ManageProperties />
             </ProtectedRoute>
           }
         />
