@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin } from 'lucide-react';
+import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
 import supabase from '../supabaseClient';
@@ -16,9 +16,15 @@ const UniStayAuth = () => {
     phone: '',
   });
   const [errors, setErrors] = useState({});
-  const [signupMessage, setSignupMessage] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
+
+  // Clear feedback when switching tabs or user types
+  const clearFeedback = () => {
+    setFeedback({ type: '', message: '' });
+    setErrors({});
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -36,26 +42,26 @@ const UniStayAuth = () => {
     }
 
     if (activeTab === 'signup') {
-      if (!formData.fullName?.trim()) {
+      if (!formData.fullName) {
         newErrors.fullName = 'Full name is required';
       }
 
       if (userType === 'student') {
-        if (!formData.university?.trim()) {
+        if (!formData.university) {
           newErrors.university = 'University is required';
         }
         
-        if (!formData.phone?.trim()) {
+        if (!formData.phone) {
           newErrors.phone = 'Phone number is required';
-        } else if (!/^\+?[0-9\s\-\(\)]{10,}$/.test(formData.phone.replace(/\s/g, ''))) {
+        } else if (!/^\+?[0-9]{10,}$/.test(formData.phone)) {
           newErrors.phone = 'Invalid phone number format';
         }
       }
 
       if (userType === 'landlord') {
-        if (!formData.phone?.trim()) {
+        if (!formData.phone) {
           newErrors.phone = 'Phone number is required';
-        } else if (!/^\+?[0-9\s\-\(\)]{10,}$/.test(formData.phone.replace(/\s/g, ''))) {
+        } else if (!/^\+?[0-9]{10,}$/.test(formData.phone)) {
           newErrors.phone = 'Invalid phone number format';
         }
       }
@@ -77,31 +83,51 @@ const UniStayAuth = () => {
         [id]: ''
       }));
     }
+    // Clear feedback when user starts typing
+    if (feedback.message) {
+      setFeedback({ type: '', message: '' });
+    }
   };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
     setLoading(true);
-    setErrors({});
+    clearFeedback();
     
     try {
+      setFeedback({ type: 'info', message: 'Signing you in...' });
+      
+      // Step 1: Sign in the user
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email,
         password: formData.password,
       });
       
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the confirmation link before signing in.');
+        } else if (error.message.includes('Too many requests')) {
+          throw new Error('Too many login attempts. Please wait a moment before trying again.');
+        }
+        throw error;
+      }
       
+      // Get user ID from the authentication response
       const userId = data.user?.id;
       if (!userId) {
         throw new Error("Unable to retrieve user information after login.");
       }
       
-      console.log("Auth ID retrieved:", userId);
+      setFeedback({ type: 'info', message: 'Verifying your account...' });
       
-      // Wait for session to be established
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Brief pause for better UX
+
+      // Add debugging step: Check auth session
+      const { data: sessionData } = await supabase.auth.getSession();
 
       const { data: userData, error: userError } = await supabase
         .from("users")
@@ -114,9 +140,11 @@ const UniStayAuth = () => {
         throw new Error("Database error: " + userError.message);
       }
       
+      // Check if user data exists
       if (!userData) {
-        // Fallback to email lookup
+        console.log("User not found with auth_id, trying email lookup");
         const userEmail = data.user?.email;
+        
         const { data: emailLookup, error: emailError } = await supabase
           .from("users")
           .select("*")
@@ -124,30 +152,44 @@ const UniStayAuth = () => {
           .maybeSingle();
           
         if (emailLookup) {
-          console.log("Found user by email, updating auth_id");
+          console.log("Found user by email instead of auth_id!");
+          
+          // Update the auth_id in the database to match
           const { error: updateError } = await supabase
             .from("users")
             .update({ auth_id: userId })
             .eq("email", userEmail);
             
-          if (!updateError) {
-            userData = { ...emailLookup, auth_id: userId };
+          if (updateError) {
+            console.error("Failed to update auth_id:", updateError);
           }
+          
+          // Use the email-found user data
+          userData = emailLookup;
         } else {
-          throw new Error("User profile not found. Please sign up first.");
+          throw new Error("User profile not found. Please sign up first or contact support.");
         }
       }
       
-      if (!userData?.role) {
+      // Ensure role exists
+      if (!userData.role) {
         throw new Error("User role not defined. Please contact support.");
       }
       
+      setFeedback({ type: 'success', message: `Welcome back, ${userData.full_name || 'User'}!` });
+      
+      // Step 3: Store user data and login
       const userRole = userData.role;
       localStorage.setItem("userRole", userRole);
       localStorage.setItem("userName", userData.full_name || '');
       
+      // Update auth context
       login(userRole);
       
+      // Brief delay to show success message
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      // Step 4: Redirect based on role
       if (userRole === "landlord") {
         navigate("/landlord-dashboard");
       } else if (userRole === "student") {
@@ -156,15 +198,16 @@ const UniStayAuth = () => {
         navigate("/");
       }
       
-      console.log("Login successful:", userRole);
-      
     } catch (error) {
       console.error("Login error:", error.message);
-      setErrors({ auth: error.message || "Login failed. Please try again." });
+      setFeedback({ 
+        type: 'error', 
+        message: error.message || "Login failed. Please try again." 
+      });
       
-      // Clean up on error
+      // Optionally sign out if login was partially successful but profile fetch failed
       const { data } = await supabase.auth.getSession();
-      if (data?.session) {
+      if (data && data.session) {
         await supabase.auth.signOut();
       }
     } finally {
@@ -172,192 +215,222 @@ const UniStayAuth = () => {
     }
   };
 
-// Replace your handleSignupSubmit function with this enhanced version
-const handleSignupSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-  setLoading(true);
-  setErrors({});
-  setSignupMessage('');
-
-  try {
-    const emailLower = formData.email.trim().toLowerCase();
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
     
-    console.log('Starting signup process for:', { userType, email: emailLower });
-    
-    // 1. Check if user already exists in public.users table
-    const { data: existingPublicUser, error: publicLookupError } = await supabase
-      .from('users')
-      .select('auth_id, email')
-      .eq('email', emailLower)
-      .maybeSingle();
+    setLoading(true);
+    clearFeedback();
 
-    if (publicLookupError && publicLookupError.code !== 'PGRST116') {
-      console.error('Database lookup error:', publicLookupError);
-      throw new Error('Database connection error. Please try again.');
-    }
+    try {
+      setFeedback({ type: 'info', message: 'Creating your account...' });
+      
+      // 1. Check public.users table with proper headers
+      const { data: existingPublicUser, error: publicLookupError } = await supabase
+        .from('users')
+        .select('auth_id')
+        .eq('email', formData.email)
+        .maybeSingle();
 
-    if (existingPublicUser) {
-      throw new Error('This email is already registered. Please log in instead.');
-    }
+      if (publicLookupError) throw publicLookupError;
+      if (existingPublicUser) {
+        throw new Error('This email is already registered. Please try logging in instead.');
+      }
 
-    // 2. Attempt to create auth user with minimal metadata
-    console.log('Creating auth user...');
-    const { data: signupData, error: signupError } = await supabase.auth.signUp({
-      email: emailLower,
-      password: formData.password,
-      options: {
-        data: {
-          full_name: formData.fullName.trim(),
-          user_type: userType
+      setFeedback({ type: 'info', message: 'Setting up your authentication...' });
+
+      // 2. Attempt signup
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            user_type: userType
+          }
         }
-      }
-    });
-
-    if (signupError) {
-      console.error('Auth signup error:', {
-        message: signupError.message,
-        status: signupError.status,
-        userType: userType
       });
+
+      // 3. Handle user already exists case
+      if (signupError) {
+        if (signupError.message.includes('already registered')) {
+          setFeedback({ type: 'info', message: 'Account exists, trying to complete setup...' });
+          
+          // Try to sign in to verify
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (signInError) {
+            throw new Error('An account with this email exists but the password is incorrect. Please try logging in or reset your password.');
+          }
+
+          // Check if user exists in public.users
+          const { data: userInPublicTable } = await supabase
+            .from('users')
+            .select('auth_id')
+            .eq('email', formData.email)
+            .single();
+
+          if (!userInPublicTable) {
+            // Complete registration in public.users
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            await supabase.from('users').insert([{
+              auth_id: user.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              role: userType,
+              university: formData.university || null,
+              phone_number: formData.phone || null,
+              created_at: new Date().toISOString()
+            }]);
+
+            setFeedback({ type: 'success', message: 'Account setup completed successfully! Redirecting...' });
+            login(userType);
+            
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
+            return;
+          }
+
+          throw new Error('This email is already fully registered. Please log in instead.');
+        }
+        
+        // Handle other signup errors
+        if (signupError.message.includes('Password should be at least')) {
+          throw new Error('Password must be at least 6 characters long.');
+        } else if (signupError.message.includes('Unable to validate email')) {
+          throw new Error('Please enter a valid email address.');
+        } else if (signupError.message.includes('rate limit')) {
+          throw new Error('Too many requests. Please wait a moment before trying again.');
+        }
+        
+        throw signupError;
+      }
+
+      // 4. Handle new user creation
+      const userId = signupData.user?.id;
+      if (!userId) {
+        throw new Error('User creation failed - no user ID returned');
+      }
+
+      setFeedback({ type: 'info', message: 'Finalizing your profile...' });
+
+      // Insert into public.users
+      const { error: insertError } = await supabase.from('users').insert([{
+        auth_id: userId,
+        full_name: formData.fullName,
+        email: formData.email,
+        role: userType,
+        university: formData.university || null,
+        phone_number: formData.phone || null,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw new Error('Failed to create user profile. Please try again.');
+      }
+
+      // 5. Handle email confirmation case
+      if (signupData.user && !signupData.session) {
+        setFeedback({ 
+          type: 'success', 
+          message: 'Account created successfully! Please check your email for a confirmation link before signing in.' 
+        });
+        
+        // Clear the form
+        setFormData({
+          fullName: '',
+          email: '',
+          password: '',
+          university: '',
+          phone: '',
+        });
+        
+        // Switch to login tab after showing success message
+        setTimeout(() => {
+          setActiveTab('login');
+          setFeedback({ type: 'info', message: 'Please confirm your email, then log in.' });
+        }, 3000);
+        return;
+      }
+
+      // 6. Login and redirect if no confirmation needed
+      setFeedback({ type: 'success', message: `Welcome to UniStay, ${formData.fullName}! Redirecting...` });
+      login(userType);
       
-      if (signupError.message.includes('already registered') || 
-          signupError.message.includes('already exists')) {
-        throw new Error('This email is already registered. Please log in instead.');
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
+
+    } catch (error) {
+      console.error('Signup error:', error);
+      
+      // User-friendly error messages
+      let errorMessage = 'Signup failed. Please try again.';
+      
+      if (error.message.includes('already registered') || 
+          error.message.includes('already exists')) {
+        errorMessage = 'This email is already registered. Please log in instead.';
+      } else if (error.message.includes('password is incorrect')) {
+        errorMessage = 'An account exists with this email but the password is incorrect. Try logging in or reset your password.';
+      } else if (error.message.includes('406')) {
+        errorMessage = 'Invalid request format. Please contact support.';
+      } else if (error.message.includes('email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
-      throw new Error(signupError.message || 'Authentication signup failed. Please try again.');
+      setFeedback({ type: 'error', message: errorMessage });
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const userId = signupData.user?.id;
-    if (!userId) {
-      throw new Error('User creation failed - no user ID returned');
-    }
+  // Feedback component
+  const FeedbackMessage = ({ type, message, onClose }) => {
+    if (!message) return null;
 
-    console.log('Auth user created successfully:', userId);
-
-    // 3. Create user profile with detailed logging
-    const userProfile = {
-      auth_id: userId,
-      full_name: formData.fullName.trim(),
-      email: emailLower,
-      role: userType, // This should be either 'student' or 'landlord'
-      university: userType === 'student' ? (formData.university?.trim() || null) : null,
-      phone_number: formData.phone?.trim() || null,
-      created_at: new Date().toISOString()
+    const bgColor = {
+      success: 'bg-green-50 border-green-200',
+      error: 'bg-red-50 border-red-200',
+      info: 'bg-blue-50 border-blue-200'
     };
 
-    console.log('Attempting to insert user profile:', {
-      ...userProfile,
-      auth_id: '[UUID]' // Don't log the actual UUID
-    });
+    const textColor = {
+      success: 'text-green-800',
+      error: 'text-red-800',
+      info: 'text-blue-800'
+    };
 
-    const { data: insertData, error: insertError } = await supabase
-      .from('users')
-      .insert([userProfile])
-      .select(); // Add select to get the inserted data back
+    const Icon = {
+      success: CheckCircle,
+      error: AlertCircle,
+      info: AlertCircle
+    };
 
-    if (insertError) {
-      console.error('Profile creation error details:', {
-        message: insertError.message,
-        code: insertError.code,
-        details: insertError.details,
-        hint: insertError.hint,
-        userType: userType,
-        profileData: {
-          ...userProfile,
-          auth_id: '[UUID]'
-        }
-      });
-      
-      // Clean up auth user if profile creation fails
-      try {
-        await supabase.auth.signOut();
-        console.log('Cleaned up auth user after profile creation failure');
-      } catch (cleanupError) {
-        console.error('Cleanup error:', cleanupError);
-      }
-      
-      if (insertError.code === '23505') { // Unique constraint violation
-        throw new Error('This email is already registered. Please log in instead.');
-      }
-      
-      if (insertError.code === '42501') { // Insufficient privilege
-        throw new Error('Permission denied. Please check your account permissions.');
-      }
-      
-      if (insertError.code === '23502') { // NOT NULL violation
-        throw new Error(`Required field missing: ${insertError.details || 'Unknown field'}`);
-      }
-      
-      if (insertError.code === '23514') { // Check constraint violation
-        throw new Error(`Invalid data format: ${insertError.details || 'Please check your information'}`);
-      }
-      
-      throw new Error(`Profile creation failed: ${insertError.message}`);
-    }
+    const IconComponent = Icon[type];
 
-    console.log('User profile created successfully:', insertData);
-
-    // 4. Handle email confirmation requirement
-    if (signupData.user && !signupData.session) {
-      setSignupMessage('Please check your email for a confirmation link to complete your registration.');
-      return;
-    }
-
-    // 5. Auto-login if no confirmation needed
-    localStorage.setItem("userRole", userType);
-    localStorage.setItem("userName", formData.fullName.trim());
-    login(userType);
-    
-    const redirectPath = userType === 'landlord' ? '/landlord-dashboard' : '/';
-    navigate(redirectPath);
-
-  } catch (error) {
-    console.error('Complete signup error details:', {
-      message: error.message,
-      stack: error.stack,
-      userType: userType,
-      timestamp: new Date().toISOString()
-    });
-    
-    let errorMessage = 'Signup failed. Please try again.';
-    
-    if (error.message.includes('Permission denied')) {
-      errorMessage = 'Account creation is temporarily disabled. Please contact support.';
-    } else if (error.message.includes('already registered') || 
-        error.message.includes('already exists')) {
-      errorMessage = 'This email is already registered. Please log in instead.';
-    } else if (error.message.includes('Invalid email')) {
-      errorMessage = 'Please enter a valid email address.';
-    } else if (error.message.includes('Password')) {
-      errorMessage = 'Password must be at least 6 characters long.';
-    } else if (error.message.includes('rate limit')) {
-      errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
-    } else if (error.message.includes('Database connection')) {
-      errorMessage = 'Database connection error. Please check your internet and try again.';
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    setErrors({ auth: errorMessage });
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Reset form when switching between login/signup or user types
-  React.useEffect(() => {
-    setFormData({
-      fullName: '',
-      email: '',
-      password: '',
-      university: '',
-      phone: '',
-    });
-    setErrors({});
-    setSignupMessage('');
-  }, [activeTab, userType]);
+    return (
+      <div className={`p-3 rounded-lg border flex items-start gap-3 ${bgColor[type]}`}>
+        <IconComponent className={`h-5 w-5 mt-0.5 flex-shrink-0 ${textColor[type]}`} />
+        <p className={`text-sm flex-1 ${textColor[type]}`}>{message}</p>
+        {onClose && type !== 'info' && (
+          <button 
+            onClick={onClose}
+            className={`${textColor[type]} hover:opacity-70`}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    );
+  };
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -380,7 +453,10 @@ const handleSignupSubmit = async (e) => {
                 {/* User Type Selection */}
                 <div className="flex gap-4 justify-center mb-6">
                   <button
-                    onClick={() => setUserType('student')}
+                    onClick={() => {
+                      setUserType('student');
+                      clearFeedback();
+                    }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'student'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -391,7 +467,10 @@ const handleSignupSubmit = async (e) => {
                     Student
                   </button>
                   <button
-                    onClick={() => setUserType('landlord')}
+                    onClick={() => {
+                      setUserType('landlord');
+                      clearFeedback();
+                    }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'landlord'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -407,7 +486,10 @@ const handleSignupSubmit = async (e) => {
                 <div className="w-full">
                   <div className="flex rounded-lg bg-blue-50 p-1">
                     <button
-                      onClick={() => setActiveTab('login')}
+                      onClick={() => {
+                        setActiveTab('login');
+                        clearFeedback();
+                      }}
                       className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
                         activeTab === 'login' ? 'bg-blue-600 text-white' : 'text-blue-600'
                       }`}
@@ -415,7 +497,10 @@ const handleSignupSubmit = async (e) => {
                       Login
                     </button>
                     <button
-                      onClick={() => setActiveTab('signup')}
+                      onClick={() => {
+                        setActiveTab('signup');
+                        clearFeedback();
+                      }}
                       className={`flex-1 text-sm font-medium py-2 rounded-md transition-colors ${
                         activeTab === 'signup' ? 'bg-blue-600 text-white' : 'text-blue-600'
                       }`}
@@ -424,17 +509,14 @@ const handleSignupSubmit = async (e) => {
                     </button>
                   </div>
 
-                  {/* Error Display */}
-                  {errors.auth && (
-                    <div className="mt-4 p-3 text-sm bg-red-50 text-red-700 rounded-md">
-                      {errors.auth}
-                    </div>
-                  )}
-
-                  {/* Success Message */}
-                  {signupMessage && (
-                    <div className="mt-4 p-3 text-sm bg-green-50 text-green-700 rounded-md">
-                      {signupMessage}
+                  {/* Feedback Message */}
+                  {feedback.message && (
+                    <div className="mt-4">
+                      <FeedbackMessage 
+                        type={feedback.type} 
+                        message={feedback.message}
+                        onClose={() => setFeedback({ type: '', message: '' })}
+                      />
                     </div>
                   )}
 
@@ -457,10 +539,10 @@ const handleSignupSubmit = async (e) => {
                               errors.email ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
+                          {errors.email && (
+                            <p className="text-red-600 text-xs mt-1">{errors.email}</p>
+                          )}
                         </div>
-                        {errors.email && (
-                          <p className="text-sm text-red-600">{errors.email}</p>
-                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -479,10 +561,10 @@ const handleSignupSubmit = async (e) => {
                               errors.password ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
+                          {errors.password && (
+                            <p className="text-red-600 text-xs mt-1">{errors.password}</p>
+                          )}
                         </div>
-                        {errors.password && (
-                          <p className="text-sm text-red-600">{errors.password}</p>
-                        )}
                       </div>
 
                       <button
@@ -514,10 +596,10 @@ const handleSignupSubmit = async (e) => {
                               errors.fullName ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
+                          {errors.fullName && (
+                            <p className="text-red-600 text-xs mt-1">{errors.fullName}</p>
+                          )}
                         </div>
-                        {errors.fullName && (
-                          <p className="text-sm text-red-600">{errors.fullName}</p>
-                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -536,10 +618,10 @@ const handleSignupSubmit = async (e) => {
                               errors.email ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
+                          {errors.email && (
+                            <p className="text-red-600 text-xs mt-1">{errors.email}</p>
+                          )}
                         </div>
-                        {errors.email && (
-                          <p className="text-sm text-red-600">{errors.email}</p>
-                        )}
                       </div>
 
                       {userType === 'student' && (
@@ -560,10 +642,10 @@ const handleSignupSubmit = async (e) => {
                                   errors.university ? 'border-red-300' : 'border-blue-200'
                                 }`}
                               />
+                              {errors.university && (
+                                <p className="text-red-600 text-xs mt-1">{errors.university}</p>
+                              )}
                             </div>
-                            {errors.university && (
-                              <p className="text-sm text-red-600">{errors.university}</p>
-                            )}
                           </div>
                           <div className="space-y-2">
                             <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
@@ -581,10 +663,10 @@ const handleSignupSubmit = async (e) => {
                                   errors.phone ? 'border-red-300' : 'border-blue-200'
                                 }`}
                               />
+                              {errors.phone && (
+                                <p className="text-red-600 text-xs mt-1">{errors.phone}</p>
+                              )}
                             </div>
-                            {errors.phone && (
-                              <p className="text-sm text-red-600">{errors.phone}</p>
-                            )}
                           </div>
                         </>
                       )}
@@ -606,10 +688,10 @@ const handleSignupSubmit = async (e) => {
                                 errors.phone ? 'border-red-300' : 'border-blue-200'
                               }`}
                             />
+                            {errors.phone && (
+                              <p className="text-red-600 text-xs mt-1">{errors.phone}</p>
+                            )}
                           </div>
-                          {errors.phone && (
-                            <p className="text-sm text-red-600">{errors.phone}</p>
-                          )}
                         </div>
                       )}
 
@@ -622,17 +704,17 @@ const handleSignupSubmit = async (e) => {
                           <input
                             id="password"
                             type="password"
-                            placeholder="Enter your password (min 6 characters)"
+                            placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
                               errors.password ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
+                          {errors.password && (
+                            <p className="text-red-600 text-xs mt-1">{errors.password}</p>
+                          )}
                         </div>
-                        {errors.password && (
-                          <p className="text-sm text-red-600">{errors.password}</p>
-                        )}
                       </div>
 
                       <button
