@@ -1,128 +1,212 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Home, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import supabase from '../supabaseClient';
+import { Lock, CheckCircle, AlertCircle, Home, Eye, EyeOff } from 'lucide-react';
 
 const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
-  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validSession, setValidSession] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user came from password reset email
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const type = hashParams.get('type');
+    // Check if we have valid session from the reset link
+    const checkSession = async () => {
+      try {
+        // First, check if we have the required tokens in URL
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const type = searchParams.get('type');
 
-    if (type !== 'recovery' || !accessToken) {
-      setFeedback({ 
-        type: 'error', 
-        message: 'Invalid reset link. Please request a new password reset.' 
-      });
-    }
-  }, []);
+        if (type === 'recovery' && accessToken && refreshToken) {
+          // Set the session using the tokens from URL
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
 
-  const validateForm = () => {
-    const newErrors = {};
+          if (error) {
+            setMessage({ 
+              type: 'error', 
+              text: 'Invalid or expired reset link. Please request a new password reset.' 
+            });
+            setValidSession(false);
+            return;
+          }
+
+          if (data.session) {
+            setValidSession(true);
+          }
+        } else {
+          // Fallback: check if we already have a valid session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            setMessage({ 
+              type: 'error', 
+              text: 'Invalid or expired reset link. Please request a new password reset.' 
+            });
+            setValidSession(false);
+          } else {
+            setValidSession(true);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        setMessage({ 
+          type: 'error', 
+          text: 'Something went wrong. Please try requesting a password reset again.' 
+        });
+        setValidSession(false);
+      }
+    };
     
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+    checkSession();
+  }, [searchParams]);
 
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+  const validatePassword = (password) => {
+    const errors = [];
+    
+    if (password.length < 6) {
+      errors.push('Password must be at least 6 characters long');
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    if (!/(?=.*[a-z])/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    
+    if (!/(?=.*[A-Z])/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    
+    if (!/(?=.*\d)/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (password !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+    
+    // Enhanced password validation
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      setMessage({ type: 'error', text: passwordErrors[0] });
+      return;
+    }
 
     setLoading(true);
-    setFeedback({ type: '', message: '' });
+    setMessage({ type: '', text: '' });
 
     try {
-      setFeedback({ type: 'info', message: 'Updating your password...' });
-
       const { error } = await supabase.auth.updateUser({
         password: password
       });
 
       if (error) {
         if (error.message.includes('session_not_found')) {
-          throw new Error('Reset link has expired. Please request a new password reset.');
-        } else if (error.message.includes('same_password')) {
-          throw new Error('New password must be different from your current password.');
+          throw new Error('Your session has expired. Please request a new password reset link.');
         }
         throw error;
       }
 
-      setFeedback({ 
+      setMessage({ 
         type: 'success', 
-        message: 'Password updated successfully! Redirecting to login...' 
+        text: 'Password updated successfully! Redirecting to login...' 
       });
 
-      // Clear form
+      // Clear the form
       setPassword('');
       setConfirmPassword('');
 
-      // Redirect to login after 2 seconds
+      // Sign out the user to ensure they log in with new password
+      await supabase.auth.signOut();
+
       setTimeout(() => {
-        navigate('/auth');
+        navigate('/auth', { 
+          state: { message: 'Password reset successful. Please log in with your new password.' }
+        });
       }, 2000);
 
     } catch (error) {
       console.error('Password reset error:', error);
-      setFeedback({ 
+      setMessage({ 
         type: 'error', 
-        message: error.message || 'Failed to update password. Please try again.' 
+        text: error.message || 'Failed to update password. Please try again.' 
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const FeedbackMessage = ({ type, message }) => {
-    if (!message) return null;
+  const handleRequestNewLink = () => {
+    navigate('/auth', { 
+      state: { showForgotPassword: true }
+    });
+  };
 
-    const bgColor = {
-      success: 'bg-green-50 border-green-200',
-      error: 'bg-red-50 border-red-200',
-      info: 'bg-blue-50 border-blue-200'
-    };
-
-    const textColor = {
-      success: 'text-green-800',
-      error: 'text-red-800',
-      info: 'text-blue-800'
-    };
-
-    const Icon = {
-      success: CheckCircle,
-      error: AlertCircle,
-      info: AlertCircle
-    };
-
-    const IconComponent = Icon[type];
-
+  // Loading state while checking session
+  if (validSession === null) {
     return (
-      <div className={`p-3 rounded-lg border flex items-start gap-3 ${bgColor[type]}`}>
-        <IconComponent className={`h-5 w-5 mt-0.5 flex-shrink-0 ${textColor[type]}`} />
-        <p className={`text-sm flex-1 ${textColor[type]}`}>{message}</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Verifying reset link...</p>
+        </div>
       </div>
     );
-  };
+  }
+
+  // Invalid session state
+  if (validSession === false) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-12">
+            <div className="max-w-md mx-auto">
+              <div className="bg-white rounded-xl shadow-lg border border-red-100 overflow-hidden">
+                <div className="p-6 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-red-500/10 p-3 rounded-full">
+                      <AlertCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-red-900 mb-2">Invalid Reset Link</h2>
+                  {message.text && (
+                    <p className="text-red-600 mb-4">{message.text}</p>
+                  )}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleRequestNewLink}
+                      className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                    >
+                      Request New Reset Link
+                    </button>
+                    <button
+                      onClick={() => navigate('/auth')}
+                      className="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Back to Login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -137,15 +221,22 @@ const ResetPassword = () => {
                     <Home className="h-8 w-8 text-blue-600" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-blue-900">Reset Password</h2>
-                <p className="text-blue-600">Enter your new password below</p>
+                <h2 className="text-2xl font-bold text-blue-900">Reset Your Password</h2>
+                <p className="text-blue-600">Enter your new secure password below</p>
               </div>
 
               <div className="p-6">
-                {/* Feedback Message */}
-                {feedback.message && (
-                  <div className="mb-4">
-                    <FeedbackMessage type={feedback.type} message={feedback.message} />
+                {message.text && (
+                  <div className={`p-3 rounded-lg mb-4 flex items-center gap-2 ${
+                    message.type === 'success' 
+                      ? 'bg-green-50 text-green-800 border border-green-200' 
+                      : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}>
+                    {message.type === 'success' ? 
+                      <CheckCircle className="h-5 w-5" /> : 
+                      <AlertCircle className="h-5 w-5" />
+                    }
+                    <span className="text-sm">{message.text}</span>
                   </div>
                 )}
 
@@ -158,18 +249,24 @@ const ResetPassword = () => {
                       <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
                       <input
                         id="password"
-                        type="password"
-                        placeholder="Enter new password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                          errors.password ? 'border-red-300' : 'border-blue-200'
-                        }`}
+                        placeholder="Enter new password"
+                        className="w-full pl-10 pr-12 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                        required
                       />
-                      {errors.password && (
-                        <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-blue-400 hover:text-blue-600"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
+                    <p className="text-xs text-gray-500">
+                      Password must be at least 6 characters with uppercase, lowercase, and number
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -180,17 +277,20 @@ const ResetPassword = () => {
                       <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
                       <input
                         id="confirmPassword"
-                        type="password"
-                        placeholder="Confirm new password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                          errors.confirmPassword ? 'border-red-300' : 'border-blue-200'
-                        }`}
+                        placeholder="Confirm new password"
+                        className="w-full pl-10 pr-12 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                        required
                       />
-                      {errors.confirmPassword && (
-                        <p className="text-red-600 text-xs mt-1">{errors.confirmPassword}</p>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-3 text-blue-400 hover:text-blue-600"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -199,7 +299,7 @@ const ResetPassword = () => {
                     disabled={loading}
                     className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Updating..." : "Update Password"}
+                    {loading ? 'Updating Password...' : 'Update Password'}
                   </button>
                 </form>
 

@@ -48,6 +48,7 @@ const AppContent = () => {
         <Route path="/Help" element={<FAQSection />} />
         <Route path="/signin" element={<UniStayAuth />} />
         <Route path="/landlord-guide" element={<LandlordGuide />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route
@@ -68,7 +69,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/reset-password" element={<ResetPassword />} />
+       
         {/* Add more landlord routes here */}
         <Route
           path="/landlord-properties"
