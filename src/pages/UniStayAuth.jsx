@@ -172,144 +172,179 @@ const UniStayAuth = () => {
     }
   };
 
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setLoading(true);
-    setErrors({});
-    setSignupMessage('');
+// Replace your handleSignupSubmit function with this enhanced version
+const handleSignupSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setLoading(true);
+  setErrors({});
+  setSignupMessage('');
 
-    try {
-      const emailLower = formData.email.trim().toLowerCase();
-      
-      // 1. Check if user already exists in public.users table
-      const { data: existingPublicUser, error: publicLookupError } = await supabase
-        .from('users')
-        .select('auth_id, email')
-        .eq('email', emailLower)
-        .maybeSingle();
+  try {
+    const emailLower = formData.email.trim().toLowerCase();
+    
+    console.log('Starting signup process for:', { userType, email: emailLower });
+    
+    // 1. Check if user already exists in public.users table
+    const { data: existingPublicUser, error: publicLookupError } = await supabase
+      .from('users')
+      .select('auth_id, email')
+      .eq('email', emailLower)
+      .maybeSingle();
 
-      if (publicLookupError && publicLookupError.code !== 'PGRST116') {
-        console.error('Database lookup error:', publicLookupError);
-        throw new Error('Database connection error. Please try again.');
+    if (publicLookupError && publicLookupError.code !== 'PGRST116') {
+      console.error('Database lookup error:', publicLookupError);
+      throw new Error('Database connection error. Please try again.');
+    }
+
+    if (existingPublicUser) {
+      throw new Error('This email is already registered. Please log in instead.');
+    }
+
+    // 2. Attempt to create auth user with minimal metadata
+    console.log('Creating auth user...');
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      email: emailLower,
+      password: formData.password,
+      options: {
+        data: {
+          full_name: formData.fullName.trim(),
+          user_type: userType
+        }
       }
+    });
 
-      if (existingPublicUser) {
+    if (signupError) {
+      console.error('Auth signup error:', {
+        message: signupError.message,
+        status: signupError.status,
+        userType: userType
+      });
+      
+      if (signupError.message.includes('already registered') || 
+          signupError.message.includes('already exists')) {
         throw new Error('This email is already registered. Please log in instead.');
       }
+      
+      throw new Error(signupError.message || 'Authentication signup failed. Please try again.');
+    }
 
-      // 2. Attempt to create auth user
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email: emailLower,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName.trim(),
-            user_type: userType
-          }
+    const userId = signupData.user?.id;
+    if (!userId) {
+      throw new Error('User creation failed - no user ID returned');
+    }
+
+    console.log('Auth user created successfully:', userId);
+
+    // 3. Create user profile with detailed logging
+    const userProfile = {
+      auth_id: userId,
+      full_name: formData.fullName.trim(),
+      email: emailLower,
+      role: userType, // This should be either 'student' or 'landlord'
+      university: userType === 'student' ? (formData.university?.trim() || null) : null,
+      phone_number: formData.phone?.trim() || null,
+      created_at: new Date().toISOString()
+    };
+
+    console.log('Attempting to insert user profile:', {
+      ...userProfile,
+      auth_id: '[UUID]' // Don't log the actual UUID
+    });
+
+    const { data: insertData, error: insertError } = await supabase
+      .from('users')
+      .insert([userProfile])
+      .select(); // Add select to get the inserted data back
+
+    if (insertError) {
+      console.error('Profile creation error details:', {
+        message: insertError.message,
+        code: insertError.code,
+        details: insertError.details,
+        hint: insertError.hint,
+        userType: userType,
+        profileData: {
+          ...userProfile,
+          auth_id: '[UUID]'
         }
       });
-
-      // 3. Handle existing auth user case
-      if (signupError) {
-        console.error('Signup error:', signupError);
-        
-        if (signupError.message.includes('already registered') || 
-            signupError.message.includes('already exists')) {
-          throw new Error('This email is already registered. Please log in instead.');
-        }
-        
-        if (signupError.message.includes('Invalid email')) {
-          throw new Error('Please enter a valid email address.');
-        }
-        
-        if (signupError.message.includes('Password')) {
-          throw new Error('Password must be at least 6 characters long.');
-        }
-        
-        if (signupError.message.includes('rate limit')) {
-          throw new Error('Too many signup attempts. Please wait a few minutes and try again.');
-        }
-        
-        throw new Error(signupError.message || 'Signup failed. Please try again.');
-      }
-
-      const userId = signupData.user?.id;
-      if (!userId) {
-        throw new Error('User creation failed - no user ID returned');
-      }
-
-      // 4. Create user profile in public.users table
-      const userProfile = {
-        auth_id: userId,
-        full_name: formData.fullName.trim(),
-        email: emailLower,
-        role: userType,
-        university: userType === 'student' ? (formData.university?.trim() || null) : null,
-        phone_number: formData.phone?.trim() || null,
-        created_at: new Date().toISOString()
-      };
-
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert([userProfile]);
-
-      if (insertError) {
-        console.error('Profile creation error:', insertError);
-        
-        // Clean up auth user if profile creation fails
-        try {
-          await supabase.auth.signOut();
-        } catch (cleanupError) {
-          console.error('Cleanup error:', cleanupError);
-        }
-        
-        if (insertError.code === '23505') { // Unique constraint violation
-          throw new Error('This email is already registered. Please log in instead.');
-        }
-        
-        throw new Error('Failed to create user profile. Please try again.');
-      }
-
-      // 5. Handle email confirmation requirement
-      if (signupData.user && !signupData.session) {
-        setSignupMessage('Please check your email for a confirmation link to complete your registration.');
-        return;
-      }
-
-      // 6. Auto-login if no confirmation needed
-      localStorage.setItem("userRole", userType);
-      localStorage.setItem("userName", formData.fullName.trim());
-      login(userType);
       
-      const redirectPath = userType === 'landlord' ? '/landlord-dashboard' : '/';
-      navigate(redirectPath);
-
-    } catch (error) {
-      console.error('Signup error:', error);
-      
-      let errorMessage = 'Signup failed. Please try again.';
-      
-      if (error.message.includes('already registered') || 
-          error.message.includes('already exists')) {
-        errorMessage = 'This email is already registered. Please log in instead.';
-      } else if (error.message.includes('Invalid email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.message.includes('Password')) {
-        errorMessage = 'Password must be at least 6 characters long.';
-      } else if (error.message.includes('rate limit')) {
-        errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
-      } else if (error.message.includes('Database connection')) {
-        errorMessage = 'Database connection error. Please check your internet and try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Clean up auth user if profile creation fails
+      try {
+        await supabase.auth.signOut();
+        console.log('Cleaned up auth user after profile creation failure');
+      } catch (cleanupError) {
+        console.error('Cleanup error:', cleanupError);
       }
       
-      setErrors({ auth: errorMessage });
-    } finally {
-      setLoading(false);
+      if (insertError.code === '23505') { // Unique constraint violation
+        throw new Error('This email is already registered. Please log in instead.');
+      }
+      
+      if (insertError.code === '42501') { // Insufficient privilege
+        throw new Error('Permission denied. Please check your account permissions.');
+      }
+      
+      if (insertError.code === '23502') { // NOT NULL violation
+        throw new Error(`Required field missing: ${insertError.details || 'Unknown field'}`);
+      }
+      
+      if (insertError.code === '23514') { // Check constraint violation
+        throw new Error(`Invalid data format: ${insertError.details || 'Please check your information'}`);
+      }
+      
+      throw new Error(`Profile creation failed: ${insertError.message}`);
     }
-  };
+
+    console.log('User profile created successfully:', insertData);
+
+    // 4. Handle email confirmation requirement
+    if (signupData.user && !signupData.session) {
+      setSignupMessage('Please check your email for a confirmation link to complete your registration.');
+      return;
+    }
+
+    // 5. Auto-login if no confirmation needed
+    localStorage.setItem("userRole", userType);
+    localStorage.setItem("userName", formData.fullName.trim());
+    login(userType);
+    
+    const redirectPath = userType === 'landlord' ? '/landlord-dashboard' : '/';
+    navigate(redirectPath);
+
+  } catch (error) {
+    console.error('Complete signup error details:', {
+      message: error.message,
+      stack: error.stack,
+      userType: userType,
+      timestamp: new Date().toISOString()
+    });
+    
+    let errorMessage = 'Signup failed. Please try again.';
+    
+    if (error.message.includes('Permission denied')) {
+      errorMessage = 'Account creation is temporarily disabled. Please contact support.';
+    } else if (error.message.includes('already registered') || 
+        error.message.includes('already exists')) {
+      errorMessage = 'This email is already registered. Please log in instead.';
+    } else if (error.message.includes('Invalid email')) {
+      errorMessage = 'Please enter a valid email address.';
+    } else if (error.message.includes('Password')) {
+      errorMessage = 'Password must be at least 6 characters long.';
+    } else if (error.message.includes('rate limit')) {
+      errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
+    } else if (error.message.includes('Database connection')) {
+      errorMessage = 'Database connection error. Please check your internet and try again.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    setErrors({ auth: errorMessage });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Reset form when switching between login/signup or user types
   React.useEffect(() => {
