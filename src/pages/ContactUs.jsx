@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MessageCircle, Check, X } from 'lucide-react';
 import ContactInfo from '../components/ContactInfo';
-import axios from 'axios';
+import supabase from '../supabaseClient';
 
 const ContactUs = () => {
   const initialFormState = {
     name: '',
-    email: '',
-    phone: '',
+    email_address: '', // Changed to match your DB schema
+    phoneNumber: '',   // Changed to match your DB schema
     subject: '',
     message: ''
   };
@@ -21,8 +21,8 @@ const ContactUs = () => {
   // Validation patterns
   const patterns = {
     name: /^[a-zA-Z\s]{2,30}$/,
-    email: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
-    phone: /^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/,
+    email_address: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
+    phoneNumber: /^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/,
     message: /.{10,}/
   };
 
@@ -32,11 +32,11 @@ const ContactUs = () => {
       pattern: 'Name should only contain letters and spaces (2-30 characters)',
       required: 'Name is required'
     },
-    email: {
+    email_address: {
       pattern: 'Please enter a valid email address',
       required: 'Email is required'
     },
-    phone: {
+    phoneNumber: {
       pattern: 'Please enter a valid phone number'
     },
     message: {
@@ -47,7 +47,7 @@ const ContactUs = () => {
 
   // Live validation function
   const validateField = (name, value) => {
-    if (!value.trim() && (name === 'name' || name === 'email' || name === 'message')) {
+    if (!value.trim() && (name === 'name' || name === 'email_address' || name === 'message')) {
       return validationMessages[name].required;
     }
     
@@ -93,18 +93,51 @@ const ContactUs = () => {
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
       try {
-        // Send form data to the mock API
-        const response = await axios.post('http://localhost:3001/messages', formData);
-        console.log('Form submitted successfully:', response.data);
+        // Prepare data for Supabase (only include non-empty fields)
+        const submitData = {
+          name: formData.name.trim(),
+          email_address: formData.email_address.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim()
+        };
+
+        // Only include phone number if it's provided
+        if (formData.phoneNumber.trim()) {
+          submitData.phoneNumber = formData.phoneNumber.trim();
+        }
+
+        // Insert data into Supabase
+        const { data, error } = await supabase
+          .from('Contact')
+          .insert([submitData])
+          .select();
+
+        if (error) {
+          throw error;
+        }
+
+        console.log('Form submitted successfully:', data);
         setFormData(initialFormState);
         setValidFields({});
         setSubmitSuccess(true);
         setTimeout(() => {
           setSubmitSuccess(false);
         }, 3000);
+
       } catch (error) {
         console.error('Error submitting form:', error);
-        setErrors({ form: 'Failed to submit the form. Please try again.' });
+        let errorMessage = 'Failed to submit the form. Please try again.';
+        
+        // Handle specific Supabase errors
+        if (error.message) {
+          if (error.message.includes('duplicate')) {
+            errorMessage = 'This email has already been used for a recent submission.';
+          } else if (error.message.includes('violates')) {
+            errorMessage = 'Please check your input and try again.';
+          }
+        }
+        
+        setErrors({ form: errorMessage });
       } finally {
         setIsLoading(false);
       }
@@ -131,6 +164,15 @@ const ContactUs = () => {
     }
     return `${baseClasses} border-gray-300 focus:border-blue-500 focus:ring-blue-500`;
   };
+
+  // Form field configuration
+  const formFields = [
+    { name: 'name', label: 'Name', type: 'text', required: true },
+    { name: 'email_address', label: 'Email', type: 'email', required: true },
+    { name: 'phoneNumber', label: 'Phone', type: 'text', required: false },
+    { name: 'subject', label: 'Subject', type: 'text', required: false },
+    { name: 'message', label: 'Message', type: 'textarea', required: true }
+  ];
 
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
@@ -161,37 +203,39 @@ const ContactUs = () => {
             )}
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              {['name', 'email', 'phone', 'subject', 'message'].map((field) => (
-                <div key={field} className="relative">
-                  <label htmlFor={field} className="block text-sm font-medium text-gray-700 capitalize">
-                    {field} {field !== 'phone' && field !== 'subject' && '*'}
+              {formFields.map((field) => (
+                <div key={field.name} className="relative">
+                  <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                    {field.label} {field.required && '*'}
                   </label>
-                  {field === 'message' ? (
+                  {field.type === 'textarea' ? (
                     <textarea
-                      id={field}
-                      name={field}
+                      id={field.name}
+                      name={field.name}
                       rows={4}
-                      value={formData[field]}
+                      value={formData[field.name]}
                       onChange={handleChange}
-                      className={getInputClassName(field)}
+                      className={getInputClassName(field.name)}
+                      placeholder={`Enter your ${field.label.toLowerCase()}...`}
                     />
                   ) : (
                     <input
-                      type={field === 'email' ? 'email' : 'text'}
-                      id={field}
-                      name={field}
-                      value={formData[field]} 
+                      type={field.type}
+                      id={field.name}
+                      name={field.name}
+                      value={formData[field.name]} 
                       onChange={handleChange}
-                      className={getInputClassName(field)}
+                      className={getInputClassName(field.name)}
+                      placeholder={`Enter your ${field.label.toLowerCase()}...`}
                     />
                   )}
-                  {validFields[field] && (
+                  {validFields[field.name] && (
                     <Check className="absolute right-3 top-8 w-5 h-5 text-green-500" />
                   )}
-                  {errors[field] && (
+                  {errors[field.name] && (
                     <div className="mt-1 flex items-center text-sm text-red-500">
                       <X className="w-4 h-4 mr-1" />
-                      {errors[field]}
+                      {errors[field.name]}
                     </div>
                   )}
                 </div>
@@ -200,7 +244,7 @@ const ContactUs = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? 'Sending...' : 'Send Message'}
               </button>

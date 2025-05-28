@@ -17,6 +17,7 @@ import ManageProperties from './pages/MyProperties'
 import PropertyDetail from './components/PropertyDetailsCard';
 import ReactGA from 'react-ga4';
 import { useEffect } from 'react';
+import ResetPassword from './components/ResetPassword';
 
 // Create a wrapper component to use useAuth hook
 const AppContent = () => {
@@ -47,6 +48,7 @@ const AppContent = () => {
         <Route path="/Help" element={<FAQSection />} />
         <Route path="/signin" element={<UniStayAuth />} />
         <Route path="/landlord-guide" element={<LandlordGuide />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route
@@ -67,7 +69,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        
+       
         {/* Add more landlord routes here */}
         <Route
           path="/landlord-properties"

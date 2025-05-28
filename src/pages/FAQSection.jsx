@@ -40,66 +40,92 @@ const FAQSection = () => {
   const faqData = {
     students: [
       {
-        category: "Finding Accommodation",
+        category: "Using UniStay",
         items: [
           {
-            question: "How do I search for accommodation on UIN Stay?",
-            answer: "You can search for properties using our search bar and filters. Filter by location, price range, room type, and amenities to find the perfect match for your needs."
+            question: "What is UniStay?",
+            answer: "UniStay is a platform that helps students discover verified accommodation options near their university. We're starting small, so features will grow over time!"
           },
           {
-            question: "Is the information about properties up to date?",
-            answer: "Yes, landlords are required to keep their listings current. However, we recommend contacting the landlord to confirm availability before making any decisions."
+            question: "Do I need to create an account?",
+            answer: "Currently, you can browse accommodation listings without creating an account. In the future, we'll introduce user accounts for saving listings and messaging landlords."
           },
           {
-            question: "Can I save properties I'm interested in?",
-            answer: "Yes, you can bookmark properties to view later by clicking the 'Save' button on any listing. Access your saved properties through your account dashboard."
+            question: "How do I find accommodation?",
+            answer: "Use the search bar and filters to browse properties by location, type, or amenities. If something looks good, you can view the details and contact the landlord."
           }
         ]
       },
       {
-        category: "Booking and Payments",
+        category: "Contacting Landlords",
         items: [
           {
-            question: "How do I book a property?",
-            answer: "Once you find a suitable property: 1. Click 'Request to Book' on the listing 2. Fill out the required information 3. Wait for landlord approval 4. Complete the payment process when approved"
+            question: "Can I contact the landlord through UniStay?",
+            answer: "Yes. For now, listings include the landlord's contact email or phone number. We're working on adding in-app messaging soon!"
           },
           {
-            question: "What payment methods are accepted?",
-            answer: "We accept major credit/debit cards and bank transfers. All payments are processed securely through our platform."
+            question: "Are the landlords verified?",
+            answer: "We manually review all landlord submissions to ensure listings are legitimate. However, we recommend you do your own checks before making any agreements."
+          }
+        ]
+      },
+      {
+        category: "Future Features",
+        items: [
+          {
+            question: "Will I be able to book rooms through the platform?",
+            answer: "Not yet. We're working on this feature! For now, you can reach out to landlords directly to arrange a visit or booking."
+          },
+          {
+            question: "Will UniStay handle payments in the future?",
+            answer: "Eventually, yes — but not right now. At this MVP stage, all payments are handled offline directly between students and landlords."
           }
         ]
       }
     ],
     landlords: [
       {
-        category: "Listing Properties",
+        category: "Getting Started",
         items: [
           {
             question: "How do I list my property?",
-            answer: "To list your property: 1. Create a landlord account 2. Click 'Add Property' 3. Fill in property details and upload photos 4. Submit required documentation 5. Wait for verification 6. Publish your listing"
+            answer: "Click on 'Add Property' from the home page, fill in your property details, and submit your listing. We’ll review it and publish it if it meets our guidelines."
           },
           {
-            question: "What documents do I need to list my property?",
-            answer: "Required documents include: Proof of ownership, Safety certificates, Insurance documentation, Property license (if applicable), Government-issued ID"
+            question: "Is there a cost to list a property?",
+            answer: "No. Listing your property on UniStay is free during our MVP stage."
           }
         ]
       },
       {
-        category: "Managing Bookings",
+        category: "Managing Your Listing",
         items: [
           {
-            question: "How do I manage booking requests?",
-            answer: "Access your dashboard to: View booking requests, Accept or decline requests, Message potential tenants, Manage current tenancies"
+            question: "Can I edit my listing after submitting?",
+            answer: "Yes, you can request edits by contacting us directly. We'll soon be adding a dashboard where you can manage listings yourself."
           },
           {
-            question: "When and how do I receive payments?",
-            answer: "Payments are processed automatically through our platform and transferred to your registered bank account within 24-48 hours of booking confirmation."
+            question: "How do I remove my property if it’s no longer available?",
+            answer: "Please email us at support@uinstay.co.za, and we’ll remove your listing within 24 hours."
+          }
+        ]
+      },
+      {
+        category: "Looking Ahead",
+        items: [
+          {
+            question: "Will I be able to message students through UniStay?",
+            answer: "We’re building this feature! For now, students will contact you via the email or phone number you provide."
+          },
+          {
+            question: "Are tenant payments handled by UniStay?",
+            answer: "Not at this time. All rental agreements and payments are made outside the platform between you and the student."
           }
         ]
       }
     ]
   };
-
+  
   const filterFAQs = (items) => {
     if (!searchQuery) return items;
     return items.filter(category => 
@@ -163,7 +189,7 @@ const FAQSection = () => {
       <div className="text-center mt-8 p-6 bg-blue-50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2 text-blue-900">Still need help?</h3>
         <p className="text-blue-800">
-          Contact our support team at <span className="text-blue-600">support@uinstay.com</span> or visit our detailed help center.
+          Contact our support team at <span className="text-blue-600">support@uinstay.co.za</span> or visit our detailed help center.
         </p>
       </div>
     </div>
