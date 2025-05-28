@@ -19,6 +19,9 @@ const UniStayAuth = () => {
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const navigate = useNavigate();
   const { login, currentUser } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+
 
   // Clear feedback when switching tabs or user types
   const clearFeedback = () => {
@@ -70,7 +73,63 @@ const UniStayAuth = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      setFeedback({ type: 'error', message: 'Please enter your email address' });
+      return;
+    }
+  
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
+      setFeedback({ type: 'error', message: 'Please enter a valid email address' });
+      return;
+    }
+  
+    setLoading(true);
+    clearFeedback();
+  
+    try {
+      setFeedback({ type: 'info', message: 'Sending password reset email...' });
+  
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`, // You'll need this page
+      });
+  
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          throw new Error('Too many requests. Please wait before trying again.');
+        }
+        throw error;
+      }
+  
+      setFeedback({ 
+        type: 'success', 
+        message: 'Password reset email sent! Check your inbox and follow the instructions.' 
+      });
+      
+      // Clear the email field
+      setResetEmail('');
+      
+      // Switch back to login after 3 seconds
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setActiveTab('login');
+        setFeedback({ type: 'info', message: 'Check your email for reset instructions' });
+      }, 3000);
+  
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setFeedback({ 
+        type: 'error', 
+        message: error.message || 'Failed to send reset email. Please try again.' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({
@@ -522,59 +581,125 @@ const UniStayAuth = () => {
 
                   {/* Login Form */}
                   {activeTab === 'login' && (
-                    <form onSubmit={handleLoginSubmit} className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <label htmlFor="email" className="block text-sm font-medium text-blue-900">
-                          Email
-                        </label>
-                        <div className="relative">
-                          <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                          <input
-                            id="email"
-                            type="email"
-                            placeholder="name@example.com"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.email ? 'border-red-300' : 'border-blue-200'
-                            }`}
-                          />
-                          {errors.email && (
-                            <p className="text-red-600 text-xs mt-1">{errors.email}</p>
-                          )}
-                        </div>
-                      </div>
+                    <div className="mt-4">
+                      {showForgotPassword ? (
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                          <div className="text-center mb-4">
+                            <h3 className="text-lg font-medium text-blue-900">Reset Password</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Enter your email address and we'll send you a reset link
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label htmlFor="resetEmail" className="block text-sm font-medium text-blue-900">
+                              Email
+                            </label>
+                            <div className="relative">
+                              <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="resetEmail"
+                                type="email"
+                                placeholder="name@example.com"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <button
+                              type="submit"
+                              disabled={loading}
+                              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {loading ? "Sending..." : "Send Reset Email"}
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowForgotPassword(false);
+                                setResetEmail('');
+                                clearFeedback();
+                              }}
+                              className="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                            >
+                              Back to Login
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <form onSubmit={handleLoginSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <label htmlFor="email" className="block text-sm font-medium text-blue-900">
+                              Email
+                            </label>
+                            <div className="relative">
+                              <Mail className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="email"
+                                type="email"
+                                placeholder="name@example.com"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                                  errors.email ? 'border-red-300' : 'border-blue-200'
+                                }`}
+                              />
+                              {errors.email && (
+                                <p className="text-red-600 text-xs mt-1">{errors.email}</p>
+                              )}
+                            </div>
+                          </div>
 
-                      <div className="space-y-2">
-                        <label htmlFor="password" className="block text-sm font-medium text-blue-900">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
-                          <input
-                            id="password"
-                            type="password"
-                            placeholder="Enter your password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.password ? 'border-red-300' : 'border-blue-200'
-                            }`}
-                          />
-                          {errors.password && (
-                            <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                          )}
-                        </div>
-                      </div>
+                          <div className="space-y-2">
+                            <label htmlFor="password" className="block text-sm font-medium text-blue-900">
+                              Password
+                            </label>
+                            <div className="relative">
+                              <Lock className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                              <input
+                                id="password"
+                                type="password"
+                                placeholder="Enter your password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                                  errors.password ? 'border-red-300' : 'border-blue-200'
+                                }`}
+                              />
+                              {errors.password && (
+                                <p className="text-red-600 text-xs mt-1">{errors.password}</p>
+                              )}
+                            </div>
+                          </div>
 
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? "Signing in..." : "Sign in"}
-                      </button>
-                    </form>
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {loading ? "Signing in..." : "Sign in"}
+                          </button>
+                          
+                          {/* Forgot Password Link */}
+                          <div className="mt-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowForgotPassword(true);
+                                clearFeedback();
+                              }}
+                              className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                              Forgot your password?
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
                   )}
 
                   {/* Signup Form */}
