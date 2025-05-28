@@ -106,7 +106,7 @@ const FAQSection = () => {
           },
           {
             question: "How do I remove my property if it’s no longer available?",
-            answer: "Please email us at support@uinstay.com, and we’ll remove your listing within 24 hours."
+            answer: "Please email us at support@uinstay.co.za, and we’ll remove your listing within 24 hours."
           }
         ]
       },

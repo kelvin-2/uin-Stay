@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, Phone, MessageCircle } from 'lucide-react';
 
+
 const ContactInfo = () => (
   <div className="bg-blue-50 p-8 rounded-lg">
     <h2 className="text-2xl font-semibold text-blue-600 mb-6">Get in Touch</h2>
