@@ -46,6 +46,7 @@ const LandlordNavbar = () => {
     // { path: "/landlord-dashboard", label: "Dashboard" },
     { path: "/landlord-properties", label: "My Properties" },
     { path: "/help", label: "FAQs / Help" },
+    { path: "/ContactUs", label: "Contact Us" }
   ];
 
   const isActive = (path) => location.pathname === path;
