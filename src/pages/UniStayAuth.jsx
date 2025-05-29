@@ -280,29 +280,25 @@ const UniStayAuth = () => {
     
     setLoading(true);
     clearFeedback();
-  
+
     try {
       setFeedback({ type: 'info', message: 'Creating your account...' });
       
-      // 1. First check if user exists in YOUR table (not auth)
-      const { data: existingUser, error: lookupError } = await supabase
+      // 1. Check public.users table with proper headers
+      const { data: existingPublicUser, error: publicLookupError } = await supabase
         .from('users')
-        .select('email')
+        .select('auth_id')
         .eq('email', formData.email)
         .maybeSingle();
-  
-      if (lookupError) {
-        console.error('Database lookup error:', lookupError);
-        throw new Error('Database connection error. Please try again.');
-      }
-  
-      if (existingUser) {
+
+      if (publicLookupError) throw publicLookupError;
+      if (existingPublicUser) {
         throw new Error('This email is already registered. Please try logging in instead.');
       }
-  
+
       setFeedback({ type: 'info', message: 'Setting up your authentication...' });
-  
-      // 2. Attempt signup - let Supabase handle existing auth users
+
+      // 2. Attempt signup
       const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -313,16 +309,56 @@ const UniStayAuth = () => {
           }
         }
       });
-  
-      // 3. Handle signup response
+
+      // 3. Handle user already exists case
       if (signupError) {
-        console.error('Supabase signup error:', signupError);
-        
-        // Handle specific error cases
         if (signupError.message.includes('already registered')) {
-          // This means the user exists in Auth but maybe not in our table
-          throw new Error('An account with this email already exists. Please try logging in or contact support if you believe this is an error.');
-        } else if (signupError.message.includes('Password should be at least')) {
+          setFeedback({ type: 'info', message: 'Account exists, trying to complete setup...' });
+          
+          // Try to sign in to verify
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (signInError) {
+            throw new Error('An account with this email exists but the password is incorrect. Please try logging in or reset your password.');
+          }
+
+          // Check if user exists in public.users
+          const { data: userInPublicTable } = await supabase
+            .from('users')
+            .select('auth_id')
+            .eq('email', formData.email)
+            .single();
+
+          if (!userInPublicTable) {
+            // Complete registration in public.users
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            await supabase.from('users').insert([{
+              auth_id: user.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              role: userType,
+              university: formData.university || null,
+              phone_number: formData.phone || null,
+              created_at: new Date().toISOString()
+            }]);
+
+            setFeedback({ type: 'success', message: 'Account setup completed successfully! Redirecting...' });
+            login(userType);
+            
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
+            return;
+          }
+
+          throw new Error('This email is already fully registered. Please log in instead.');
+        }
+        
+        // Handle other signup errors
+        if (signupError.message.includes('Password should be at least')) {
           throw new Error('Password must be at least 6 characters long.');
         } else if (signupError.message.includes('Unable to validate email')) {
           throw new Error('Please enter a valid email address.');
@@ -330,18 +366,18 @@ const UniStayAuth = () => {
           throw new Error('Too many requests. Please wait a moment before trying again.');
         }
         
-        throw new Error(signupError.message || 'Signup failed. Please try again.');
+        throw signupError;
       }
-  
-      // 4. Get user ID from signup response
+
+      // 4. Handle new user creation
       const userId = signupData.user?.id;
       if (!userId) {
-        throw new Error('Signup failed - no user ID returned. Please try again.');
+        throw new Error('User creation failed - no user ID returned');
       }
-  
-      setFeedback({ type: 'info', message: 'Creating your profile...' });
-  
-      // 5. Insert into your users table
+
+      setFeedback({ type: 'info', message: 'Finalizing your profile...' });
+
+      // Insert into public.users
       const { error: insertError } = await supabase.from('users').insert([{
         auth_id: userId,
         full_name: formData.fullName,
@@ -351,21 +387,13 @@ const UniStayAuth = () => {
         phone_number: formData.phone || null,
         created_at: new Date().toISOString()
       }]);
-  
+
       if (insertError) {
         console.error('Insert error:', insertError);
-        
-        // If insert fails, we should clean up the auth user
-        await supabase.auth.signOut();
-        
-        if (insertError.code === '23505') { // Unique constraint violation
-          throw new Error('This email is already registered. Please try logging in instead.');
-        }
-        
-        throw new Error('Failed to create user profile. Please try again or contact support.');
+        throw new Error('Failed to create user profile. Please try again.');
       }
-  
-      // 6. Handle email confirmation
+
+      // 5. Handle email confirmation case
       if (signupData.user && !signupData.session) {
         setFeedback({ 
           type: 'success', 
@@ -381,32 +409,43 @@ const UniStayAuth = () => {
           phone: '',
         });
         
-        // Switch to login tab after showing message
+        // Switch to login tab after showing success message
         setTimeout(() => {
           setActiveTab('login');
           setFeedback({ type: 'info', message: 'Please confirm your email, then log in.' });
         }, 3000);
         return;
       }
-  
-      // 7. If no email confirmation needed, log in automatically
+
+      // 6. Login and redirect if no confirmation needed
       setFeedback({ type: 'success', message: `Welcome to UniStay, ${formData.fullName}! Redirecting...` });
-      
-      // Set user data and login
-      localStorage.setItem("userRole", userType);
-      localStorage.setItem("userName", formData.fullName);
       login(userType);
       
       await new Promise((resolve) => setTimeout(resolve, 1500));
       navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
-  
+
     } catch (error) {
       console.error('Signup error:', error);
       
-      setFeedback({ 
-        type: 'error', 
-        message: error.message || "Signup failed. Please try again." 
-      });
+      // User-friendly error messages
+      let errorMessage = 'Signup failed. Please try again.';
+      
+      if (error.message.includes('already registered') || 
+          error.message.includes('already exists')) {
+        errorMessage = 'This email is already registered. Please log in instead.';
+      } else if (error.message.includes('password is incorrect')) {
+        errorMessage = 'An account exists with this email but the password is incorrect. Try logging in or reset your password.';
+      } else if (error.message.includes('406')) {
+        errorMessage = 'Invalid request format. Please contact support.';
+      } else if (error.message.includes('email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setFeedback({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
     }
