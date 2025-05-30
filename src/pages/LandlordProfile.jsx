@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Edit2, Save, X, User, Phone, Mail, MapPin, Calendar, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AutContext';
 import { useNavigate } from 'react-router-dom';
-import LandlordNavbar from '../components/LandlordNavbar'; 
+import supabase  from '../supabaseClient';
+import LandlordNavbar from '../components/LandlordNavbar';
 
 const LandlordProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { currentUser, updateUserProfile, loading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const { currentUser, loading } = useAuth();
   const navigate = useNavigate();
   
   const [profile, setProfile] = useState({
     full_name: '',
     email: '',
     phone_number: '',
+    university: '',
     role: 'landlord',
     created_at: '',
     auth_id: '',
@@ -24,27 +27,83 @@ const LandlordProfile = () => {
 
   const [editForm, setEditForm] = useState({ ...profile });
 
-  // Load profile data from auth context
-  useEffect(() => {
-    if (currentUser) {
+  // Fetch landlord profile and stats from Supabase
+  const fetchLandlordProfile = async () => {
+    try {
+      setDataLoading(true);
+      
+      // Get the current Supabase user (not Firebase user)
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Error getting Supabase user:', authError);
+        return;
+      }
+
+      console.log('Supabase user:', user);
+      
+      // Fetch user profile using Supabase user ID
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', user.id) // Use Supabase user.id, not Firebase currentUser.uid
+        .single();
+
+      console.log('User data:', userData);
+
+      if (userError && userError.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error fetching user data:', userError);
+      }
+
+      // Fetch accommodation stats
+      const { data: accommodationData, error: accommodationError } = await supabase
+        .from('accommodation')
+        .select('id, room_type')
+        .eq('landlord_id', user.id); // Use Supabase user.id
+
+      if (accommodationError) {
+        console.error('Error fetching accommodation data:', accommodationError);
+      }
+
+      console.log('Accommodation data:', accommodationData);
+
+      // Calculate stats
+      const properties = accommodationData?.length || 0;
+      const totalUnits = accommodationData?.reduce((total, acc) => {
+        return total + 1;
+      }, 0) || 0;
+
       const formattedProfile = {
-        full_name: currentUser.fullName || '',
-        email: currentUser.email || '',
-        phone_number: currentUser.phoneNumber || '',
-        role: currentUser.role || 'landlord',
-        created_at: currentUser.createdAt || '',
-        auth_id: currentUser.uid || '',
-        joinDate: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long' 
-        }) : 'Recently',
-        properties: currentUser.properties || 0,
-        totalUnits: currentUser.totalUnits || 0
+        full_name: userData?.full_name || user?.user_metadata?.full_name || '',
+        email: userData?.email || user?.email || '',
+        phone_number: userData?.phone_number || '',
+        role: userData?.role || 'landlord',
+        created_at: userData?.created_at || new Date().toISOString(),
+        auth_id: userData?.auth_id || user.id,
+        properties,
+        totalUnits,
+        joinDate: userData?.created_at 
+          ? new Date(userData.created_at).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long' 
+            }) 
+          : 'Recently'
       };
+
       setProfile(formattedProfile);
       setEditForm(formattedProfile);
+    } catch (error) {
+      console.error('Error fetching landlord profile:', error);
+    } finally {
+      setDataLoading(false);
     }
-  }, [currentUser]);
+  };
+
+  // Load profile data when component mounts
+  useEffect(() => {
+    // Don't depend on currentUser from Firebase, use Supabase auth directly
+    fetchLandlordProfile();
+  }, []); // Remove currentUser dependency
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -54,14 +113,42 @@ const LandlordProfile = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await updateUserProfile({
-        fullName: editForm.full_name,
-        email: editForm.email,
-        phoneNumber: editForm.phone_number
-      });
+      // Get current Supabase user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
 
-      setProfile({ ...editForm });
+      // Update user profile in Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .upsert({
+          auth_id: user.id, // Use Supabase user.id
+          full_name: editForm.full_name,
+          email: editForm.email,
+          phone_number: editForm.phone_number,
+          role: 'landlord',
+          created_at: profile.created_at || new Date().toISOString()
+        }, {
+          onConflict: 'auth_id'
+        });
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedProfile = {
+        ...profile,
+        full_name: editForm.full_name,
+        email: editForm.email,
+        phone_number: editForm.phone_number,
+      };
+      
+      setProfile(updatedProfile);
       setIsEditing(false);
+      
+      // Show success message
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile. Please try again.');
@@ -82,8 +169,8 @@ const LandlordProfile = () => {
     }));
   };
 
-  // Show loading state while auth is initializing
-  if (loading) {
+  // Show loading state while data is loading
+  if (loading || dataLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -92,12 +179,6 @@ const LandlordProfile = () => {
         </div>
       </div>
     );
-  }
-
-  // Redirect if no user is logged in
-  if (!currentUser) {
-    navigate('/login');
-    return null;
   }
 
   return (
@@ -251,8 +332,8 @@ const LandlordProfile = () => {
                 </div>
               </div>
 
-              {/* <div className="space-y-6">
-                <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
+              <div className="space-y-6">
+                {/* <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
                   <h2 className="text-xl font-semibold mb-6 text-blue-900 border-b border-blue-100 pb-3">Additional Details</h2>
                   
                   <div className="space-y-5">
@@ -286,7 +367,7 @@ const LandlordProfile = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                   <h2 className="text-xl font-semibold mb-6 text-blue-900">UniStay Portfolio</h2>
@@ -302,7 +383,7 @@ const LandlordProfile = () => {
                     </div>
                   </div>
                 </div>
-              </div> */}
+              </div>
             </div>
 
             {isEditing && (
