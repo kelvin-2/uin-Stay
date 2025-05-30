@@ -18,6 +18,7 @@ import PropertyDetail from './components/PropertyDetailsCard';
 import ReactGA from 'react-ga4';
 import { useEffect } from 'react';
 import ResetPassword from './components/ResetPassword';
+import LandlordProfile from './pages/LandlordProfile';
 
 // Create a wrapper component to use useAuth hook
 const AppContent = () => {
@@ -69,13 +70,22 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-       
-        {/* Add more landlord routes here */}
+
         <Route
           path="/landlord-properties"
           element={
             <ProtectedRoute>
               <ManageProperties/>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* FIX: Move landlord-profile inside ProtectedRoute */}
+        <Route
+          path="/landlord-profile"
+          element={
+            <ProtectedRoute>
+              <LandlordProfile />
             </ProtectedRoute>
           }
         />
