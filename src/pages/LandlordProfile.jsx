@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Edit2, Save, X, User, Phone, Mail, MapPin, Calendar, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AutContext';
 import { useNavigate } from 'react-router-dom';
-import LandlordNavbar from './LandlordNavbar'; // Import the navbar
+import LandlordNavbar from '../components/LandlordNavbar'; 
 
 const LandlordProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
