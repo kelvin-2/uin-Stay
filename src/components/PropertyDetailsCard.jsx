@@ -460,7 +460,7 @@ const PropertyDetail = () => {
           )}
 
           {/* Rating Section */}
-          <div className="mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
+          {/* <div className="mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
             <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">Rate this Property</h2>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((value) => (
@@ -486,7 +486,7 @@ const PropertyDetail = () => {
                 </span>
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Landlord Information */}
           <div className="border-t pt-4 md:pt-6">
