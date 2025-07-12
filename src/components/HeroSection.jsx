@@ -9,50 +9,49 @@ function HeroSection() {
             id="hero-heading"
             className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl bg-gradient-to-r from-blue-600 to-indigo-600 inline-block text-transparent bg-clip-text"
           >
-            Student Accommodation Port Elizabeth - UniStay
+            Student Accommodation Port Elizabirth 
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-            Find affordable student housing and apartments near universities in Port Elizabeth. Discover quality accommodation options that make your university experience comfortable and convenient.
+            Find affordable student housing and accommodation in Port Elizabeth, South Africa. 
+            Browse verified apartments, shared rooms, and student residences near Nelson Mandela University (NMU), PE College, Rosebank College, universities and colleges. 
+            Book your perfect student home today with UniStay.
           </p>
           
-          {/* Call-to-Action Buttons */}
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <a
-              href="/properties"
-              className="rounded-md bg-blue-600 px-6 py-3 text-lg font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
-              aria-label="Browse student accommodation in Port Elizabeth"
-            >
-              Browse Properties
-            </a>
-            <a
-              href="/how-it-works"
-              className="text-lg font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors"
-              aria-label="Learn how UniStay student accommodation works"
-            >
-              How it works <span aria-hidden="true">→</span>
-            </a>
-          </div>
+          {/* Schema.org structured data for SEO */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "RealEstateAgent",
+                "name": "UniStay",
+                "description": "Student accommodation platform in Port Elizabeth, South Africa",
+                "url": "https://unistay.com",
+                "areaServed": {
+                  "@type": "City",
+                  "name": "Port Elizabeth",
+                  "addressCountry": "ZA"
+                },
+                "serviceType": "Student Accommodation",
+                "priceRange": "$$"
+              })
+            }}
+          />
           
-          {/* Trust Indicators */}
-          <div className="mt-12 flex items-center justify-center gap-x-8 text-sm text-gray-500">
-            <div className="flex items-center gap-x-2">
-              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-              </svg>
-              <span>Quality Properties</span>
-            </div>
-            <div className="flex items-center gap-x-2">
-              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-              </svg>
-              <span>Easy Booking</span>
-            </div>
-            <div className="flex items-center gap-x-2">
-              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-              </svg>
-              <span>Student-Focused</span>
-            </div>
+          {/* Call-to-action section for better user engagement */}
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <button 
+              className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors duration-200"
+              aria-label="Search for student accommodation in Port Elizabeth"
+            >
+              Find Accommodation
+            </button>
+            {/* <button 
+              className="text-sm font-semibold leading-6 text-gray-900 hover:text-indigo-600 transition-colors duration-200"
+              aria-label="Learn more about UniStay student housing services"
+            >
+              Learn more <span aria-hidden="true">→</span>
+            </button> */}
           </div>
         </div>
       </div>
@@ -61,6 +60,8 @@ function HeroSection() {
 }
 
 export default HeroSection;
+
+
 
 
 
