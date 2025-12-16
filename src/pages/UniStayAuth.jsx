@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Building, User, Mail, Lock, Home, BookOpen, Phone, MapPin, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Building, User, Mail, Lock, Home, BookOpen, Phone, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AutContext';
-import supabase from '../supabaseClient';
+import { createUser, loginUser } from '../api/auth';
 
 const UniStayAuth = () => {
   const [userType, setUserType] = useState('student');
   const [activeTab, setActiveTab] = useState('login');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     university: '',
@@ -18,7 +19,7 @@ const UniStayAuth = () => {
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const navigate = useNavigate();
-  const { login, currentUser } = useAuth();
+  const { login } = useAuth();
 
   // Clear feedback when switching tabs or user types
   const clearFeedback = () => {
@@ -42,8 +43,12 @@ const UniStayAuth = () => {
     }
 
     if (activeTab === 'signup') {
-      if (!formData.fullName) {
-        newErrors.fullName = 'Full name is required';
+      if (!formData.firstName) {
+        newErrors.firstName = 'First name is required';
+      }
+
+      if (!formData.lastName) {
+        newErrors.lastName = 'Last name is required';
       }
 
       if (userType === 'student') {
@@ -99,117 +104,44 @@ const UniStayAuth = () => {
     try {
       setFeedback({ type: 'info', message: 'Signing you in...' });
       
-      // Step 1: Sign in the user
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      // Call backend login API
+      const response = await loginUser(formData.email, formData.password);
+      
+      const userData = response.user;
+      const userRole = userData.role;
+      
+      // Store in localStorage
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("userRole", userRole);
+      localStorage.setItem("userName", userData.full_name || '');
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("currentUser", JSON.stringify(userData));
+      
+      console.log('✅ Login successful, stored data:', {
+        token: !!response.token,
+        userRole,
+        userName: userData.full_name
       });
       
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before signing in.');
-        } else if (error.message.includes('Too many requests')) {
-          throw new Error('Too many login attempts. Please wait a moment before trying again.');
-        }
-        throw error;
-      }
-      
-      // Get user ID from the authentication response
-      const userId = data.user?.id;
-      if (!userId) {
-        throw new Error("Unable to retrieve user information after login.");
-      }
-      
-      setFeedback({ type: 'info', message: 'Verifying your account...' });
-      
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Brief pause for better UX
-
-      // Add debugging step: Check auth session
-      const { data: sessionData } = await supabase.auth.getSession();
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("auth_id", userId)
-        .maybeSingle();
-      
-      if (userError) {
-        console.error("Database query error:", userError);
-        throw new Error("Database error: " + userError.message);
-      }
-      
-      // Check if user data exists
-      if (!userData) {
-        console.log("User not found with auth_id, trying email lookup");
-        const userEmail = data.user?.email;
-        
-        const { data: emailLookup, error: emailError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("email", userEmail)
-          .maybeSingle();
-          
-        if (emailLookup) {
-          console.log("Found user by email instead of auth_id!");
-          
-          // Update the auth_id in the database to match
-          const { error: updateError } = await supabase
-            .from("users")
-            .update({ auth_id: userId })
-            .eq("email", userEmail);
-            
-          if (updateError) {
-            console.error("Failed to update auth_id:", updateError);
-          }
-          
-          // Use the email-found user data
-          userData = emailLookup;
-        } else {
-          throw new Error("User profile not found. Please sign up first or contact support.");
-        }
-      }
-      
-      // Ensure role exists
-      if (!userData.role) {
-        throw new Error("User role not defined. Please contact support.");
-      }
+      // Update auth context with userData object
+      login(userData);
       
       setFeedback({ type: 'success', message: `Welcome back, ${userData.full_name || 'User'}!` });
       
-      // Step 3: Store user data and login
-      const userRole = userData.role;
-      localStorage.setItem("userRole", userRole);
-      localStorage.setItem("userName", userData.full_name || '');
+      // Small delay to show success message and ensure state updates
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      // Update auth context
-      login(userRole);
-      
-      // Brief delay to show success message
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // Step 4: Redirect based on role
-      if (userRole === "landlord") {
-        navigate("/landlord-dashboard");
-      } else if (userRole === "student") {
-        navigate("/");
-      } else {
-        navigate("/");
-      }
+      // Redirect based on role
+      const redirectPath = userRole === "landlord" ? "/landlord-dashboard" : "/";
+      console.log('🚀 Navigating to:', redirectPath);
+      navigate(redirectPath, { replace: true });
       
     } catch (error) {
-      console.error("Login error:", error.message);
+      console.error("❌ Login error:", error.message);
       setFeedback({ 
         type: 'error', 
         message: error.message || "Login failed. Please try again." 
       });
-      
-      // Optionally sign out if login was partially successful but profile fetch failed
-      const { data } = await supabase.auth.getSession();
-      if (data && data.session) {
-        await supabase.auth.signOut();
-      }
     } finally {
       setLoading(false);
     }
@@ -225,165 +157,87 @@ const UniStayAuth = () => {
     try {
       setFeedback({ type: 'info', message: 'Creating your account...' });
       
-      // 1. Check public.users table with proper headers
-      const { data: existingPublicUser, error: publicLookupError } = await supabase
-        .from('users')
-        .select('auth_id')
-        .eq('email', formData.email)
-        .maybeSingle();
-
-      if (publicLookupError) throw publicLookupError;
-      if (existingPublicUser) {
-        throw new Error('This email is already registered. Please try logging in instead.');
-      }
-
-      setFeedback({ type: 'info', message: 'Setting up your authentication...' });
-
-      // 2. Attempt signup
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      // Call backend createUser API with role
+      const response = await createUser({
         email: formData.email,
+        user_name: formData.email.split('@')[0],
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            user_type: userType
-          }
-        }
+        role: userType,
+        phone_number: formData.phone || null,
+        university: formData.university || null
       });
 
-      // 3. Handle user already exists case
-      if (signupError) {
-        if (signupError.message.includes('already registered')) {
-          setFeedback({ type: 'info', message: 'Account exists, trying to complete setup...' });
-          
-          // Try to sign in to verify
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
-          });
-
-          if (signInError) {
-            throw new Error('An account with this email exists but the password is incorrect. Please try logging in or reset your password.');
-          }
-
-          // Check if user exists in public.users
-          const { data: userInPublicTable } = await supabase
-            .from('users')
-            .select('auth_id')
-            .eq('email', formData.email)
-            .single();
-
-          if (!userInPublicTable) {
-            // Complete registration in public.users
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            await supabase.from('users').insert([{
-              auth_id: user.id,
-              full_name: formData.fullName,
-              email: formData.email,
-              role: userType,
-              university: formData.university || null,
-              phone_number: formData.phone || null,
-              created_at: new Date().toISOString()
-            }]);
-
-            setFeedback({ type: 'success', message: 'Account setup completed successfully! Redirecting...' });
-            login(userType);
-            
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
-            return;
-          }
-
-          throw new Error('This email is already fully registered. Please log in instead.');
-        }
+      console.log('✅ Signup response:', response);
+      
+      if (response.token && response.user) {
+        const userData = response.user;
+        const userRole = userData.role;
         
-        // Handle other signup errors
-        if (signupError.message.includes('Password should be at least')) {
-          throw new Error('Password must be at least 6 characters long.');
-        } else if (signupError.message.includes('Unable to validate email')) {
-          throw new Error('Please enter a valid email address.');
-        } else if (signupError.message.includes('rate limit')) {
-          throw new Error('Too many requests. Please wait a moment before trying again.');
-        }
+        // Store all auth data in localStorage
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("userRole", userRole);
+        localStorage.setItem("userName", userData.full_name || `${userData.first_name} ${userData.last_name}`);
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("currentUser", JSON.stringify(userData));
         
-        throw signupError;
-      }
-
-      // 4. Handle new user creation
-      const userId = signupData.user?.id;
-      if (!userId) {
-        throw new Error('User creation failed - no user ID returned');
-      }
-
-      setFeedback({ type: 'info', message: 'Finalizing your profile...' });
-
-      // Insert into public.users
-      const { error: insertError } = await supabase.from('users').insert([{
-        auth_id: userId,
-        full_name: formData.fullName,
-        email: formData.email,
-        role: userType,
-        university: formData.university || null,
-        phone_number: formData.phone || null,
-        created_at: new Date().toISOString()
-      }]);
-
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        throw new Error('Failed to create user profile. Please try again.');
-      }
-
-      // 5. Handle email confirmation case
-      if (signupData.user && !signupData.session) {
-        setFeedback({ 
-          type: 'success', 
-          message: 'Account created successfully! Please check your email for a confirmation link before signing in.' 
+        console.log('💾 Auth data stored:', {
+          token: !!response.token,
+          userRole: userRole,
+          userName: localStorage.getItem("userName")
         });
         
-        // Clear the form
+        // Update auth context with userData object (consistent with login)
+        login(userData);
+        
+        console.log('🎯 Auth context updated');
+        
+        setFeedback({ 
+          type: 'success', 
+          message: `Welcome to UniStay, ${formData.firstName}!` 
+        });
+        
+        // Longer delay to ensure context updates properly
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // Navigate based on role
+        const redirectPath = userRole === 'landlord' ? '/landlord-dashboard' : '/';
+        console.log('🚀 Navigating to:', redirectPath);
+        
+        navigate(redirectPath, { replace: true });
+        
+      } else {
+        console.error('❌ Backend did not return token or user');
+        
+        // Clear form and switch to login
         setFormData({
-          fullName: '',
+          firstName: '',
+          lastName: '',
           email: '',
           password: '',
           university: '',
           phone: '',
         });
         
-        // Switch to login tab after showing success message
-        setTimeout(() => {
-          setActiveTab('login');
-          setFeedback({ type: 'info', message: 'Please confirm your email, then log in.' });
-        }, 3000);
-        return;
+        setActiveTab('login');
+        setFeedback({ 
+          type: 'info', 
+          message: 'Account created! Please log in with your credentials.' 
+        });
       }
 
-      // 6. Login and redirect if no confirmation needed
-      setFeedback({ type: 'success', message: `Welcome to UniStay, ${formData.fullName}! Redirecting...` });
-      login(userType);
-      
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      navigate(userType === 'landlord' ? '/landlord-dashboard' : '/student-dashboard');
-
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('❌ Signup error:', error);
       
-      // User-friendly error messages
-      let errorMessage = 'Signup failed. Please try again.';
+      let errorMessage = error.message || 'Signup failed. Please try again.';
       
-      if (error.message.includes('already registered') || 
-          error.message.includes('already exists')) {
+      if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
         errorMessage = 'This email is already registered. Please log in instead.';
-      } else if (error.message.includes('password is incorrect')) {
-        errorMessage = 'An account exists with this email but the password is incorrect. Try logging in or reset your password.';
-      } else if (error.message.includes('406')) {
-        errorMessage = 'Invalid request format. Please contact support.';
-      } else if (error.message.includes('email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.message.includes('Password')) {
+      } else if (errorMessage.includes('Invalid user data')) {
+        errorMessage = 'Please check all fields and try again.';
+      } else if (errorMessage.includes('password')) {
         errorMessage = 'Password must be at least 6 characters long.';
-      } else if (error.message) {
-        errorMessage = error.message;
       }
       
       setFeedback({ type: 'error', message: errorMessage });
@@ -581,23 +435,45 @@ const UniStayAuth = () => {
                   {activeTab === 'signup' && (
                     <form onSubmit={handleSignupSubmit} className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <label htmlFor="fullName" className="block text-sm font-medium text-blue-900">
-                          Full Name
+                        <label htmlFor="firstName" className="block text-sm font-medium text-blue-900">
+                          First Name
                         </label>
                         <div className="relative">
                           <User className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
                           <input
-                            id="fullName"
+                            id="firstName"
                             type="text"
-                            placeholder="John Doe"
-                            value={formData.fullName}
+                            placeholder="John"
+                            value={formData.firstName}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.fullName ? 'border-red-300' : 'border-blue-200'
+                              errors.firstName ? 'border-red-300' : 'border-blue-200'
                             }`}
                           />
-                          {errors.fullName && (
-                            <p className="text-red-600 text-xs mt-1">{errors.fullName}</p>
+                          {errors.firstName && (
+                            <p className="text-red-600 text-xs mt-1">{errors.firstName}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="lastName" className="block text-sm font-medium text-blue-900">
+                          Last Name
+                        </label>
+                        <div className="relative">
+                          <User className="h-4 w-4 absolute left-3 top-3 text-blue-400" />
+                          <input
+                            id="lastName"
+                            type="text"
+                            placeholder="Doe"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.lastName ? 'border-red-300' : 'border-blue-200'
+                            }`}
+                          />
+                          {errors.lastName && (
+                            <p className="text-red-600 text-xs mt-1">{errors.lastName}</p>
                           )}
                         </div>
                       </div>
