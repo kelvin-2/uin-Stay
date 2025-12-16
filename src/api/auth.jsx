@@ -68,7 +68,7 @@ export const loginUser = async (email, password) => {
   try {
     console.log('Attempting login with:', { email });
     
-    const response = await api.post('/login', {
+    const response = await api.post('/api/auth/login', {
       email,
       password
     });

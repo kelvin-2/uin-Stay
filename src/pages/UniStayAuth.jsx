@@ -147,48 +147,60 @@ const UniStayAuth = () => {
     }
   };
 
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+ const handleSignupSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  
+  setLoading(true);
+  clearFeedback();
+
+  try {
+    setFeedback({ type: 'info', message: 'Creating your account...' });
     
-    setLoading(true);
-    clearFeedback();
+    // Call backend createUser API with role
+    const signupResponse = await createUser({
+      email: formData.email,
+      user_name: formData.email.split('@')[0],
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      password: formData.password,
+      role: userType,
+      phone_number: formData.phone || null,
+      university: formData.university || null
+    });
 
-    try {
-      setFeedback({ type: 'info', message: 'Creating your account...' });
+    console.log('✅ Signup response:', signupResponse);
+    
+    // Check if signup was successful
+    if (signupResponse.user) {
+      setFeedback({ type: 'info', message: 'Account created! Logging you in...' });
       
-      // Call backend createUser API with role
-      const response = await createUser({
-        email: formData.email,
-        user_name: formData.email.split('@')[0],
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        password: formData.password,
-        role: userType,
-        phone_number: formData.phone || null,
-        university: formData.university || null
-      });
-
-      console.log('✅ Signup response:', response);
+      // Wait a bit for the database to fully commit the new user
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      if (response.token && response.user) {
-        const userData = response.user;
+      try {
+        // Attempt to login with the credentials
+        const loginResponse = await loginUser(formData.email, formData.password);
+        
+        console.log('✅ Auto-login response:', loginResponse);
+        
+        const userData = loginResponse.user;
         const userRole = userData.role;
         
         // Store all auth data in localStorage
-        localStorage.setItem("token", response.token);
+        localStorage.setItem("token", loginResponse.token);
         localStorage.setItem("userRole", userRole);
         localStorage.setItem("userName", userData.full_name || `${userData.first_name} ${userData.last_name}`);
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("currentUser", JSON.stringify(userData));
         
         console.log('💾 Auth data stored:', {
-          token: !!response.token,
+          token: !!loginResponse.token,
           userRole: userRole,
           userName: localStorage.getItem("userName")
         });
         
-        // Update auth context with userData object (consistent with login)
+        // Update auth context with userData object
         login(userData);
         
         console.log('🎯 Auth context updated');
@@ -198,8 +210,8 @@ const UniStayAuth = () => {
           message: `Welcome to UniStay, ${formData.firstName}!` 
         });
         
-        // Longer delay to ensure context updates properly
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Wait for state to update
+        await new Promise((resolve) => setTimeout(resolve, 500));
         
         // Navigate based on role
         const redirectPath = userRole === 'landlord' ? '/landlord-dashboard' : '/';
@@ -207,10 +219,11 @@ const UniStayAuth = () => {
         
         navigate(redirectPath, { replace: true });
         
-      } else {
-        console.error('❌ Backend did not return token or user');
+      } catch (loginError) {
+        // If auto-login fails, that's okay - just show a message to log in manually
+        console.warn('⚠️ Auto-login failed:', loginError.message);
         
-        // Clear form and switch to login
+        // Clear form
         setFormData({
           firstName: '',
           lastName: '',
@@ -220,31 +233,37 @@ const UniStayAuth = () => {
           phone: '',
         });
         
+        // Switch to login tab
         setActiveTab('login');
         setFeedback({ 
-          type: 'info', 
-          message: 'Account created! Please log in with your credentials.' 
+          type: 'success', 
+          message: 'Account created successfully! Please log in with your credentials.' 
         });
       }
-
-    } catch (error) {
-      console.error('❌ Signup error:', error);
-      
-      let errorMessage = error.message || 'Signup failed. Please try again.';
-      
-      if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
-        errorMessage = 'This email is already registered. Please log in instead.';
-      } else if (errorMessage.includes('Invalid user data')) {
-        errorMessage = 'Please check all fields and try again.';
-      } else if (errorMessage.includes('password')) {
-        errorMessage = 'Password must be at least 6 characters long.';
-      }
-      
-      setFeedback({ type: 'error', message: errorMessage });
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error('Signup failed. Please try again.');
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Signup error:', error);
+    
+    let errorMessage = error.message || 'Signup failed. Please try again.';
+    
+    if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
+      errorMessage = 'This email is already registered. Please log in instead.';
+      // Switch to login tab for better UX
+      setActiveTab('login');
+    } else if (errorMessage.includes('Invalid user data')) {
+      errorMessage = 'Please check all fields and try again.';
+    } else if (errorMessage.includes('password')) {
+      errorMessage = 'Password must be at least 6 characters long.';
+    }
+    
+    setFeedback({ type: 'error', message: errorMessage });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Feedback component
   const FeedbackMessage = ({ type, message, onClose }) => {
