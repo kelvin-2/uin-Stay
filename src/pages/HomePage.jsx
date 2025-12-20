@@ -17,17 +17,12 @@ function HomePage() {
 
   return (
     <div className="w-full mx-auto">
-      {/* <HeroSection/> */}
-      
-
+      <HeroSection/>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        
           <>
             <FeaturedProperties/>
             <Benefits/>
           </>
-        
       </div>
     </div>
   );
