@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
-import supabase from '../supabaseClient';
+import { addProperty } from '../api/CreateProperty';
 import { Loader2, CheckCircle } from 'lucide-react';
 
 const AddPropertyForm = ({ onSubmit, onClose }) => {
