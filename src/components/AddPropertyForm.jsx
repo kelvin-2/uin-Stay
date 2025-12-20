@@ -1,35 +1,32 @@
 import React, { useState } from 'react';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
-import { addProperty } from '../api/CreateProperty';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { X, Image as ImageIcon, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { createAccommodationWithImages } from '../api/accommodationApi';
 
 const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
     address: '',
     location: '',
     roomType: '',
-    distanceFromShuttle: '',
-    distanceFromSchool: '',
     amenities: [],
-    paymentAccepted: [],
+    paymentMethods: [],
     images: [],
-    houseRules: [],
-    leaseLength: '',
     depositAmount: '',
     monthlyRent: '',
-    accDetails: '' // Added new field for accommodation details
+    accDetails: '',
+    maxOccupants: '1'
   });
 
   const [previewImages, setPreviewImages] = useState([]);
-  const [uploadStatus, setUploadStatus] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const roomTypes = [
     "Studio",
     "Single",
-    "ensuite",
+    "Ensuite",
     "2 Shared room",
     "3 Shared room"
   ];
@@ -37,7 +34,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   const amenityOptions = [
     "WiFi",
     "Air Conditioning",
-    "Washin Machine",
+    "Washing Machine",
     "Parking",
     "Kitchen",
     "Study Area",
@@ -48,7 +45,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
   ];
 
   const paymentOptions = [
-    "NSFAS", "BUSARY", "PRIVATE"
+    "NSFAS", "BURSARY", "PRIVATE"
   ];
   
   const locationOptions = [
@@ -68,6 +65,8 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleCheckboxChange = (field, value) => {
@@ -81,160 +80,86 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
+    
+    // Validate file count
+    if (formData.images.length + files.length > 10) {
+      setErrorMessage('Maximum 10 images allowed per property');
+      return;
+    }
+
+    // Validate file sizes
+    const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      setErrorMessage('Some files exceed 5MB limit');
+      return;
+    }
+
     const newPreviewUrls = files.map(file => URL.createObjectURL(file));
     
-    // Initialize upload status for new images
-    const newUploadStatus = files.map(() => ({ 
-      uploading: false, 
-      uploaded: false, 
-      error: false 
-    }));
-
     setPreviewImages(prev => [...prev, ...newPreviewUrls]);
-    setUploadStatus(prev => [...prev, ...newUploadStatus]);
-    
     setFormData(prev => ({
       ...prev,
       images: [...prev.images, ...files]
     }));
-  };
-
-  // New function to upload images to Supabase storage
-  const uploadImagesToSupabase = async (files, userId) => {
-    const uploadPromises = files.map(async (file, index) => {
-      setUploadStatus(prev => {
-        const newStatus = [...prev];
-        newStatus[index] = { ...newStatus[index], uploading: true };
-        return newStatus;
-      });
-
-      try {
-        // Create a unique file name to avoid collisions
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        // Upload the file to Supabase Storage
-        const { data, error } = await supabase.storage
-          .from('properties')
-          .upload(filePath, file);
-
-        if (error) {
-          throw error;
-        }
-
-        // Get the public URL for the uploaded file
-        const { data: { publicUrl } } = supabase.storage
-          .from('properties')
-          .getPublicUrl(filePath);
-
-        setUploadStatus(prev => {
-          const newStatus = [...prev];
-          newStatus[index] = { uploading: false, uploaded: true, error: false };
-          return newStatus;
-        });
-
-        return publicUrl;
-      } catch (error) {
-        console.error('Image upload error:', error);
-        setUploadStatus(prev => {
-          const newStatus = [...prev];
-          newStatus[index] = { uploading: false, uploaded: false, error: true };
-          return newStatus;
-        });
-        // Return an empty string on error
-        return '';
-      }
-    });
-  
-    return Promise.all(uploadPromises);
+    setErrorMessage('');
   };
 
   const removeImage = (index) => {
+    URL.revokeObjectURL(previewImages[index]);
+    
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
-    setUploadStatus(prev => prev.filter((_, i) => i !== index));
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitSuccess(false);
+    setErrorMessage('');
+    setUploadProgress(0);
   
     try {
-      // Fetch the authenticated user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-      if (authError || !user) {
-        console.error("Error fetching user:", authError);
-        setIsSubmitting(false);
-        return;
-      }
-  
-      // Upload images to Supabase if there are any
-      let imageUrls = [];
-      if (formData.images.length > 0) {
-        imageUrls = await uploadImagesToSupabase(formData.images, user.id);
-        // Filter out any failed uploads
-        imageUrls = imageUrls.filter(url => url);
-      }
-  
-      // Prepare data for Supabase
+      // Prepare property data
       const propertyData = {
-        address: formData.address || null,
-        location: formData.location || null,
-        room_type: formData.roomType || null,
-        amenities: formData.amenities || [],
-        payment_methods: formData.paymentAccepted || [],
-        image_url: imageUrls || [],
+        address: formData.address.trim(),
+        location: formData.location,
+        roomType: formData.roomType,
+        amenities: formData.amenities,
+        paymentMethods: formData.paymentMethods,
         deposit: parseFloat(formData.depositAmount) || 0,
-        monthly_rent: parseFloat(formData.monthlyRent) || 0,
-        landlord_id: user.id,
-        acc_details: formData.accDetails || null // Added accommodation details
+        monthlyRent: parseFloat(formData.monthlyRent),
+        accDetails: formData.accDetails.trim(),
+        maxOccupants: parseInt(formData.maxOccupants) || 1
       };
   
-      const { data: existingProperty } = await supabase
-      .from('accommodation')
-      .select('acc_id')
-      .eq('address', formData.address)
-      .eq('landlord_id', user.id)
-      .single();
-
-      let response;
-      if (existingProperty) {
-        // Update existing property
-        response = await supabase
-          .from('accommodation')
-          .update(propertyData)
-          .eq('acc_id', existingProperty.acc_id);
-      } else {
-        // Insert new property
-        response = await supabase
-          .from('accommodation')
-          .insert([propertyData])
-          .select();
-      }
-  
-      const { data, error: supabaseError } = response;
-  
-      if (supabaseError) {
-        console.error('Supabase Error:', supabaseError.message);
-        setSuccessMessage('There was an issue saving your property. Please try again.');
-      } else {
-        setSuccessMessage('Property saved successfully!');
-        setSubmitSuccess(true);
-        
-        // Call onSubmit with the saved data
-        onSubmit(data ? data[0] : propertyData);
-      }
+      // Upload images and create accommodation
+      const response = await createAccommodationWithImages(
+        propertyData,
+        formData.images,
+        (progress) => setUploadProgress(progress)
+      );
+      
+      setSuccessMessage('Property added successfully!');
+      setSubmitSuccess(true);
+      
+      // Clean up preview URLs
+      previewImages.forEach(url => URL.revokeObjectURL(url));
+      
+      // Wait before closing to show success message
+      setTimeout(() => {
+        onSubmit(response.property);
+        onClose();
+      }, 1500);
+      
     } catch (err) {
       console.error('Error submitting property:', err);
-      setSuccessMessage('An unexpected error occurred. Please try again.');
+      setErrorMessage(err.message || 'Failed to add property. Please try again.');
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -244,83 +169,93 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Images Section */}
           <div className="space-y-4">
-            <label className="block text-sm font-semibold text-blue-900">
-              Property Images
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-semibold text-blue-900">
+                Property Images {formData.images.length > 0 && `(${formData.images.length}/10)`}
+              </label>
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <span className="text-sm text-blue-600">
+                  Uploading: {uploadProgress}%
+                </span>
+              )}
+            </div>
+            
             <div className="flex flex-wrap gap-4">
               {previewImages.map((url, index) => (
-                <div key={index} className="relative">
+                <div key={index} className="relative group">
                   <img 
                     src={url} 
                     alt={`Preview ${index + 1}`} 
                     className="w-24 h-24 object-cover rounded-lg"
                   />
-                  {/* Upload Status Indicators */}
-                  {uploadStatus[index]?.uploading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <Loader2 className="h-8 w-8 text-white animate-spin" />
-                    </div>
-                  )}
-                  {uploadStatus[index]?.uploaded && (
-                    <div className="absolute top-0 right-0 bg-green-500 rounded-full">
-                      <CheckCircle className="h-6 w-6 text-white" />
-                    </div>
-                  )}
-                  {uploadStatus[index]?.error && (
-                    <div className="absolute top-0 right-0 bg-red-500 rounded-full">
-                      <X className="h-6 w-6 text-white" />
-                    </div>
-                  )}
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 
+                             hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isSubmitting}
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ))}
-              <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
-                <ImageIcon className="h-8 w-8 text-blue-500" />
-                <span className="text-xs text-blue-500 mt-1">Add Image</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handleImageUpload} 
-                  className="hidden" 
-                  disabled={isSubmitting}
-                />
-              </label>
+              
+              {formData.images.length < 10 && (
+                <label className="w-24 h-24 flex flex-col items-center justify-center 
+                               border-2 border-dashed border-blue-300 rounded-lg 
+                               hover:border-blue-500 hover:bg-blue-50 transition-colors 
+                               cursor-pointer">
+                  <ImageIcon className="h-8 w-8 text-blue-500" />
+                  <span className="text-xs text-blue-500 mt-1">Add Image</span>
+                  <input 
+                    type="file" 
+                    accept="image/jpeg,image/jpg,image/png,image/webp" 
+                    multiple 
+                    onChange={handleImageUpload} 
+                    className="hidden" 
+                    disabled={isSubmitting}
+                  />
+                </label>
+              )}
             </div>
+            <p className="text-xs text-gray-500">
+              Upload up to 10 images. Supported formats: JPEG, PNG, WebP (max 5MB each)
+            </p>
           </div>
 
           {/* Address */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
-              Property Address
+              Property Address <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                       focus:outline-none focus:border-blue-500 focus:ring-2 
+                       focus:ring-blue-200 transition-all"
+              placeholder="e.g., 123 Main Street, Summerstrand"
               required
+              disabled={isSubmitting}
             />
           </div>
           
           {/* Location */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
-              Location
+              Location <span className="text-red-500">*</span>
             </label>
             <select
               name="location"
               value={formData.location}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                       focus:outline-none focus:border-blue-500 focus:ring-2 
+                       focus:ring-blue-200 transition-all"
               required
+              disabled={isSubmitting}
             >
               <option value="">Select Location</option>
               {locationOptions.map(location => (
@@ -332,51 +267,84 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           {/* Property Details */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
-              Property Details
+              Property Details <span className="text-red-500">*</span>
             </label>
             <textarea
               name="accDetails"
               value={formData.accDetails}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-              placeholder="Describe your property, including features, environment, nearby facilities, and any important information for potential tenants."
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                       focus:outline-none focus:border-blue-500 focus:ring-2 
+                       focus:ring-blue-200 transition-all resize-none"
+              placeholder="Describe your property in detail. Include features, environment, nearby facilities, and any important information for potential tenants."
               rows={5}
               required
+              disabled={isSubmitting}
             />
+            <p className="text-xs text-gray-500">
+              Provide a detailed description to attract potential tenants
+            </p>
           </div>
 
-          {/* Room Type and Monthly Rent */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Room Type, Monthly Rent, and Max Occupants */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
-                Room Type
+                Room Type <span className="text-red-500">*</span>
               </label>
               <select
                 name="roomType"
                 value={formData.roomType}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                         focus:outline-none focus:border-blue-500 focus:ring-2 
+                         focus:ring-blue-200 transition-all"
                 required
+                disabled={isSubmitting}
               >
-                <option value="">Select Room Type</option>
+                <option value="">Select Type</option>
                 {roomTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
             </div>
+            
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-blue-900">
-                Monthly Rent (R)
+                Monthly Rent (R) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 name="monthlyRent"
                 value={formData.monthlyRent}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                min="0"
-                placeholder="Enter monthly rent"
+                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                         focus:outline-none focus:border-blue-500 focus:ring-2 
+                         focus:ring-blue-200 transition-all"
+                min="1"
+                step="0.01"
+                placeholder="3000"
                 required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-blue-900">
+                Max Occupants <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="maxOccupants"
+                value={formData.maxOccupants}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                         focus:outline-none focus:border-blue-500 focus:ring-2 
+                         focus:ring-blue-200 transition-all"
+                min="1"
+                max="10"
+                required
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -384,17 +352,21 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           {/* Deposit Amount */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-blue-900">
-              Deposit Amount (R)
+              Deposit Amount (R) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
               name="depositAmount"
               value={formData.depositAmount}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              className="w-full px-4 py-3 border-2 border-blue-100 rounded-lg 
+                       focus:outline-none focus:border-blue-500 focus:ring-2 
+                       focus:ring-blue-200 transition-all"
               min="0"
-              placeholder="Enter deposit amount"
+              step="0.01"
+              placeholder="3000"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -405,12 +377,17 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {amenityOptions.map(amenity => (
-                <label key={amenity} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                <label 
+                  key={amenity} 
+                  className="flex items-center space-x-3 p-3 border-2 border-blue-50 
+                           rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                >
                   <input
                     type="checkbox"
                     checked={formData.amenities.includes(amenity)}
                     onChange={() => handleCheckboxChange('amenities', amenity)}
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isSubmitting}
                   />
                   <span className="text-sm text-blue-900">{amenity}</span>
                 </label>
@@ -425,12 +402,17 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {paymentOptions.map(payment => (
-                <label key={payment} className="flex items-center space-x-3 p-3 border-2 border-blue-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                <label 
+                  key={payment} 
+                  className="flex items-center space-x-3 p-3 border-2 border-blue-50 
+                           rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                >
                   <input
                     type="checkbox"
-                    checked={formData.paymentAccepted.includes(payment)}
-                    onChange={() => handleCheckboxChange('paymentAccepted', payment)}
+                    checked={formData.paymentMethods.includes(payment)}
+                    onChange={() => handleCheckboxChange('paymentMethods', payment)}
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isSubmitting}
                   />
                   <span className="text-sm text-blue-900">{payment}</span>
                 </label>
@@ -440,35 +422,47 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
           
           {/* Success Message */}
           {submitSuccess && (
-            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 my-4 rounded-md flex items-center">
-              <CheckCircle className="h-6 w-6 mr-2" />
-              <span>{successMessage}</span>
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md flex items-center">
+              <CheckCircle className="h-6 w-6 text-green-500 mr-3" />
+              <span className="text-green-700 font-medium">{successMessage}</span>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md flex items-start">
+              <AlertCircle className="h-6 w-6 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-700 font-medium">Error</p>
+                <p className="text-red-600 text-sm mt-1">{errorMessage}</p>
+              </div>
             </div>
           )}
 
           {/* Submit Buttons */}
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex justify-end space-x-4 pt-4 border-t">
             <button 
               type="button" 
               onClick={onClose} 
-              className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700"
+              className="px-6 py-3 border-2 border-blue-200 rounded-lg text-blue-700 
+                       hover:bg-blue-50 transition-colors font-medium"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              className={`px-6 py-3 rounded-lg text-white ${
+              className={`px-6 py-3 rounded-lg text-white font-medium transition-all ${
                 isSubmitting 
                   ? 'bg-blue-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
               }`}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <div className="flex items-center">
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Adding Property...
+                  {uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Processing...'}
                 </div>
               ) : (
                 'Add Property'
