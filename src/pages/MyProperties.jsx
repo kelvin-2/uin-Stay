@@ -3,7 +3,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
 import PropertyCard from '../components/LandlordPropertyCard';
 import EditPropertyForm from '../components/EditPropertyForm';
-import supabase from '../supabaseClient';
+import { getMyProperties } from '../api/accomodationApi';
 
 const MyPropertiesPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -14,41 +14,43 @@ const MyPropertiesPage = () => {
 
   // Cache mechanism for properties
   const [propertyCache, setPropertyCache] = useState(null);
-
-  // Fetch properties when component mounts
+ 
   useEffect(() => {
     const fetchProperties = async () => {
-      // Use cache if available
-      if (propertyCache) {
-        setProperties(propertyCache);
-        setLoading(false);
-        return;
-      }
-
+      setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          const { data, error } = await supabase
-            .from('accommodation')
-            .select('*')
-            .eq('landlord_id', user.id);
-            
-          if (error) throw error;
-          
-          const propertiesData = data || [];
-          setProperties(propertiesData);
-          setPropertyCache(propertiesData);
-        }
+        console.log("🔥 Fetching properties from API");
+        const data = await getMyProperties(); // your API function
+        console.log("✅ Properties fetched:", data);
+
+        // Map backend fields to PropertyCard fields
+        const mappedProperties = (data || []).map(p => ({
+          acc_id: p.id,               // PropertyCard expects acc_id
+          monthly_rent: p.rent,       // PropertyCard expects monthly_rent
+          location: p.title || 'Town',
+          address: p.address || 'Address not specified',
+          deposit: p.deposit || 0,
+          room_type: p.room_type || 'Studio',
+          amenities: p.amenities || [],
+          payment_methods: p.payment_methods || [],
+          image_url: p.image_url,      // can be null, fallback handled in card
+          status: p.is_verified ? 'available' : 'pending',
+          acc_details: p.description || '',
+        }));
+
+        setProperties(mappedProperties);
+        setPropertyCache(mappedProperties);
       } catch (error) {
-        console.error('Error fetching properties:', error);
+        console.error("Error fetching properties:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProperties();
-  }, [propertyCache]);
+  }, []);
+
+
 
   const handleAddProperty = (propertyData) => {
     // Add the new property to the state
@@ -102,7 +104,7 @@ const MyPropertiesPage = () => {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-5 w-5" />
-          Add Property
+          Add Property 
         </button>
       </div>
 
