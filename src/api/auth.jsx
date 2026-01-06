@@ -12,7 +12,7 @@ export const createUser = async (userData) => {
       phone_number: userData.phone_number
     });
     
-    const response = await api.post('/api/auth/createUser', {
+    const response = await api.post('/auth/createUser', {
       email: userData.email,
       user_name: userData.user_name,
       first_name: userData.first_name,
@@ -68,7 +68,7 @@ export const loginUser = async (email, password) => {
   try {
     console.log('Attempting login with:', { email });
     
-    const response = await api.post('/api/auth/login', {
+    const response = await api.post('/auth/login', {
       email,
       password
     });

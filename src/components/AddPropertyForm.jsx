@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Image as ImageIcon, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { createAccommodationWithImages } from '../api/accommodationApi';
+import { createAccommodation } from '../api/accomodationApi';
 
 const AddPropertyForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
@@ -136,7 +136,7 @@ const AddPropertyForm = ({ onSubmit, onClose }) => {
       };
   
       // Upload images and create accommodation
-      const response = await createAccommodationWithImages(
+      const response = await createAccommodation(
         propertyData,
         formData.images,
         (progress) => setUploadProgress(progress)

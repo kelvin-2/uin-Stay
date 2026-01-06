@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // // // in development 
-const API_URL = 'http://localhost:3002';
+const API_URL = 'http://localhost:3002/api';
 
 
 //this is in production 
