@@ -28,8 +28,6 @@ export const createAccommodation = async (
 
   const config = {
     headers: {
-      // IMPORTANT: Don't set Content-Type for multipart/form-data
-      // The browser will set it automatically with the correct boundary
       Authorization: `Bearer ${token}`,
     }
   };
@@ -58,9 +56,19 @@ export const createAccommodation = async (
 };
 
 export const getMyProperties = async () => {
+  console.log("here we go");
   try {
-    const response = await api.get('/accommodations/my-properties');
-    return response.data.properties;
+    const token = localStorage.getItem("token");
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    };
+
+    const response = await api.get('/accommodations/my-properties',config); 
+    console.log("the response:",response);
+
+    return response.data;
   } catch (error) {
     console.error('Error fetching properties:', error);
     throw new Error(

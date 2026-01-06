@@ -1,45 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Eye, X, Edit, Trash2, ArrowLeft } from 'lucide-react';
-// import AddPropertyForm from '../components/AddPropertyForm';
 import PropertyDetails from '../components/PropertyDetailsCard';
-import supabase from '../supabaseClient';
+import { getMyProperties } from '../api/accomodationApi';
 
 const LandlordDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'detail'
+  const [viewMode, setViewMode] = useState('list');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    Console.log("featching properties");
     fetchProperties();
   }, []);
 
   const fetchProperties = async () => {
-    // Get the authenticated user's ID
-    const { data: user, error: userError } = await supabase.auth.getUser();
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 sec delay
-  
-    if (userError) {
-      console.error("Error getting user:", userError.message);
-      return;
-    }
-  
-    const landlordId = user?.user?.id; // User's unique ID from Supabase Auth
-  
-    console.log("Fetching properties for landlord ID:", landlordId);
-  
-    // Fetch properties where landlord_id matches the authenticated user ID
-    const { data, error } = await supabase
-      .from("accommodation")
-      .select("*")
-      .eq("landlord_id", landlordId); // Ensure landlord_id exists in the table
-  
-    if (error) {
-      console.error("Error fetching properties:", error.message);
-    } else {
-      console.log("Properties fetched:", data);
-      setProperties(data);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await getMyProperties();
+      setProperties(data || []);
+    } catch (err) {
+      console.error("Error fetching properties:", err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,32 +54,26 @@ const LandlordDashboard = () => {
   };
 
   const handleUpdateProperty = async (updatedProperty) => {
-    const { data, error } = await supabase
-      .from('accommodation')
-      .update(updatedProperty)
-      .eq('acc_id', updatedProperty.id)
-      .select()
-      .single(); // Ensures a single updated record is returned
-  
-    if (error) {
-      console.error('Error updating property:', error.message);
-    } else {
-      console.log('Property updated:', data);
-      await fetchProperties(); // Ensure the state updates after a successful update
+    // You'll need to create an updateProperty API function
+    // For now, this is a placeholder
+    try {
+      // await updateProperty(updatedProperty.id, updatedProperty);
+      await fetchProperties();
       setIsModalOpen(false);
       setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating property:', error.message);
     }
   };
   
   const handleDeleteProperty = async (id) => {
-    const { error } = await supabase
-      .from('accommodation')
-      .delete()
-      .eq('acc_id', id);
-    if (error) {
-      console.error('Error deleting property:', error);
-    } else {
-      fetchProperties();
+    // You'll need to create a deleteProperty API function
+    // For now, this is a placeholder
+    try {
+      // await deleteProperty(id);
+      await fetchProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error.message);
     }
   };
 
@@ -103,6 +86,36 @@ const LandlordDashboard = () => {
 
   const totalProperties = properties.length;
   const totalViews = properties.reduce((sum, property) => sum + (property.views || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 max-w-7xl mx-auto mt-16 md:mt-20">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading properties...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 max-w-7xl mx-auto mt-16 md:mt-20">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 font-medium">Error loading properties</p>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+          <button 
+            onClick={fetchProperties}
+            className="mt-3 text-sm text-red-600 hover:text-red-800 font-medium"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 mt-16 md:mt-20">
@@ -225,7 +238,7 @@ const LandlordDashboard = () => {
                 </div>
               ) : (
                 <div className="p-4 text-center text-gray-500">
-                  No properties found. Add your first property!
+                  No properties found. Add your first property today!
                 </div>
               )}
             </div>
@@ -270,15 +283,9 @@ const LandlordDashboard = () => {
                   if (isEditing) {
                     await handleUpdateProperty(propertyData);
                   } else {
-                    const { data, error } = await supabase
-                      .from('accommodations')
-                      .insert([propertyData]);
-                    if (error) {
-                      console.error('Error adding property:', error);
-                    } else {
-                      fetchProperties();
-                      handleCloseModal();
-                    }
+                    // Call API to add property
+                    await fetchProperties();
+                    handleCloseModal();
                   }
                 }}
                 onClose={handleCloseModal}
