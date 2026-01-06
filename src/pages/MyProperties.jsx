@@ -14,17 +14,32 @@ const MyPropertiesPage = () => {
 
   // Cache mechanism for properties
   const [propertyCache, setPropertyCache] = useState(null);
-  // Fetch properties when component mounts
+ 
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
-
       try {
         console.log("🔥 Fetching properties from API");
         const data = await getMyProperties(); // your API function
         console.log("✅ Properties fetched:", data);
-        setProperties(data || []);
-        setPropertyCache(data || []);
+
+        // Map backend fields to PropertyCard fields
+        const mappedProperties = (data || []).map(p => ({
+          acc_id: p.id,               // PropertyCard expects acc_id
+          monthly_rent: p.rent,       // PropertyCard expects monthly_rent
+          location: p.title || 'Town',
+          address: p.address || 'Address not specified',
+          deposit: p.deposit || 0,
+          room_type: p.room_type || 'Studio',
+          amenities: p.amenities || [],
+          payment_methods: p.payment_methods || [],
+          image_url: p.image_url,      // can be null, fallback handled in card
+          status: p.is_verified ? 'available' : 'pending',
+          acc_details: p.description || '',
+        }));
+
+        setProperties(mappedProperties);
+        setPropertyCache(mappedProperties);
       } catch (error) {
         console.error("Error fetching properties:", error);
       } finally {
@@ -34,6 +49,7 @@ const MyPropertiesPage = () => {
 
     fetchProperties();
   }, []);
+
 
 
   const handleAddProperty = (propertyData) => {
