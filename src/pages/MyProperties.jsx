@@ -12,53 +12,48 @@ const MyPropertiesPage = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
 
-  // Cache mechanism for properties
-  const [propertyCache, setPropertyCache] = useState(null);
+  // Fetch properties function (extracted for reuse)
+  const fetchProperties = async () => {
+    setLoading(true);
+    try {
+      console.log("🔥 Fetching properties from API");
+      const data = await getMyProperties();
+      console.log("✅ Properties fetched:", data);
+
+      // Extract the properties array from the response
+      const propertiesArray = data.properties || [];
+
+      // Map backend fields to PropertyCard fields
+      const mappedProperties = propertiesArray.map(p => ({
+        acc_id: p.id,
+        monthly_rent: p.monthlyRent,
+        location: p.title || 'Town',
+        address: p.address || 'Address not specified',
+        deposit: p.deposit || 0,
+        room_type: p.roomType,
+        amenities: p.amenities || [],
+        payment_methods: p.paymentMethods,
+        image_url: p.images?.[0] || null,
+        status: p.isVerified ? 'available' : 'pending',
+        acc_details: p.accDetails || '',
+        max_occupants: p.maxOccupants || 1,
+      }));
+
+      setProperties(mappedProperties);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
  
   useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
-      try {
-        console.log("🔥 Fetching properties from API");
-        const data = await getMyProperties();
-        console.log("✅ Properties fetched:", data);
-
-        // Extract the properties array from the response
-        const propertiesArray = data.properties || [];
-
-        // Map backend fields (already in camelCase from our mapping function) to PropertyCard fields
-        const mappedProperties = propertiesArray.map(p => ({
-          acc_id: p.id,
-          monthly_rent: p.monthlyRent,
-          location: p.title || 'Town',
-          address: p.address || 'Address not specified',
-          deposit: p.deposit || 0,
-          room_type: p.roomType,
-          amenities: p.amenities || [],
-          payment_methods: p.paymentMethods,
-          image_url: p.images?.[0] || null,
-          status: p.isVerified ? 'available' : 'pending',
-          acc_details: p.accDetails || '',
-          max_occupants: p.maxOccupants || 1,
-        }));
-
-        setProperties(mappedProperties);
-        setPropertyCache(mappedProperties);
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProperties();
   }, []);
 
-  const handleAddProperty = (propertyData) => {
-    // Add the new property to the state
-    const updatedProperties = [...properties, propertyData];
-    setProperties(updatedProperties);
-    setPropertyCache(updatedProperties);
+  const handleAddProperty = async (propertyData) => {
+    // Refetch properties after adding
+    await fetchProperties();
     setShowAddForm(false);
   };
 
@@ -66,16 +61,11 @@ const MyPropertiesPage = () => {
     try {
       // Use the deleteAccommodation API function
       await deleteAccommodation(propertyToDelete.acc_id);
-  
-      // Update local state after successful deletion
-      const updatedProperties = properties.filter(
-        property => property.acc_id !== propertyToDelete.acc_id
-      );
-      
-      setProperties(updatedProperties);
-      setPropertyCache(updatedProperties);
       
       console.log("✅ Property deleted successfully");
+      
+      // Refetch properties after deletion
+      await fetchProperties();
     } catch (error) {
       console.error('Error deleting property:', error);
       // Optionally show error message to user
@@ -88,13 +78,9 @@ const MyPropertiesPage = () => {
     setShowEditForm(true);
   };
 
-  const handleUpdateProperty = (oldProperty, updatedProperty) => {
-    const updatedProperties = properties.map(property =>
-      property.acc_id === oldProperty.acc_id ? updatedProperty : property
-    );
-    
-    setProperties(updatedProperties);
-    setPropertyCache(updatedProperties);
+  const handleUpdateProperty = async (oldProperty, updatedProperty) => {
+    // Refetch properties after update
+    await fetchProperties();
     setShowEditForm(false);
   };
 
