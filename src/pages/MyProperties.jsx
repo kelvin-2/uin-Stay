@@ -20,22 +20,26 @@ const MyPropertiesPage = () => {
       setLoading(true);
       try {
         console.log("🔥 Fetching properties from API");
-        const data = await getMyProperties(); // your API function
+        const data = await getMyProperties(); // returns { properties: [...] }
         console.log("✅ Properties fetched:", data);
 
-        // Map backend fields to PropertyCard fields
-        const mappedProperties = (data || []).map(p => ({
-          acc_id: p.id,               // PropertyCard expects acc_id
-          monthly_rent: p.rent,       // PropertyCard expects monthly_rent
+        // Extract the properties array from the response
+        const propertiesArray = data.properties || [];
+
+        // Map backend fields (already in camelCase from our mapping function) to PropertyCard fields
+        const mappedProperties = propertiesArray.map(p => ({
+          acc_id: p.id,                    // PropertyCard expects acc_id
+          monthly_rent: p.monthlyRent,     // Now camelCase from our mapping
           location: p.title || 'Town',
           address: p.address || 'Address not specified',
           deposit: p.deposit || 0,
-          room_type: p.room_type || 'Studio',
+          room_type: p.roomType,           // Now camelCase from our mapping
           amenities: p.amenities || [],
-          payment_methods: p.payment_methods || [],
-          image_url: p.image_url,      // can be null, fallback handled in card
-          status: p.is_verified ? 'available' : 'pending',
-          acc_details: p.description || '',
+          payment_methods: p.paymentMethods, // Now camelCase from our mapping
+          image_url: p.images?.[0] || null,  // Get first image from images array
+          status: p.isVerified ? 'available' : 'pending', // Now camelCase
+          acc_details: p.accDetails || '',   // Now camelCase from our mapping
+          max_occupants: p.maxOccupants || 1, // Include this if PropertyCard needs it
         }));
 
         setProperties(mappedProperties);
@@ -49,8 +53,6 @@ const MyPropertiesPage = () => {
 
     fetchProperties();
   }, []);
-
-
 
   const handleAddProperty = (propertyData) => {
     // Add the new property to the state

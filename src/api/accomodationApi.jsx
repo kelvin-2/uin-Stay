@@ -1,5 +1,30 @@
 import api from './axiosClient';
 
+// Utility function to map backend response to frontend format
+const mapAccommodationResponse = (property) => {
+  if (!property) return null;
+  console.log(property);
+  
+  return {
+    id: property.id,
+    title: property.title,
+    address: property.address,
+    accDetails: property.description,
+    maxOccupants: property.max_occupants,
+    deposit: property.deposit,
+    userId: property.user_id,
+    monthlyRent: property.rent,
+    roomType: property.room_type,
+    location: property.location,
+    paymentMethods: property.payment_methods,
+    isVerified: property.is_verified,
+    amenities: property.amenities,
+    images: property.image_urls,
+    createdAt: property.created_at,
+    updatedAt: property.updated_at
+  };
+};
+
 export const createAccommodation = async (
   propertyData,
   imageFiles = [],
@@ -45,7 +70,13 @@ export const createAccommodation = async (
       formData,
       config
     );
-    return response.data;
+    
+    // Map the response before returning
+    return {
+      message: response.data.message,
+      property: mapAccommodationResponse(response.data.property),
+      imageErrors: response.data.imageErrors || []
+    };
   } catch (error) {
     console.error('=== Upload Error ===');
     console.error('Error:', error);
@@ -65,10 +96,20 @@ export const getMyProperties = async () => {
       }
     };
 
-    const response = await api.get('/accommodations/my-properties',config); 
-    console.log("the response:",response);
+    const response = await api.get('/accommodations/my-properties', config); 
+    console.log("the response:", response);
 
-    return response.data;
+    // Map all properties in the response
+    const mappedData = {
+      ...response.data,
+      properties: Array.isArray(response.data.properties) 
+        ? response.data.properties.map(mapAccommodationResponse)
+        : Array.isArray(response.data)
+        ? response.data.map(mapAccommodationResponse)
+        : []
+    };
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching properties:', error);
     throw new Error(
@@ -82,7 +123,12 @@ export const getMyProperties = async () => {
 export const updateAccommodation = async (propertyId, updateData) => {
   try {
     const response = await api.put(`/accommodations/${propertyId}`, updateData);
-    return response.data;
+    
+    // Map the response before returning
+    return {
+      ...response.data,
+      property: mapAccommodationResponse(response.data.property)
+    };
   } catch (error) {
     console.error('Error updating accommodation:', error);
     throw new Error(
