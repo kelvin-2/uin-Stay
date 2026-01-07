@@ -3,7 +3,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
 import PropertyCard from '../components/LandlordPropertyCard';
 import EditPropertyForm from '../components/EditPropertyForm';
-import { getMyProperties } from '../api/accomodationApi';
+import { getMyProperties, deleteAccommodation } from '../api/accomodationApi';
 
 const MyPropertiesPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -20,7 +20,7 @@ const MyPropertiesPage = () => {
       setLoading(true);
       try {
         console.log("🔥 Fetching properties from API");
-        const data = await getMyProperties(); // returns { properties: [...] }
+        const data = await getMyProperties();
         console.log("✅ Properties fetched:", data);
 
         // Extract the properties array from the response
@@ -28,18 +28,18 @@ const MyPropertiesPage = () => {
 
         // Map backend fields (already in camelCase from our mapping function) to PropertyCard fields
         const mappedProperties = propertiesArray.map(p => ({
-          acc_id: p.id,                    // PropertyCard expects acc_id
-          monthly_rent: p.monthlyRent,     // Now camelCase from our mapping
+          acc_id: p.id,
+          monthly_rent: p.monthlyRent,
           location: p.title || 'Town',
           address: p.address || 'Address not specified',
           deposit: p.deposit || 0,
-          room_type: p.roomType,           // Now camelCase from our mapping
+          room_type: p.roomType,
           amenities: p.amenities || [],
-          payment_methods: p.paymentMethods, // Now camelCase from our mapping
-          image_url: p.images?.[0] || null,  // Get first image from images array
-          status: p.isVerified ? 'available' : 'pending', // Now camelCase
-          acc_details: p.accDetails || '',   // Now camelCase from our mapping
-          max_occupants: p.maxOccupants || 1, // Include this if PropertyCard needs it
+          payment_methods: p.paymentMethods,
+          image_url: p.images?.[0] || null,
+          status: p.isVerified ? 'available' : 'pending',
+          acc_details: p.accDetails || '',
+          max_occupants: p.maxOccupants || 1,
         }));
 
         setProperties(mappedProperties);
@@ -64,21 +64,22 @@ const MyPropertiesPage = () => {
 
   const handleDeleteProperty = async (propertyToDelete) => {
     try {
-      const { error } = await supabase
-        .from('accommodation')
-        .delete()
-        .eq('acc_id', propertyToDelete.acc_id);
-        
-      if (error) throw error;
+      // Use the deleteAccommodation API function
+      await deleteAccommodation(propertyToDelete.acc_id);
   
+      // Update local state after successful deletion
       const updatedProperties = properties.filter(
         property => property.acc_id !== propertyToDelete.acc_id
       );
       
       setProperties(updatedProperties);
       setPropertyCache(updatedProperties);
+      
+      console.log("✅ Property deleted successfully");
     } catch (error) {
       console.error('Error deleting property:', error);
+      // Optionally show error message to user
+      alert('Failed to delete property. Please try again.');
     }
   };
 

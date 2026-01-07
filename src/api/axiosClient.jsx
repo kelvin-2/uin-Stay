@@ -3,16 +3,24 @@ import axios from 'axios';
 // // // in development 
 const API_URL = 'http://localhost:3002/api';
 
-
-//this is in production 
-// const API_URL = 'https://emanzinibackend.onrender.com';
-
 const api = axios.create({
   baseURL: API_URL,
   timeout: 40000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: {
+  //   'Content-Type': 'application/json',
+  // },
 });
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token'); // or however you store it
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export default api;
