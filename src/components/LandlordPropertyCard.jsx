@@ -345,7 +345,7 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
           
           {/* Deposit Badge */}
           {property.deposit > 0 && (
-            <div className="bg-amber-50 text-amber-700 text-xs font-medium px-2 py-1 rounded-lg border border-amber-200">
+            <div className="bg-amber-50 text-amber-700 text-s font-medium px-2 py-1 rounded-lg border border-amber-200">
               R{property.deposit.toLocaleString()} deposit
             </div>
           )}

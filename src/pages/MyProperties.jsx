@@ -59,16 +59,23 @@ const MyPropertiesPage = () => {
 
   const handleDeleteProperty = async (propertyToDelete) => {
     try {
-      // Use the deleteAccommodation API function
+      // Optimistically remove from UI first (instant feedback)
+      const updatedProperties = properties.filter(
+        property => property.acc_id !== propertyToDelete.acc_id
+      );
+      setProperties(updatedProperties);
+      
+      // Delete from backend in the background
       await deleteAccommodation(propertyToDelete.acc_id);
       
       console.log("✅ Property deleted successfully");
       
-      // Refetch properties after deletion
-      await fetchProperties();
+      // Optionally refetch to ensure sync (but UI already updated)
+      // await fetchProperties();
     } catch (error) {
       console.error('Error deleting property:', error);
-      // Optionally show error message to user
+      // If deletion failed, refetch to restore the property
+      await fetchProperties();
       alert('Failed to delete property. Please try again.');
     }
   };
