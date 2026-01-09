@@ -3,7 +3,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import AddPropertyForm from '../components/AddPropertyForm';
 import PropertyCard from '../components/LandlordPropertyCard';
 import EditPropertyForm from '../components/EditPropertyForm';
-import { getMyProperties } from '../api/accomodationApi';
+import { getMyProperties, deleteAccommodation } from '../api/accomodationApi';
 
 const MyPropertiesPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -12,71 +12,71 @@ const MyPropertiesPage = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
 
-  // Cache mechanism for properties
-  const [propertyCache, setPropertyCache] = useState(null);
+  // Fetch properties function (extracted for reuse)
+  const fetchProperties = async () => {
+    setLoading(true);
+    try {
+      console.log("🔥 Fetching properties from API");
+      const data = await getMyProperties();
+      console.log("✅ Properties fetched:", data);
+
+      // Extract the properties array from the response
+      const propertiesArray = data.properties || [];
+
+      // Map backend fields to PropertyCard fields
+      const mappedProperties = propertiesArray.map(p => ({
+        acc_id: p.id,
+        monthly_rent: p.monthlyRent,
+        location: p.title || 'Town',
+        address: p.address || 'Address not specified',
+        deposit: p.deposit || 0,
+        room_type: p.roomType,
+        amenities: p.amenities || [],
+        payment_methods: p.paymentMethods,
+        image_url: p.images?.[0] || null,
+        status: p.isVerified ? 'available' : 'pending',
+        acc_details: p.accDetails || '',
+        max_occupants: p.maxOccupants || 1,
+      }));
+
+      setProperties(mappedProperties);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
  
   useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
-      try {
-        console.log("🔥 Fetching properties from API");
-        const data = await getMyProperties(); // your API function
-        console.log("✅ Properties fetched:", data);
-
-        // Map backend fields to PropertyCard fields
-        const mappedProperties = (data || []).map(p => ({
-          acc_id: p.id,               // PropertyCard expects acc_id
-          monthly_rent: p.rent,       // PropertyCard expects monthly_rent
-          location: p.title || 'Town',
-          address: p.address || 'Address not specified',
-          deposit: p.deposit || 0,
-          room_type: p.room_type || 'Studio',
-          amenities: p.amenities || [],
-          payment_methods: p.payment_methods || [],
-          image_url: p.image_url,      // can be null, fallback handled in card
-          status: p.is_verified ? 'available' : 'pending',
-          acc_details: p.description || '',
-        }));
-
-        setProperties(mappedProperties);
-        setPropertyCache(mappedProperties);
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProperties();
   }, []);
 
-
-
-  const handleAddProperty = (propertyData) => {
-    // Add the new property to the state
-    const updatedProperties = [...properties, propertyData];
-    setProperties(updatedProperties);
-    setPropertyCache(updatedProperties);
+  const handleAddProperty = async (propertyData) => {
+    // Refetch properties after adding
+    await fetchProperties();
     setShowAddForm(false);
   };
 
   const handleDeleteProperty = async (propertyToDelete) => {
     try {
-      const { error } = await supabase
-        .from('accommodation')
-        .delete()
-        .eq('acc_id', propertyToDelete.acc_id);
-        
-      if (error) throw error;
-  
+      // Optimistically remove from UI first (instant feedback)
       const updatedProperties = properties.filter(
         property => property.acc_id !== propertyToDelete.acc_id
       );
-      
       setProperties(updatedProperties);
-      setPropertyCache(updatedProperties);
+      
+      // Delete from backend in the background
+      await deleteAccommodation(propertyToDelete.acc_id);
+      
+      console.log("✅ Property deleted successfully");
+      
+      // Optionally refetch to ensure sync (but UI already updated)
+      // await fetchProperties();
     } catch (error) {
       console.error('Error deleting property:', error);
+      // If deletion failed, refetch to restore the property
+      await fetchProperties();
+      alert('Failed to delete property. Please try again.');
     }
   };
 
@@ -85,13 +85,9 @@ const MyPropertiesPage = () => {
     setShowEditForm(true);
   };
 
-  const handleUpdateProperty = (oldProperty, updatedProperty) => {
-    const updatedProperties = properties.map(property =>
-      property.acc_id === oldProperty.acc_id ? updatedProperty : property
-    );
-    
-    setProperties(updatedProperties);
-    setPropertyCache(updatedProperties);
+  const handleUpdateProperty = async (oldProperty, updatedProperty) => {
+    // Refetch properties after update
+    await fetchProperties();
     setShowEditForm(false);
   };
 

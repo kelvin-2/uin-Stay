@@ -9,9 +9,9 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  // Default placeholder - ensure this asset exists in your public directory
-  const defaultPlaceholder = '/images/placeholder.jpg'; 
+  const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState('');
   
   // Built-in SVG fallback as base64 (guaranteed to work)
   const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNMTUwLjUgOTZDMTIzLjcgOTYgMTAyIDExNy43IDEwMiAxNDQuNUMxMDIgMTcxLjMgMTIzLjcgMTkzIDE1MC41IDE5M0MxNzcuMyAxOTMgMTk5IDE3MS4zIDE5OSAxNDQuNUMxOTkgMTE3LjcgMTc3LjMgOTYgMTUwLjUgOTZaTTE1MC41IDE4NC4zQzEyOC41IDE4NC4zIDExMC43IDE2Ni41IDExMC43IDE0NC41QzExMC43IDEyMi41IDEyOC41IDEwNC43IDE1MC41IDEwNC43QzE3Mi41IDEwNC43IDE5MC4zIDEyMi41IDE5MC4zIDE0NC41QzE5MC4zIDE2Ni41IDE3Mi41IDE4NC4zIDE1MC41IDE4NC4zWk0xNTYuMyAxNjcuNEgxNDQuOFYxNTMuMkgxMzAuNlYxNDEuN0gxNDQuOFYxMjcuNUgxNTYuM1YxNDEuN0gxNzAuNVYxNTMuMkgxNTYuM1YxNjcuNFoiIGZpbGw9IiM5Q0EzQUYiLz48L3N2Zz4=';
@@ -77,16 +77,15 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
   
   // Ensure we always have at least one image (even if it's the fallback)
   if (imageUrls.length === 0) {
-    imageUrls = [defaultPlaceholder];
+    imageUrls = [fallbackImage];
   }
 
   // Helper function to validate and format image URLs
   function validateImageUrl(url) {
-    if (!url) return defaultPlaceholder;
+    if (!url) return fallbackImage;
     
     if (typeof url !== 'string') {
-      console.warn(`Invalid image URL (not a string):`, url);
-      return defaultPlaceholder;
+      return fallbackImage;
     }
     
     // Check if image_url is a relative path that needs a prefix
@@ -119,8 +118,15 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
 
   const confirmDelete = async (e) => {
     e.stopPropagation();
-    await onDelete(property);
-    setIsDeleting(false);
+    setIsLoading(true);
+    setLoadingAction('Deleting');
+    try {
+      await onDelete(property);
+    } finally {
+      setIsDeleting(false);
+      setIsLoading(false);
+      setLoadingAction('');
+    }
   };
 
   const cancelDelete = (e) => {
@@ -130,8 +136,15 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
 
   const handleEditClick = (e) => {
     e.stopPropagation();
+    setIsLoading(true);
+    setLoadingAction('Loading');
     onEdit(property);
     setShowMenu(false);
+    // Reset loading after a short delay (the parent component will handle the actual loading state)
+    setTimeout(() => {
+      setIsLoading(false);
+      setLoadingAction('');
+    }, 300);
   };
 
   const toggleMenu = (e) => {
@@ -141,20 +154,10 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
 
   // Function to handle image loading errors
   const handleImageError = (e) => {
-    console.log("Image failed to load, using fallback");
     e.target.onerror = null; // Prevent infinite loop
-    
-    // Try the default placeholder first
-    e.target.src = defaultPlaceholder;
-    
-    // If the placeholder also fails, use the base64 fallback
-    e.target.onerror = () => {
-      console.log("Placeholder also failed, using base64 fallback");
-      e.target.src = fallbackImage;
-    };
-    
-    // Reset the current image index
-    setCurrentImageIndex(0);
+    if (!imageError) {
+      setImageError(true);
+    }
   };
 
   // Navigate through property images
@@ -174,6 +177,7 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
     }
     
     setCurrentImageIndex(newIndex);
+    setImageError(false); // Reset error state when navigating
   };
 
   return (
@@ -215,18 +219,28 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
         </div>
 
         {/* Images */}
-        <div className="relative w-full h-48 overflow-hidden">
+        <div className="relative w-full h-48 overflow-hidden bg-gray-100">
           {imageUrls && imageUrls.length > 0 ? (
             <>
-              <img
-                src={imageUrls[currentImageIndex]}
-                alt={`${property.address || 'Property'}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                onError={handleImageError}
-              />
+              {imageError ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center p-4">
+                    <ImageOff className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">Image unavailable</p>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  key={`${property.id || 'img'}-${currentImageIndex}`}
+                  src={imageUrls[currentImageIndex]}
+                  alt={`${property.address || 'Property'}`}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={handleImageError}
+                />
+              )}
               
               {/* Image navigation buttons (only if multiple images) */}
-              {imageUrls.length > 1 && (
+              {imageUrls.length > 1 && !imageError && (
                 <>
                   {/* Image counter */}
                   <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
@@ -261,26 +275,47 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
           )}
           
           {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {!imageError && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          )}
         </div>
 
         {/* Delete Confirmation */}
         {isDeleting && (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-4 z-30">
-            <p className="text-white text-center mb-4">Are you sure you want to delete this property?</p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
-              >
-                <Check className="h-4 w-4 mr-1" /> Yes
-              </button>
-              <button 
-                onClick={cancelDelete}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center"
-              >
-                <X className="h-4 w-4 mr-1" /> No
-              </button>
+            {isLoading ? (
+              <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-3"></div>
+                <p className="text-white text-center">{loadingAction}...</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-white text-center mb-4">Are you sure you want to delete this property?</p>
+                <div className="flex space-x-3">
+                  <button 
+                    onClick={confirmDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
+                  >
+                    <Check className="h-4 w-4 mr-1" /> Yes
+                  </button>
+                  <button 
+                    onClick={cancelDelete}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center"
+                  >
+                    <X className="h-4 w-4 mr-1" /> No
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        
+        {/* Loading Overlay for Edit */}
+        {isLoading && !isDeleting && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-4 z-30">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-3"></div>
+              <p className="text-white text-center">{loadingAction}...</p>
             </div>
           </div>
         )}
@@ -310,7 +345,7 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
           
           {/* Deposit Badge */}
           {property.deposit > 0 && (
-            <div className="bg-amber-50 text-amber-700 text-xs font-medium px-2 py-1 rounded-lg border border-amber-200">
+            <div className="bg-amber-50 text-amber-700 text-s font-medium px-2 py-1 rounded-lg border border-amber-200">
               R{property.deposit.toLocaleString()} deposit
             </div>
           )}
