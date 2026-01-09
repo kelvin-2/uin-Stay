@@ -313,7 +313,7 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
             </h3>
             <div className="flex items-start gap-2 text-gray-600">
               <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5 text-gray-400" />
-              <span className="text-sm line-clamp-2">{property.address || 'Address not specified'}</span>
+              <span className="text-sm line-clamp-2">{(property.address) || 'Address not specified'}</span>
             </div>
           </div>
 
