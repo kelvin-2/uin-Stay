@@ -122,7 +122,7 @@ export const getMyProperties = async () => {
 //will featch accomodation by its id 
 export const getAccommodationById = async (propertyId) => {
   try {
-    const response = await api.get(`/accommodations/${propertyId}`, config);
+    const response = await api.get(`/accommodations/${propertyId}`);
     console.log("Property details response:", response);
 
     // Map the response

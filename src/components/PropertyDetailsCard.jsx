@@ -5,17 +5,13 @@ import {
   BedDouble,
   Bath,
   Home,
-  Calendar,
   Wifi,
   Car,
   Utensils,
   Lock,
   ThermometerSun,
   Sofa,
-  Phone,
-  Camera,
   MessageCircle,
-  Star,
   DollarSign,
   Shield,
   CreditCard,
@@ -23,23 +19,19 @@ import {
   BadgeDollarSign,
   Wallet,
   ArrowLeft,
-  Mail
+  Mail,
+  Loader2
 } from 'lucide-react';
-import supabase from '../supabaseClient';
+import { getAccommodationById } from '../api/accomodationApi';
 import PropertyImageGrid from '../components/PropertyImageGrid';
 import ReactGA from 'react-ga4';
-
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
-  const [landlord, setLandlord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [showRatingMessage, setShowRatingMessage] = useState(false);
   const [images, setImages] = useState([]);
   
   // Define default placeholder image
@@ -50,91 +42,58 @@ const PropertyDetail = () => {
     const fetchPropertyDetails = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-       
+        console.log("🔥 Fetching property details for ID:", id);
         
-        // Fetch property data with explicit headers
-        const { data: propertyData, error: propertyError } = await supabase
-          .from('accommodation')
-          .select('*')
-          .eq('acc_id', id)
-          .single();
+        // Fetch from backend API
+        const data = await getAccommodationById(id);
+        console.log("✅ Property data received:", data);
         
-        if (propertyError) {
-          console.error('Property Error Details:', propertyError);
-          throw propertyError;
-        }
-        
-        if (!propertyData) {
+        if (!data || !data.property) {
           throw new Error('No property data found');
         }
         
-    
+        const propertyData = data.property;
         
-        // Process property data safely
+        // Process amenities
         let parsedAmenities = [];
         if (propertyData.amenities) {
-          try {
-            // Try to parse if it's a JSON string
-            parsedAmenities = typeof propertyData.amenities === 'string' ? 
-              JSON.parse(propertyData.amenities) : 
-              propertyData.amenities;
-          } catch (e) {
-            console.warn("Error parsing amenities:", e);
-            // If it's not JSON, split by commas
-            parsedAmenities = String(propertyData.amenities).split(',').map(item => item.trim());
-          }
+          parsedAmenities = Array.isArray(propertyData.amenities) 
+            ? propertyData.amenities 
+            : [];
         }
         
-        // Parse payment methods if available
+        // Process payment methods
         let parsedPaymentMethods = [];
-        if (propertyData.payment_methods) {
-          try {
-            parsedPaymentMethods = typeof propertyData.payment_methods === 'string' ?
-              JSON.parse(propertyData.payment_methods) :
-              propertyData.payment_methods;
-          } catch (e) {
-            console.warn("Error parsing payment methods:", e);
-            parsedPaymentMethods = String(propertyData.payment_methods).split(',').map(item => item.trim());
-          }
+        if (propertyData.paymentMethods) {
+          parsedPaymentMethods = Array.isArray(propertyData.paymentMethods)
+            ? propertyData.paymentMethods
+            : [];
         }
         
         // Process and validate image URLs
         const processedImages = processPropertyImages(propertyData);
         setImages(processedImages);
         
-        // Set property data first
+        // Set property data with mapped fields
         setProperty({
           ...propertyData,
           parsedAmenities,
-          parsedPaymentMethods
+          parsedPaymentMethods,
+          // Map backend fields to frontend fields
+          acc_id: propertyData.id,
+          monthly_rent: propertyData.monthlyRent,
+          acc_details: propertyData.accDetails,
+          room_type: propertyData.roomType,
+          max_occupants: propertyData.maxOccupants,
+          payment_methods: propertyData.paymentMethods,
+          is_verified: propertyData.isVerified
         });
         
-        // Fetch landlord data 
-        if (propertyData.landlord_id) {
-          try {
-          
-            const { data: landlordData, error: landlordError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('auth_id', propertyData.landlord_id);
-              
-            if (landlordError) {
-              console.warn('Landlord Error:', landlordError);
-            } else if (landlordData && landlordData.length > 0) {
-              console.log("Retrieved landlord data:", landlordData[0]);
-              setLandlord(landlordData[0]);
-            } else {
-              console.log("No landlord found ");
-            }
-          } catch (landlordFetchError) {
-            console.error('Error fetching landlord details:', landlordFetchError);
-          }
-        }
-      }
-      catch(error) {
-        console.error('Error fetching property details:', error);
-        setError(error.message || 'Unknown error occurred');
+      } catch(error) {
+        console.error('❌ Error fetching property details:', error);
+        setError(error.message || 'Failed to load property details');
       } finally {
         setLoading(false);
       }
@@ -147,33 +106,17 @@ const PropertyDetail = () => {
 
   // Helper function to process property images
   const processPropertyImages = (propertyData) => {
-    if (!propertyData || !propertyData.image_url) {
+    if (!propertyData || !propertyData.images) {
       return [defaultPlaceholder];
     }
     
     let imageUrls = [];
     
-    // Handle array of image URLs
-    if (Array.isArray(propertyData.image_url)) {
-      imageUrls = propertyData.image_url.map(url => validateImageUrl(url));
-    }
-    // Handle JSON string array
-    else if (typeof propertyData.image_url === 'string') {
-      try {
-        // Try to parse as JSON if it starts with '[' or '{'
-        if (propertyData.image_url.trim().startsWith('[') || propertyData.image_url.trim().startsWith('{')) {
-          const parsedImages = JSON.parse(propertyData.image_url);
-          imageUrls = Array.isArray(parsedImages) ? 
-            parsedImages.map(url => validateImageUrl(url)) : 
-            [validateImageUrl(propertyData.image_url)];
-        } else {
-          // Just a regular string URL
-          imageUrls = [validateImageUrl(propertyData.image_url)];
-        }
-      } catch (e) {
-        console.warn("Error parsing image URL as JSON:", e);
-        imageUrls = [validateImageUrl(propertyData.image_url)];
-      }
+    // Handle array of image URLs from backend
+    if (Array.isArray(propertyData.images)) {
+      imageUrls = propertyData.images.map(url => validateImageUrl(url));
+    } else if (typeof propertyData.images === 'string') {
+      imageUrls = [validateImageUrl(propertyData.images)];
     }
     
     // If no valid images, use placeholder
@@ -201,7 +144,7 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsAppContact = () => {
-    const phoneNumber = landlord?.phone_number || property?.landlord_contact || '';
+    const phoneNumber = property?.landlord_contact || '';
     const formattedPhone = phoneNumber.replace(/\D/g, '');
     
     if (!formattedPhone) {
@@ -213,39 +156,36 @@ const PropertyDetail = () => {
     ReactGA.event({
       action: 'whatsapp_contact_click',
       category: 'Property Interaction',
-      label: `Property ID: ${property.acc_id}`,
-      custom_dimension_1: property.acc_id, // property_id
-      custom_dimension_2: property.location || 'Unknown Location', // property_location
-      value: property.monthly_rent || 0
+      label: `Property ID: ${property.acc_id || property.id}`,
+      custom_dimension_1: property.acc_id || property.id,
+      custom_dimension_2: property.location || 'Unknown Location',
+      value: property.monthly_rent || property.monthlyRent || 0
     });
     
-    // Also track as conversion if this is a key action
+    // Also track as conversion
     ReactGA.event({
       action: 'contact_landlord',
       category: 'Conversion',
       label: `WhatsApp - ${property.location}`,
-      custom_dimension_1: property.acc_id,
+      custom_dimension_1: property.acc_id || property.id,
       custom_dimension_2: property.location || 'Unknown Location'
     });
     
     const message = `Hi there,
 
-    I came across your property in ${property.location || 'Student Accommodation'} at ${property.address || 'Address not specified'} on uinStay, and it looks like a great fit for me. I'd love to know if it's still available.
+I came across your property in ${property.location || property.title || 'Student Accommodation'} at ${property.address || 'Address not specified'} on UniStay, and it looks like a great fit for me. I'd love to know if it's still available.
+
+If possible, I'd also like to arrange a viewing at your convenience. Looking forward to your response!`;
     
-    If possible, I'd also like to arrange a viewing at your convenience. Looking forward to your response!`;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
     
     // Open WhatsApp in a new tab
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleRating = (value) => {
-    setRating(value);
-    setShowRatingMessage(true);
-    setTimeout(() => setShowRatingMessage(false), 3000);
-  };
-
   const getPaymentMethodIcon = (method) => {
+    if (!method) return <DollarSign className="w-4 h-4 text-gray-600" />;
+    
     const methodLower = method.toLowerCase();
     if (methodLower.includes('cash')) return <Wallet className="w-4 h-4 text-gray-600" />;
     if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) 
@@ -260,22 +200,10 @@ const PropertyDetail = () => {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-4 mt-16 sm:mt-20 md:mt-24">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse">
-          <div className="h-64 md:h-96 bg-gray-200" />
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start mb-4 md:mb-6 gap-4">
-              <div className="space-y-2 w-full md:w-auto">
-                <div className="h-8 bg-gray-200 rounded-full w-full md:w-64" />
-                <div className="h-4 bg-gray-200 rounded-full w-32 md:w-40" />
-              </div>
-              <div className="space-y-2 w-full md:w-auto mt-4 md:mt-0">
-                <div className="h-8 bg-gray-200 rounded-full w-full md:w-32" />
-                <div className="h-4 bg-gray-200 rounded-full w-24" />
-              </div>
-            </div>
-            <div className="h-32 bg-gray-200 rounded-lg" />
-            <div className="h-32 bg-gray-200 rounded-lg" />
-            <div className="h-48 bg-gray-200 rounded-lg" />
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="flex flex-col items-center justify-center p-12">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+            <p className="text-gray-600 text-lg">Loading property details...</p>
           </div>
         </div>
       </div>
@@ -288,10 +216,10 @@ const PropertyDetail = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 text-center">
             <div className="bg-red-50 p-4 md:p-6 rounded-2xl inline-block shadow-sm">
-              <p className="text-red-600 font-medium">Error: {error}</p>
+              <p className="text-red-600 font-medium mb-4">Error: {error}</p>
               <button 
-                onClick={() => navigate('/properties')}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={() => navigate('/landlord-properties')}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Properties
               </button>
@@ -308,10 +236,10 @@ const PropertyDetail = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 text-center">
             <div className="bg-yellow-50 p-4 md:p-6 rounded-2xl inline-block shadow-sm">
-              <p className="text-yellow-700 font-medium">Property not found</p>
+              <p className="text-yellow-700 font-medium mb-4">Property not found</p>
               <button 
-                onClick={() => navigate('/properties')}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={() => navigate('/landlord-properties')}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Properties
               </button>
@@ -322,9 +250,9 @@ const PropertyDetail = () => {
     );
   }
   
-  const landlordName = landlord?.full_name || property.landlord_name || 'Property Owner';
-  const landlordContact = landlord?.phone_number || property.landlord_contact;
-  const landlordEmail = landlord?.email || property.landlord_email;
+  const landlordName = property.landlord_name || 'Property Owner';
+  const landlordContact = property.landlord_contact;
+  const landlordEmail = property.landlord_email;
 
   return (
     <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24">
@@ -343,7 +271,7 @@ const PropertyDetail = () => {
           {/* Status Badge */}
           <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10">
             <span className="bg-blue-600 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">
-              Available Now
+              {property.is_verified ? 'Available Now' : 'Pending Verification'}
             </span>
           </div>
           
@@ -358,7 +286,9 @@ const PropertyDetail = () => {
           {/* Header Information */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">{property.location || 'Student Accommodation'}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                {property.location || property.title || 'Student Accommodation'}
+              </h1>
               <div className="flex items-center text-gray-600">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span className="text-sm md:text-base">{property.address || 'Address not specified'}</span>
@@ -367,7 +297,8 @@ const PropertyDetail = () => {
             <div className="bg-blue-50 p-3 md:p-4 rounded-xl w-full md:w-auto mt-2 md:mt-0">
               <div className="flex items-center mb-1">
                 <span className="text-xl md:text-2xl font-bold text-blue-700">
-                  R{property.monthly_rent ? property.monthly_rent.toLocaleString() : 'N/A'}
+                  R{property.monthly_rent ? property.monthly_rent.toLocaleString() : 
+                    property.monthlyRent ? property.monthlyRent.toLocaleString() : 'N/A'}
                 </span>
                 <span className="text-xs md:text-sm text-gray-600 ml-1">/month</span>
               </div>
@@ -383,7 +314,9 @@ const PropertyDetail = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
             <div className="flex flex-col items-center p-2 md:p-3 bg-white rounded-lg shadow-sm">
               <Home className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mb-1 md:mb-2" />
-              <span className="font-medium text-sm md:text-base">{property.room_type || 'Room'}</span>
+              <span className="font-medium text-sm md:text-base">
+                {property.room_type || property.roomType || 'Room'}
+              </span>
               <span className="text-xs md:text-sm text-gray-600">Type</span>
             </div>
             <div className="flex flex-col items-center p-2 md:p-3 bg-white rounded-lg shadow-sm">
@@ -397,9 +330,11 @@ const PropertyDetail = () => {
               <span className="text-xs md:text-sm text-gray-600">Included</span>
             </div>
             <div className="flex flex-col items-center p-2 md:p-3 bg-white rounded-lg shadow-sm">
-              <Bath className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mb-1 md:mb-2" />
-              <span className="font-medium text-sm md:text-base">{property.bathrooms || 'Shared'}</span>
-              <span className="text-xs md:text-sm text-gray-600">Bathroom</span>
+              <BedDouble className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mb-1 md:mb-2" />
+              <span className="font-medium text-sm md:text-base">
+                {property.max_occupants || property.maxOccupants || 1}
+              </span>
+              <span className="text-xs md:text-sm text-gray-600">Occupants</span>
             </div>
           </div>
 
@@ -407,7 +342,8 @@ const PropertyDetail = () => {
           <div className="mb-6">
             <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">About this property</h2>
             <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-              {property.acc_details || 'No description provided for this property. Please contact the landlord for more information about this accommodation.'}
+              {property.acc_details || property.accDetails || 
+               'No description provided for this property. Please contact the landlord for more information about this accommodation.'}
             </p>
           </div>
 
@@ -459,35 +395,6 @@ const PropertyDetail = () => {
             </div>
           )}
 
-          {/* Rating Section */}
-          {/* <div className="mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
-            <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">Rate this Property</h2>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => handleRating(value)}
-                  onMouseEnter={() => setHoveredRating(value)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  className="p-0.5 md:p-1 cursor-pointer transition-colors"
-                >
-                  <Star
-                    className={`w-6 h-6 md:w-8 md:h-8 ${
-                      (hoveredRating && value <= hoveredRating) || (!hoveredRating && value <= rating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                </button>
-              ))}
-              {showRatingMessage && (
-                <span className="ml-2 md:ml-4 text-green-600 font-medium text-xs md:text-sm">
-                  Rating updated!
-                </span>
-              )}
-            </div>
-          </div> */}
-
           {/* Landlord Information */}
           <div className="border-t pt-4 md:pt-6">
             <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Contact Landlord</h2>
@@ -495,13 +402,6 @@ const PropertyDetail = () => {
               <div>
                 <h3 className="font-medium text-sm md:text-base">{landlordName}</h3>
                 <div className="text-xs md:text-sm text-gray-600 mt-1">Usually responds within 24 hours</div>
-                {property.landlord_rating && (
-                  <div className="flex items-center mt-2">
-                    <span className="text-yellow-400">★</span>
-                    <span className="ml-1 text-xs md:text-sm">{property.landlord_rating}</span>
-                    <span className="text-gray-600 ml-1 text-xs md:text-sm">({property.landlord_reviews || 0} reviews)</span>
-                  </div>
-                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto mt-2 md:mt-0">
                 {/* WhatsApp button */}
@@ -512,7 +412,7 @@ const PropertyDetail = () => {
                     landlordContact 
                       ? 'bg-green-500 hover:bg-green-600' 
                       : 'bg-green-300 cursor-not-allowed'
-                  } text-white rounded-lg w-full text-sm md:text-base`}
+                  } text-white rounded-lg w-full text-sm md:text-base transition-colors`}
                 >
                   <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                   Contact via WhatsApp
@@ -521,8 +421,8 @@ const PropertyDetail = () => {
                 {/* Email button */}
                 {landlordEmail && (
                   <a
-                    href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
-                    className="flex items-center justify-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full text-sm md:text-base mt-2 sm:mt-0"
+                    href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || property.title || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
+                    className="flex items-center justify-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full text-sm md:text-base mt-2 sm:mt-0 transition-colors"
                   >
                     <Mail className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                     Email Landlord
