@@ -317,7 +317,7 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
               <span className="font-medium text-sm md:text-base">
                 {property.room_type || property.roomType || 'Room'}
               </span>
-              <span className="text-xs md:text-sm text-gray-600">Type</span>
+              <span className="text-xs md:text-sm text-gray-600">Room</span>
             </div>
             <div className="flex flex-col items-center p-2 md:p-3 bg-white rounded-lg shadow-sm">
               <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mb-1 md:mb-2" />
@@ -334,7 +334,7 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
               <span className="font-medium text-sm md:text-base">
                 {property.max_occupants || property.maxOccupants || 1}
               </span>
-              <span className="text-xs md:text-sm text-gray-600">Occupants</span>
+              <span className="text-xs md:text-sm text-gray-600">Max Occupants</span>
             </div>
           </div>
 
