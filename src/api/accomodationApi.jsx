@@ -119,6 +119,25 @@ export const getMyProperties = async () => {
     );
   }
 };
+//will featch accomodation by its id 
+export const getAccommodationById = async (propertyId) => {
+  try {
+    const response = await api.get(`/accommodations/${propertyId}`);
+    console.log("Property details response:", response);
+
+    // Map the response
+    return {
+      property: mapAccommodationResponse(response.data.property || response.data)
+    };
+  } catch (error) {
+    console.error('Error fetching property details:', error);
+    throw new Error(
+      error.response?.data?.details || 
+      error.response?.data?.error || 
+      'Failed to fetch property details'
+    );
+  }
+};
 
 export const updateAccommodation = async (propertyId, updateData) => {
   try {
