@@ -6,7 +6,7 @@ import {
   Star, Bath, BedDouble, ChevronLeft, ChevronRight, CreditCard, 
   GraduationCap, BadgeDollarSign, ImageOff 
 } from 'lucide-react';
-import supabase from '../supabaseClient';
+import { get_all_accomodation } from "../api/accomodationApi";
 
 function FeaturedProperties() {
   const [properties, setProperties] = useState([]);
@@ -25,22 +25,30 @@ function FeaturedProperties() {
     const fetchFeaturedProperties = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('accommodation')
-          .select('*')
-          .limit(4);
-          
-        if (error) throw error;
+        
+        // Use the API endpoint instead of direct Supabase query
+        const response = await get_all_accomodation();
+        
+        // Check if the response has an error
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        
+        // Get the data from the response
+        const data = response.data || response;
+        
+        // Limit to first 4 properties for featured section
+        const featuredData = Array.isArray(data) ? data.slice(0, 4) : [];
         
         // Initialize the current image index for each property
         const initialImageIndices = {};
-        data.forEach(prop => {
+        featuredData.forEach(prop => {
           initialImageIndices[prop.acc_id] = 0;
         });
         setCurrentImageIndex(initialImageIndices);
         
         // Process property data and validate image URLs
-        const processedData = data.map(prop => {
+        const processedData = featuredData.map(prop => {
           // Process amenities
           let parsedAmenities = [];
           if (prop.amenities) {
@@ -108,11 +116,11 @@ function FeaturedProperties() {
           };
         });
         
-        setProperties(processedData || []);
+        setProperties(processedData);
       }
       catch(error) {
         console.error('Error fetching featured properties:', error);
-        setError(error.message);
+        setError(error.message || 'Failed to fetch properties');
       } finally {
         setLoading(false);
       }
