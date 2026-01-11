@@ -171,3 +171,18 @@ export const deleteAccommodation = async (propertyId) => {
     );
   }
 };
+export const get_all_accomodation = async () => {
+   try{
+    const response = await api.get('/accomodations/properties');
+    return {
+       property: mapAccommodationResponse(response.data.property || response.data)
+    };
+  }catch{
+    console.error('Error fetching property details:', error);
+    throw new Error(
+      error.response?.data?.details || 
+      error.response?.data?.error || 
+      'Failed to fetch property details'
+    );
+  }
+}
