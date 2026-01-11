@@ -7,7 +7,7 @@ import Benefits from "../components/Benefits";
 import FeaturedProperties from "../components/FeaturedProperties";
 import { Building2, GraduationCap, Home, Users } from 'lucide-react';
 import SearchResults from '../components/SearchResults';
-
+import  LandlordCTA from '../components/LandlordCTA';
 function HomePage() {
   
   const [loading, setLoading] = useState(false);
@@ -24,6 +24,7 @@ function HomePage() {
             <Benefits/>
           </>
       </div>
+       <LandlordCTA/> 
     </div>
   );
 }

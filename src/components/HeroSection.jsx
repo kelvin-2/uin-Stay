@@ -12,9 +12,9 @@ function HeroSection() {
             Student Accommodation Port Elizabirth 
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-            Find affordable student housing and accommodation in Port Elizabeth, South Africa. 
-            Browse verified apartments, shared rooms, and student residences near Nelson Mandela University (NMU), PE College, Rosebank College, universities and colleges. 
-            Book your perfect student home today with UniStay.
+            Find affordable student housing and accommodation in Port Elizabeth. 
+            Browse verified apartments, shared rooms, and student residences near Nelson Mandela University (NMU), PE College, Rosebank College.
+            
           </p>
           
           {/* Schema.org structured data for SEO */}
