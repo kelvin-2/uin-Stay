@@ -159,10 +159,6 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
   };
 
   return (
-    <Link 
-      to={`/property/${property.acc_id}`}
-      className="block"
-    >
       <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-blue-200">
         {/* Property Image */}
         <div className="relative overflow-hidden">
@@ -415,7 +411,6 @@ const PropertyCard = ({ property, onDelete, onEdit }) => {
           </div>
         </div>
       </div>
-    </Link>
   );
 };
 
