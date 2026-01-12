@@ -14,7 +14,7 @@ import SEOHead from './SEOHead';
 const Properties = () => {
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState({});

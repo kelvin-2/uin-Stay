@@ -1,8 +1,11 @@
 import React from "react";
 import { Building2, Users, Home, GraduationCap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function HeroSection() {
+  const navigate = useNavigate(); 
   return (
+    
     <section className="relative overflow-hidden" aria-labelledby="hero-heading">
       {/* Glassmorphism container */}
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
@@ -57,6 +60,7 @@ function HeroSection() {
             {/* Call-to-action section */}
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <button 
+               onClick={() => navigate("/properties")}
                 className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 aria-label="Search for student accommodation in Port Elizabeth"
               >
