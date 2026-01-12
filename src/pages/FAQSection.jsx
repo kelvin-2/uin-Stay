@@ -14,9 +14,9 @@ const CustomAccordion = ({ items }) => {
   return (
     <div className="space-y-2">
       {items.map((item, idx) => (
-        <div key={idx} className="border border-blue-100 rounded-lg">
+        <div key={idx} className="border border-white/30 rounded-lg bg-white/20 backdrop-blur-md shadow-sm">
           <button
-            className="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-blue-50"
+            className="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-white/10 transition-colors"
             onClick={() => toggleItem(idx)}
           >
             <span className="font-medium text-blue-900">{item.question}</span>
@@ -24,7 +24,7 @@ const CustomAccordion = ({ items }) => {
               className={`h-5 w-5 transition-transform text-blue-500 ${openItems[idx] ? 'transform rotate-180' : ''}`}
             />
           </button>
-          <div className={`px-4 overflow-hidden transition-all ${openItems[idx] ? 'max-h-96 py-3' : 'max-h-0'}`}>
+          <div className={`px-4 overflow-hidden transition-all text-gray-900 ${openItems[idx] ? 'max-h-96 py-3' : 'max-h-0'}`}>
             {item.answer}
           </div>
         </div>
@@ -137,7 +137,8 @@ const FAQSection = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-white mt-10">
+    <div className="w-full max-w-4xl mx-auto p-6 mt-10">
+      {/* Heading + Search */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-4 text-blue-900">How can we help you?</h1>
         <div className="relative max-w-xl mx-auto">
@@ -145,38 +146,38 @@ const FAQSection = () => {
           <input
             type="text"
             placeholder="Search FAQs..."
-            className="w-full px-10 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-10 py-2 rounded-lg bg-white/30 backdrop-blur-md border border-white/30 text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="mb-8">
-        <div className="grid grid-cols-2 gap-2 p-1 bg-blue-50 rounded-lg">
-          <button
-            className={`py-2 px-4 rounded-md transition-colors ${
-              activeTab === 'students'
-                ? 'bg-white shadow-sm text-blue-600'
-                : 'hover:bg-blue-100 text-blue-800'
-            }`}
-            onClick={() => setActiveTab('students')}
-          >
-            For Students
-          </button>
-          <button
-            className={`py-2 px-4 rounded-md transition-colors ${
-              activeTab === 'landlords'
-                ? 'bg-white shadow-sm text-blue-600'
-                : 'hover:bg-blue-100 text-blue-800'
-            }`}
-            onClick={() => setActiveTab('landlords')}
-          >
-            For Landlords
-          </button>
-        </div>
+      {/* Tabs */}
+      <div className="mb-8 grid grid-cols-2 gap-2 p-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/30">
+        <button
+          className={`py-2 px-4 rounded-md transition-colors ${
+            activeTab === 'students'
+              ? 'bg-white/30 shadow-sm text-blue-600 font-semibold'
+              : 'hover:bg-white/10 text-blue-800'
+          }`}
+          onClick={() => setActiveTab('students')}
+        >
+          For Students
+        </button>
+        <button
+          className={`py-2 px-4 rounded-md transition-colors ${
+            activeTab === 'landlords'
+              ? 'bg-white/30 shadow-sm text-blue-600 font-semibold'
+              : 'hover:bg-white/10 text-blue-800'
+          }`}
+          onClick={() => setActiveTab('landlords')}
+        >
+          For Landlords
+        </button>
       </div>
 
+      {/* FAQ Content */}
       <div>
         {filterFAQs(faqData[activeTab]).map((category, idx) => (
           <div key={idx} className="mb-6">
@@ -186,14 +187,15 @@ const FAQSection = () => {
         ))}
       </div>
 
-      <div className="text-center mt-8 p-6 bg-blue-50 rounded-lg">
+      {/* Still need help */}
+      <div className="text-center mt-8 p-6 rounded-lg bg-white/20 backdrop-blur-md border border-white/30 text-gray-900">
         <h3 className="text-lg font-semibold mb-2 text-blue-900">Still need help?</h3>
-        <p className="text-blue-800">
-          Contact our support team at <span className="text-blue-600">support@uinstay.co.za</span> or visit our detailed help center.
+        <p>
+          Contact our support team at <span className="text-blue-600 font-medium">support@uinstay.co.za</span> or visit our detailed help center.
         </p>
       </div>
     </div>
   );
 };
 
-export default FAQSection
+export default FAQSection;
