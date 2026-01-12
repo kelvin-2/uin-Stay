@@ -64,22 +64,7 @@ function HeroSection() {
               </button>
             </div>
 
-            {/* Trust signals row */}
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">Verified Properties</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">NSFAS Friendly</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-indigo-600" />
-                  <span className="font-medium">No Booking Fees</span>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Stats Section */}
             {/* <div className="mt-16 grid grid-cols-2 gap-6 md:grid-cols-4 max-w-4xl mx-auto">
