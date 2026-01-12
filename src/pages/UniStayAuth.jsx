@@ -270,15 +270,15 @@ const UniStayAuth = () => {
     if (!message) return null;
 
     const bgColor = {
-      success: 'bg-green-50 border-green-200',
-      error: 'bg-red-50 border-red-200',
-      info: 'bg-blue-50 border-blue-200'
+      success: 'backdrop-blur-md bg-green-500/10 border-green-400/30',
+      error: 'backdrop-blur-md bg-red-500/10 border-red-400/30',
+      info: 'backdrop-blur-md bg-blue-500/10 border-blue-400/30'
     };
 
     const textColor = {
-      success: 'text-green-800',
-      error: 'text-red-800',
-      info: 'text-blue-800'
+      success: 'text-green-700',
+      error: 'text-red-700',
+      info: 'text-blue-700'
     };
 
     const Icon = {
@@ -306,15 +306,15 @@ const UniStayAuth = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12">
           <div className="max-w-xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
+            <div className="backdrop-blur-md bg-white/30 rounded-xl shadow-lg border border-white/20 overflow-hidden">
               {/* Header */}
-              <div className="p-6 space-y-2 text-center border-b border-gray-100">
+              <div className="p-6 space-y-2 text-center border-b border-white/20">
                 <div className="flex justify-center mb-4">
-                  <div className="bg-blue-500/10 p-3 rounded-full">
+                  <div className="bg-blue-500/20 backdrop-blur-sm p-3 rounded-full">
                     <Home className="h-8 w-8 text-blue-600" />
                   </div>
                 </div>
@@ -333,7 +333,7 @@ const UniStayAuth = () => {
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'student'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'border border-gray-300 hover:bg-blue-50'
+                        : 'backdrop-blur-sm bg-white/40 border border-white/30 hover:bg-white/60'
                     }`}
                   >
                     <BookOpen className="h-4 w-4" />
@@ -347,7 +347,7 @@ const UniStayAuth = () => {
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                       userType === 'landlord'
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'border border-gray-300 hover:bg-blue-50'
+                        : 'backdrop-blur-sm bg-white/40 border border-white/30 hover:bg-white/60'
                     }`}
                   >
                     <Building className="h-4 w-4" />
@@ -357,7 +357,7 @@ const UniStayAuth = () => {
 
                 {/* Tabs */}
                 <div className="w-full">
-                  <div className="flex rounded-lg bg-blue-50 p-1">
+                  <div className="flex rounded-lg backdrop-blur-sm bg-blue-500/10 p-1">
                     <button
                       onClick={() => {
                         setActiveTab('login');
@@ -408,8 +408,8 @@ const UniStayAuth = () => {
                             placeholder="name@example.com"
                             value={formData.email}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.email ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.email ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.email && (
@@ -430,8 +430,8 @@ const UniStayAuth = () => {
                             placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.password ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.password ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.password && (
@@ -465,8 +465,8 @@ const UniStayAuth = () => {
                             placeholder="John"
                             value={formData.firstName}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.firstName ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.firstName ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.firstName && (
@@ -487,8 +487,8 @@ const UniStayAuth = () => {
                             placeholder="Doe"
                             value={formData.lastName}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.lastName ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.lastName ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.lastName && (
@@ -509,8 +509,8 @@ const UniStayAuth = () => {
                             placeholder="name@example.com"
                             value={formData.email}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.email ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.email ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.email && (
@@ -533,8 +533,8 @@ const UniStayAuth = () => {
                                 placeholder="Your University"
                                 value={formData.university}
                                 onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.university ? 'border-red-300' : 'border-blue-200'
+                                className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                                  errors.university ? 'border-red-300' : 'border-white/30'
                                 }`}
                               />
                               {errors.university && (
@@ -554,8 +554,8 @@ const UniStayAuth = () => {
                                 placeholder="+44 123 456 7890"
                                 value={formData.phone}
                                 onChange={handleInputChange}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                  errors.phone ? 'border-red-300' : 'border-blue-200'
+                                className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                                  errors.phone ? 'border-red-300' : 'border-white/30'
                                 }`}
                               />
                               {errors.phone && (
@@ -579,8 +579,8 @@ const UniStayAuth = () => {
                               placeholder="+44 123 456 7890"
                               value={formData.phone}
                               onChange={handleInputChange}
-                              className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                                errors.phone ? 'border-red-300' : 'border-blue-200'
+                              className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                                errors.phone ? 'border-red-300' : 'border-white/30'
                               }`}
                             />
                             {errors.phone && (
@@ -602,8 +602,8 @@ const UniStayAuth = () => {
                             placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                              errors.password ? 'border-red-300' : 'border-blue-200'
+                            className={`w-full pl-10 pr-4 py-2 backdrop-blur-sm bg-white/50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                              errors.password ? 'border-red-300' : 'border-white/30'
                             }`}
                           />
                           {errors.password && (
@@ -624,7 +624,7 @@ const UniStayAuth = () => {
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-100 text-center text-sm text-blue-600">
+              <div className="p-6 border-t border-white/20 text-center text-sm text-blue-600">
                 {userType === 'student'
                   ? "Find your perfect student home"
                   : "List your properties to thousands of students"
