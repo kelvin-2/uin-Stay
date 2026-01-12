@@ -7,6 +7,28 @@ html, body {
     padding: 0;
     width: 100vw !important;
     height: 100%;
-    background-color:white;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    background-attachment: fixed; /* Keeps gradient fixed when scrolling */
   }
- 
+  
+* {
+  font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+/* Floating effect */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Gradient shift */
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 8s ease infinite;
+}

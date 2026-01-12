@@ -1,4 +1,5 @@
 import api from './axiosClient';
+import publicApi from './publicApi';
 
 // Utility function to map backend response to frontend format
 const mapAccommodationResponse = (property) => {
@@ -172,17 +173,25 @@ export const deleteAccommodation = async (propertyId) => {
   }
 };
 export const get_all_accomodation = async () => {
-   try{
-    const response = await api.get('/accomodations/properties');
+  try {
+    const response = await publicApi.get("/accommodations/public");
+    
+    // If response.data is an array, map each item
+    if (Array.isArray(response.data)) {
+      return {
+        property: response.data.map(mapAccommodationResponse)
+      };
+    }
+    
+    // If single object
     return {
-       property: mapAccommodationResponse(response.data.property || response.data)
+      property: mapAccommodationResponse(response.data)
     };
-  }catch{
-    console.error('Error fetching property details:', error);
-    throw new Error(
-      error.response?.data?.details || 
-      error.response?.data?.error || 
-      'Failed to fetch property details'
-    );
+  } catch (error) {
+    return {
+      error: error.response?.data?.details || 
+             error.response?.data?.error || 
+             "Failed to fetch property details"
+    };
   }
-}
+};

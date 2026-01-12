@@ -4,6 +4,10 @@
   padding: 2rem;
   text-align: center;
 }
+* {
+  font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 
 .logo {
   height: 6em;
