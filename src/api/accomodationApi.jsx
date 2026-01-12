@@ -175,19 +175,23 @@ export const deleteAccommodation = async (propertyId) => {
 export const get_all_accomodation = async () => {
   try {
     const response = await publicApi.get("/accommodations/public");
-
-    console.log(response);
-
+    
+    // If response.data is an array, map each item
+    if (Array.isArray(response.data)) {
+      return {
+        property: response.data.map(mapAccommodationResponse)
+      };
+    }
+    
+    // If single object
     return {
-      property: mapAccommodationResponse(response.data),
+      property: mapAccommodationResponse(response.data)
     };
   } catch (error) {
-    console.error("❌ Error fetching property details:", error);
-
-    throw new Error(
-      error.response?.data?.details ||
-      error.response?.data?.error ||
-      "Failed to fetch property details"
-    );
+    return {
+      error: error.response?.data?.details || 
+             error.response?.data?.error || 
+             "Failed to fetch property details"
+    };
   }
 };

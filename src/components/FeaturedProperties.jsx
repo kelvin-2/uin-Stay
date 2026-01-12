@@ -26,24 +26,33 @@ function FeaturedProperties() {
       try {
         setLoading(true);
         
-        // Use the API endpoint instead of direct Supabase query
+        // Use the API endpoint
         const response = await get_all_accomodation();
+        
+        console.log("API Response:", response);
         
         // Check if the response has an error
         if (response.error) {
           throw new Error(response.error);
         }
         
-        // Get the data from the response
-        const data = response.data || response;
+        // Get the data from the response - handle the 'property' key from your API
+        const data = response.property || response.data || response;
+        
+        console.log("Data extracted:", data);
+        
+        // Ensure data is an array
+        const dataArray = Array.isArray(data) ? data : [data];
         
         // Limit to first 4 properties for featured section
-        const featuredData = Array.isArray(data) ? data.slice(0, 4) : [];
+        const featuredData = dataArray.slice(0, 4);
+        
+        console.log("Featured data:", featuredData);
         
         // Initialize the current image index for each property
         const initialImageIndices = {};
         featuredData.forEach(prop => {
-          initialImageIndices[prop.acc_id] = 0;
+          initialImageIndices[prop.id] = 0;
         });
         setCurrentImageIndex(initialImageIndices);
         
@@ -52,55 +61,22 @@ function FeaturedProperties() {
           // Process amenities
           let parsedAmenities = [];
           if (prop.amenities) {
-            try {
-              parsedAmenities = typeof prop.amenities === 'string' ? 
-                JSON.parse(prop.amenities) : 
-                prop.amenities;
-            } catch (e) {
-              parsedAmenities = typeof prop.amenities === 'string' ?
-                prop.amenities.split(',').map(item => item.trim()) :
-                [];
-            }
+            parsedAmenities = Array.isArray(prop.amenities) ? prop.amenities : [];
           }
           
           // Process payment methods
           let parsedPaymentMethods = [];
-          if (prop.payment_methods) {
-            try {
-              parsedPaymentMethods = typeof prop.payment_methods === 'string' ?
-                JSON.parse(prop.payment_methods) :
-                prop.payment_methods;
-            } catch (e) {
-              parsedPaymentMethods = typeof prop.payment_methods === 'string' ?
-                prop.payment_methods.split(',').map(item => item.trim()) :
-                [];
-            }
+          if (prop.paymentMethods) {
+            parsedPaymentMethods = Array.isArray(prop.paymentMethods) ? prop.paymentMethods : [];
           }
           
-          // Process image URLs to handle arrays or strings
+          // Process image URLs - your API returns 'images' array
           let imageUrls = [];
           
-          // Check if image_url is an array
-          if (Array.isArray(prop.image_url)) {
-            imageUrls = prop.image_url.map(url => validateImageUrl(url));
-          }
-          // Check if it's a string that might be JSON
-          else if (typeof prop.image_url === 'string') {
-            try {
-              // Try to parse as JSON if it starts with [ or {
-              if (prop.image_url.trim().startsWith('[') || prop.image_url.trim().startsWith('{')) {
-                const parsedImages = JSON.parse(prop.image_url);
-                imageUrls = Array.isArray(parsedImages) ? 
-                  parsedImages.map(url => validateImageUrl(url)) : 
-                  [validateImageUrl(prop.image_url)];
-              } else {
-                // Just a regular string URL
-                imageUrls = [validateImageUrl(prop.image_url)];
-              }
-            } catch (e) {
-              // If parsing fails, treat as a single URL
-              imageUrls = [validateImageUrl(prop.image_url)];
-            }
+          if (Array.isArray(prop.images)) {
+            imageUrls = prop.images.map(url => validateImageUrl(url));
+          } else if (prop.images && typeof prop.images === 'string') {
+            imageUrls = [validateImageUrl(prop.images)];
           }
           
           // Ensure we always have at least one image (even if it's the fallback)
@@ -109,13 +85,27 @@ function FeaturedProperties() {
           }
           
           return {
-            ...prop,
+            acc_id: prop.id,
+            title: prop.title,
+            address: prop.address,
+            description: prop.accDetails,
+            max_occupants: prop.maxOccupants,
+            deposit: prop.deposit,
+            user_id: prop.userId,
+            monthly_rent: prop.monthlyRent,
+            room_type: prop.roomType,
+            location: prop.location,
+            is_verified: prop.isVerified,
+            created_at: prop.createdAt,
+            updated_at: prop.updatedAt,
+            status: 'available',
             parsedAmenities,
             parsedPaymentMethods,
             imageUrls
           };
         });
         
+        console.log("Processed data:", processedData);
         setProperties(processedData);
       }
       catch(error) {
@@ -150,7 +140,7 @@ function FeaturedProperties() {
     if (!method) return <DollarSign className="w-3 h-3 text-gray-600" />;
     
     const methodLower = method.toLowerCase();
-    if (methodLower.includes('cash')) return <Wallet className="w-3 h-3 text-gray-600" />;
+    if (methodLower.includes('cash') || methodLower.includes('private')) return <Wallet className="w-3 h-3 text-gray-600" />;
     if (methodLower.includes('card') || methodLower.includes('credit') || methodLower.includes('debit')) 
       return <CreditCard className="w-3 h-3 text-gray-600" />;
     if (methodLower.includes('bursary')) 
@@ -390,7 +380,7 @@ function FeaturedProperties() {
                 <div className="p-4 md:p-6">
                   {/* Title/Location */}
                   <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                    {accommodation.location || 'Student Accommodation'}
+                    {accommodation.location || accommodation.title || 'Student Accommodation'}
                   </h3>
 
                   {/* Address */}
