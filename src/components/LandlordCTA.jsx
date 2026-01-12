@@ -3,7 +3,7 @@ import { Building2, TrendingUp, Users, Award } from 'lucide-react';
 
 function LandlordCTA() {
   return (
-    <section className="w-full py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section className="w-full py-20 bg-gradient-to-b from-gray-50 to-white pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Card */}
