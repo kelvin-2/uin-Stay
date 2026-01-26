@@ -104,11 +104,11 @@ function LandlordCTA() {
               </Link>
               
               {/* Special Offer with Glassmorphism */}
-              <div className="mt-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm rounded-2xl p-4 border border-blue-300/30">
+              {/* <div className="mt-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm rounded-2xl p-4 border border-blue-300/30">
                 <p className="text-gray-900 font-semibold text-center">
                   🎉 Special Launch Offer: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">No Commission for 6 Months!</span>
                 </p>
-              </div>
+              </div> */}
             </div>
             
             {/* Right Side - Stats & Visual with Enhanced Glassmorphism */}
