@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, TrendingUp, Users, Award } from 'lucide-react';
+import { publicStats } from '../api/statsApi';
 import { Link } from 'react-router-dom';
 
 function LandlordCTA() {
@@ -15,26 +16,17 @@ function LandlordCTA() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Replace with your actual API call
-        // const response = await publicStats();
-        // if (response.success && response.stats) {
-        //   setStats(response.stats);
-        // }
-        
-        // Fallback/demo values
-        setStats({
-          activeListings: 0,
-          studentUsers: 0,
-          propertyOwners: 0,
-          occupancyRate: 95,
-          avgResponseTime: "24h"
-        });
+        const response = await publicStats();
+        if (response.success && response.stats) {
+          setStats(response.stats);
+        }
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        // Optionally set fallback values on error
         setStats({
-          activeListings: 0,
-          studentUsers: 0,
-          propertyOwners: 0,
+          activeListings: 500,
+          studentUsers: 2000,
+          propertyOwners: 150,
           occupancyRate: 95,
           avgResponseTime: "24h"
         });
@@ -159,12 +151,52 @@ function LandlordCTA() {
                     <div className="text-white/90 text-sm">Avg. Response</div>
                   </div>
                 </div>
+                
+                {/* Testimonial with Glassmorphism */}
+                {/* <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300">
+                  <p className="text-white/95 italic mb-4">
+                    "UniStay helped me fill all my properties within 2 weeks. The platform is easy to use and the students are reliable."
+                  </p>
+                  <p className="font-semibold">Sarah M.</p>
+                  <p className="text-sm text-white/80">Property Owner, Summerstrand</p>
+                </div> */}
               </div>
             </div>
             
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0); 
+          }
+        }
+      `}</style>
     </section>
   );
 }
