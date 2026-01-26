@@ -24,9 +24,9 @@ function LandlordCTA() {
         console.error('Failed to fetch stats:', error);
         // Optionally set fallback values on error
         setStats({
-          activeListings: 500,
-          studentUsers: 2000,
-          propertyOwners: 150,
+          activeListings: 0,
+          studentUsers: 0,
+          propertyOwners: 0,
           occupancyRate: 95,
           avgResponseTime: "24h"
         });
