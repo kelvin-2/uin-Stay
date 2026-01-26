@@ -1,7 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, TrendingUp, Users, Award } from 'lucide-react';
+import { publicStats } from '../api/statsApi';
+import { Link } from 'react-router-dom';
 
 function LandlordCTA() {
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    studentUsers: 0,
+    propertyOwners: 0,
+    occupancyRate: 0,
+    avgResponseTime: "0h"
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await publicStats();
+        if (response.success && response.stats) {
+          setStats(response.stats);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+        // Optionally set fallback values on error
+        setStats({
+          activeListings: 0,
+          studentUsers: 0,
+          propertyOwners: 0,
+          occupancyRate: 95,
+          avgResponseTime: "24h"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <section className="w-full py-20 mt-20 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -60,15 +96,17 @@ function LandlordCTA() {
               </div>
               
               {/* CTA Button */}
-              <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2 group w-full sm:w-auto">
-                <Building2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                List Your Property Now
-              </button>
+              <Link to="/signin" className="w-full sm:w-auto">
+                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 inline-flex items-center justify-center gap-2 group w-full">
+                  <Building2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                  List Your Property Now
+                </button>
+              </Link>
               
               {/* Special Offer with Glassmorphism */}
               <div className="mt-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm rounded-2xl p-4 border border-blue-300/30">
                 <p className="text-gray-900 font-semibold text-center">
-                  🎉 Special Launch Offer: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">No Commission for 3 Months!</span>
+                  🎉 Special Launch Offer: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">No Commission for 6 Months!</span>
                 </p>
               </div>
             </div>
@@ -86,34 +124,42 @@ function LandlordCTA() {
                 {/* Stats Grid with Glassmorphism */}
                 <div className="grid grid-cols-2 gap-6 mb-8">
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-bold mb-2">500+</div>
+                    <div className={`text-4xl font-bold mb-2 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                      {stats.activeListings}+
+                    </div>
                     <div className="text-white/90 text-sm">Active Listings</div>
                   </div>
                   
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-bold mb-2">2000+</div>
+                    <div className={`text-4xl font-bold mb-2 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                      {stats.studentUsers}+
+                    </div>
                     <div className="text-white/90 text-sm">Student Users</div>
                   </div>
                   
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-bold mb-2">95%</div>
-                    <div className="text-white/90 text-sm">Occupancy Rate</div>
+                    <div className={`text-4xl font-bold mb-2 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                      {stats.propertyOwners}+
+                    </div>
+                    <div className="text-white/90 text-sm">Property Owners</div>
                   </div>
                   
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-bold mb-2">24h</div>
+                    <div className={`text-4xl font-bold mb-2 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                      {stats.avgResponseTime}
+                    </div>
                     <div className="text-white/90 text-sm">Avg. Response</div>
                   </div>
                 </div>
                 
                 {/* Testimonial with Glassmorphism */}
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300">
+                {/* <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 hover:bg-white/25 transition-all duration-300">
                   <p className="text-white/95 italic mb-4">
                     "UniStay helped me fill all my properties within 2 weeks. The platform is easy to use and the students are reliable."
                   </p>
                   <p className="font-semibold">Sarah M.</p>
                   <p className="text-sm text-white/80">Property Owner, Summerstrand</p>
-                </div>
+                </div> */}
               </div>
             </div>
             
@@ -147,7 +193,7 @@ function LandlordCTA() {
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0); 
           }
         }
       `}</style>
