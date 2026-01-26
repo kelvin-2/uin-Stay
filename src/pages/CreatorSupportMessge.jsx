@@ -1,148 +1,120 @@
 import React from 'react';
-import { Heart, DollarSign, Code, University, User, Coffee, Gift, ArrowRight, Mail, Phone } from 'lucide-react';
+import { Heart, Coffee, Zap, Server, Sparkles } from 'lucide-react';
 
-const CreatorSupportMessage= () => {
+const CreatorSupportMessage = () => {
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
-        {/* Header - Keeping as is since it's perfect */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0 bg-[linear-gradient(45deg,_#ffffff33_25%,_transparent_25%,_transparent_50%,_#ffffff33_50%,_#ffffff33_75%,_transparent_75%,_transparent)] bg-[length:64px_64px]"></div>
-          </div>
-          <User className="mx-auto w-20 h-20 mb-6 text-white bg-white/10 p-4 rounded-full" />
-          <h1 className="text-5xl font-bold mb-4">Support uinStay</h1>
-          <p className="text-xl text-blue-100">Help Make Student Housing Accessible</p>
-        </div>
-
-        {/* Journey Section with enhanced design */}
-        <div className="p-8 lg:p-12 bg-gradient-to-br from-white to-blue-50">
-          <div className="flex items-center mb-8">
-            <div className="bg-blue-100 p-3 rounded-full mr-4 shadow-md">
-              <Code className="w-8 h-8 text-blue-600" />
-            </div>
-            <h3 className="text-3xl font-bold text-gray-800">My Journey</h3>
-          </div>
-          <div className="space-y-6 text-gray-600 leading-relaxed max-w-3xl mx-auto">
-            <p className="text-lg">uinStay was created to make finding university accommodation easier and completely free for students. This platform is built with passion and dedication, ensuring that students don't have to pay anything to access valuable resources.</p>
-            <p className="text-lg">As a final-year Computer Science student, I have invested my time and skills into developing and maintaining uinStay. Your donations will help cover my university fees, allowing me to keep uinStay running and free for all students.</p>
-          </div>
-        </div>
-
-        {/* Donation Section with cards */}
-        <div className="p-8 lg:p-12 bg-gray-50">
-          <h3 className="text-3xl font-bold mb-10 text-center text-gray-800">How to Donate</h3>
+    <div className="min-h-screen p-6 md:p-12 flex items-center justify-center">
+      {/* Main Container */}
+      <div className="max-w-4xl w-full">
         
-          <div className="space-y-6 mb-10 text-gray-600 leading-relaxed max-w-3xl mx-auto">
-            <p className="text-lg">You can contribute directly to my university account to help cover my tuition fees:.</p>
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 backdrop-blur-xl bg-white/20 rounded-3xl border border-white/30 shadow-2xl mb-6">
+            <Coffee className="w-10 h-10 text-purple-700" />
           </div>
-          <div className="space-y-8">
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="flex items-center mb-6">
-                <DollarSign className="w-8 h-8 text-blue-600 mr-3" />
-                <h4 className="text-2xl font-semibold">International Payments</h4>
-              </div>
-              <div className="grid gap-4 text-gray-700 divide-y">
-                {[
-                  ["Account Name", "Nelson Mandela University – Main"],
-                  ["Bank Name", "Standard Bank"],
-                  ["Bank Address", "Rink Street, Port Elizabeth, South Africa"],
-                  ["Account Number", "080263011"],
-                  ["Bank Swift Code", "SBZA ZAJJ"],
-                  ["Internet Banking Code", "051001"],
-                  ["Reference", "225047357"]
-                ].map(([label, value]) => (
-                  <div key={label} className="py-3 flex flex-col sm:flex-row sm:justify-between">
-                    <strong className="text-gray-900">{label}:</strong>
-                    <span className="font-medium">{value}</span>
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-purple-700 via-pink-600 to-purple-700 bg-clip-text text-transparent">
+            Support the Creator 
+          </h1>
+          <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="backdrop-blur-xl bg-white/30 rounded-3xl shadow-2xl border border-white/40 overflow-hidden mb-6">
+          <div className="p-8 md:p-12">
+            {/* Introduction */}
+            <div className="mb-8">
+              <p className="text-gray-800 text-lg md:text-xl leading-relaxed mb-4">
+                Hi, my name is <span className="font-bold text-purple-700">Jack Daniel</span>, the creator of <span className="font-bold text-purple-700">UniStay</span> — a platform built to help students find accommodation freely and safely.
+              </p>
+              <p className="text-gray-800 text-lg md:text-xl leading-relaxed mb-4">
+                Everything on this website is <span className="font-bold text-pink-600">100% free</span>, because I believe students shouldn't have to pay just to find a place to stay.
+              </p>
+              <p className="text-gray-700 text-lg leading-relaxed">
+                UniStay is independently built and maintained, from hosting to updates and new features. If you enjoy using the platform and would like to support its growth, you're welcome to make a small donation.
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center my-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent"></div>
+              <Heart className="w-6 h-6 text-pink-500 mx-4" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent"></div>
+            </div>
+
+            {/* Support Items */}
+            <div className="mb-8">
+              <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                <Sparkles className="w-7 h-7 mr-3 text-purple-600" />
+                Your support helps cover:
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Item 1 */}
+                <div className="backdrop-blur-lg bg-white/40 rounded-2xl p-5 border border-white/50 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-start">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-md">
+                      <Server className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-lg mb-1">Website hosting & maintenance</h4>
+                      <p className="text-gray-700">Keeping UniStay online and running smoothly 24/7</p>
+                    </div>
                   </div>
-                ))}
-                <div className="pt-4">
-                  <strong>Email copy of deposit to: </strong>
-                  <a href="mailto:intfees@mandela.ac.za" className="text-blue-600 hover:text-blue-800 transition-colors">intfees@mandela.ac.za</a>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="flex items-center mb-6">
-                <University className="w-8 h-8 text-blue-600 mr-3" />
-                <h4 className="text-2xl font-semibold">Local Payments</h4>
-              </div>
-              <div className="grid gap-4 text-gray-700 divide-y">
-                {[
-                  ["Account Name", "Nelson Mandela University – Main"],
-                  ["Bank Name", "Standard Bank"],
-                  ["Bank Address", "Rink Street, Port Elizabeth, South Africa"],
-                  ["Account Number", "080265855"],
-                  ["Internet Banking Code", "050417"],
-                  ["Reference", "225047357"]
-                ].map(([label, value]) => (
-                  <div key={label} className="py-3 flex flex-col sm:flex-row sm:justify-between">
-                    <strong className="text-gray-900">{label}:</strong>
-                    <span className="font-medium">{value}</span>
+                {/* Item 2 */}
+                <div className="backdrop-blur-lg bg-white/40 rounded-2xl p-5 border border-white/50 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-start">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-md">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-lg mb-1">Ongoing improvements & new features</h4>
+                      <p className="text-gray-700">Continuously enhancing your experience with better tools</p>
+                    </div>
                   </div>
-                ))}
-                <div className="pt-4">
-                  <strong>Email copy of deposit to: </strong>
-                  <a href="mailto:intfees@mandela.ac.za" className="text-blue-600 hover:text-blue-800 transition-colors">intfees@mandela.ac.za</a>
+                </div>
+
+                {/* Item 3 */}
+                <div className="backdrop-blur-lg bg-white/40 rounded-2xl p-5 border border-white/50 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-start">
+                    <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-md">
+                      <Coffee className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-lg mb-1">The occasional coffee that keeps the code flowing</h4>
+                      <p className="text-gray-700">Fueling late-night development sessions</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
-              <p className="text-lg font-semibold text-gray-800 mb-2"> Please also send proof of payment to my email:</p>
-              <a href="mailto:tkmudzingwa21@gmail.com" className="text-blue-600 hover:text-blue-800 transition-colors text-lg">tkmudzingwa21@gmail.com</a>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="flex items-center mb-6">
-                <Coffee className="w-8 h-8 text-blue-600 mr-3" />
-                <h4 className="text-2xl font-semibold">Buy Me a Coffee </h4>
-              </div>
-              <p className="text-gray-700 mb-6">If you'd like to support me directly for coffee, internet, or maintaining uinStay, I truly appreciate it! Since I don't have a payment gateway yet, please contact me for direct donation options:</p>
-              <div className="space-y-4 text-lg">
-                <div className="flex items-center justify-center gap-4">
-                  <Mail className="w-6 h-6 text-blue-600" />
-                  <a href="mailto:tkmudzingwa21@gmail.com" className="text-blue-600 hover:text-blue-800 transition-colors">tkmudzingwa21@gmail.com</a>
-                </div>
-                <div className="flex items-center justify-center gap-4">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                  <a href="tel:+27639604148" className="text-blue-600 hover:text-blue-800 transition-colors">+27 63 960 4148</a>
-                </div>
-              </div>
+            {/* Optional Note */}
+            <div className="backdrop-blur-lg bg-gradient-to-r from-purple-100/60 to-pink-100/60 rounded-2xl p-6 border border-purple-200/50 shadow-inner">
+              <p className="text-gray-800 text-center text-lg font-medium leading-relaxed">
+                Donations are completely <span className="font-bold text-purple-700">optional</span>, but always appreciated. Thank you for being part of the UniStay journey 
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Future Goals with enhanced cards */}
-        <div className="p-8 lg:p-12 bg-gradient-to-br from-gray-50 to-blue-50">
-          <h3 className="text-3xl font-bold mb-10 text-center text-gray-800">What Your Support Will Enable</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="bg-green-100 p-3 rounded-xl inline-block mb-4">
-                <Gift className="w-8 h-8 text-green-600" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-800 mb-3">New Features</h4>
-              <p className="text-gray-600">Virtual tours, AI-powered matching, and enhanced search filters</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="bg-blue-100 p-3 rounded-xl inline-block mb-4">
-                <University className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-800 mb-3">More Universities</h4>
-              <p className="text-gray-600">Expanding coverage to help more students nationwide</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-12 text-center bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-          <p className="text-2xl font-medium mb-8 max-w-2xl mx-auto">
-            Your support keeps uinStay free and accessible for students everywhere.
-          </p>
-          <button className="bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-            Make a Difference Today
+        {/* CTA Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <button className="backdrop-blur-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-5 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-pink-500/50 transform hover:-translate-y-1 transition-all duration-300 border border-white/30 flex items-center justify-center">
+            <Coffee className="w-6 h-6 mr-2" />
+            Buy Me a Coffee
           </button>
+          
+          <button className="backdrop-blur-xl bg-white/40 hover:bg-white/60 text-purple-700 px-8 py-5 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-purple-500/50 transform hover:-translate-y-1 transition-all duration-300 border border-white/50 flex items-center justify-center">
+            <Heart className="w-6 h-6 mr-2" />
+            Support UniStay
+          </button>
+        </div>
+
+        {/* Bottom accent */}
+        <div className="text-center">
+          <p className="text-gray-600 text-sm">Every contribution makes a difference </p>
         </div>
       </div>
     </div>
