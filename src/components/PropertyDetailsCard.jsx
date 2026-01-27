@@ -276,9 +276,7 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
   const landlordContact = property.users?.phone_number;
   const landlordEmail = property.users?.email;
 
-  console.log('👤 Landlord Name:', landlordName);
-  console.log('📞 Landlord Contact:', landlordContact);
-  console.log('📧 Landlord Email:', landlordEmail);
+
 
   return (
     <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24">
