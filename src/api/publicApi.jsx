@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const publicApi = axios.create({
-  baseURL: "https://uinstaybackend-production.up.railway.app/api",
+  baseURL: "https://uinstaybackend.onrender.com/api",
   timeout: 40000,
 });
 
