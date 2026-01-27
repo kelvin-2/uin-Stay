@@ -144,13 +144,29 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsAppContact = () => {
-    const phoneNumber = property?.landlord_contact || '';
-    const formattedPhone = phoneNumber.replace(/\D/g, '');
+    // Get phone number from property.users object
+    const phoneNumber = property?.users?.phone_number || '';
+    
+    console.log('📞 Original phone number:', phoneNumber);
+    
+    // Remove all non-digit characters
+    let formattedPhone = phoneNumber.replace(/\D/g, '');
+    
+    console.log('📞 Formatted phone number:', formattedPhone);
     
     if (!formattedPhone) {
       alert("Sorry, landlord contact information is not available.");
       return;
     }
+    
+    // If the number doesn't start with country code, add South African code (27)
+    if (!formattedPhone.startsWith('27') && formattedPhone.startsWith('0')) {
+      formattedPhone = '27' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('27') && !formattedPhone.startsWith('0')) {
+      formattedPhone = '27' + formattedPhone;
+    }
+    
+    console.log('📞 Final WhatsApp number:', formattedPhone);
     
     // Track WhatsApp button click with Google Analytics
     ReactGA.event({
@@ -178,6 +194,8 @@ I came across your property in ${property.location || property.title || 'Student
 If possible, I'd also like to arrange a viewing at your convenience. Looking forward to your response!`;
     
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
     
     // Open WhatsApp in a new tab
     window.open(whatsappUrl, '_blank');
@@ -250,9 +268,17 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
     );
   }
   
-  const landlordName = property.landlord_name || 'Property Owner';
-  const landlordContact = property.landlord_contact;
-  const landlordEmail = property.landlord_email;
+  // Combine first name and last name for landlord's full name
+  const landlordName = property.users?.first_name && property.users?.last_name
+    ? `${property.users.first_name} ${property.users.last_name}`
+    : property.users?.first_name || property.users?.last_name || 'Property Owner';
+  
+  const landlordContact = property.users?.phone_number;
+  const landlordEmail = property.users?.email;
+
+  console.log('👤 Landlord Name:', landlordName);
+  console.log('📞 Landlord Contact:', landlordContact);
+  console.log('📧 Landlord Email:', landlordEmail);
 
   return (
     <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24">
@@ -420,8 +446,8 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
                 
                 {/* Email button */}
                 {landlordEmail && (
-                  <a
-                    href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || property.title || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
+                  
+                  <a href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || property.title || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
                     className="flex items-center justify-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full text-sm md:text-base mt-2 sm:mt-0 transition-colors"
                   >
                     <Mail className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
@@ -436,5 +462,6 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
     </div>
   );
 };
+
 
 export default PropertyDetail;

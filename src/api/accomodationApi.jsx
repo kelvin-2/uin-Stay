@@ -22,7 +22,8 @@ const mapAccommodationResponse = (property) => {
     amenities: property.amenities,
     images: property.image_urls,
     createdAt: property.created_at,
-    updatedAt: property.updated_at
+    updatedAt: property.updated_at,
+     users: property.users
   };
 };
 

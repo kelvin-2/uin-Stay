@@ -1,7 +1,7 @@
 import axios from "axios";
-
+// const API_URL = 'http://localhost:3005/api';
 const publicApi = axios.create({
-  baseURL: "https://uinstaybackend.onrender.com/api",
+  baseURL: "http://localhost:3005/api",
   timeout: 40000,
 });
 
