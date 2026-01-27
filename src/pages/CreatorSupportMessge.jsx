@@ -24,7 +24,7 @@ const CreatorSupportMessage = () => {
             {/* Introduction */}
             <div className="mb-8">
               <p className="text-gray-800 text-lg md:text-xl leading-relaxed mb-4">
-                Hi, my name is <span className="font-bold text-purple-700">Jack Daniel</span>, the creator of <span className="font-bold text-purple-700">UniStay</span> — a platform built to help students find accommodation freely and safely.
+                Hi, my name is <span className="font-bold text-purple-700">Kelvin Mudzingwa</span>, the creator of <span className="font-bold text-purple-700">UniStay</span> — a platform built to help students find accommodation freely and safely.
               </p>
               <p className="text-gray-800 text-lg md:text-xl leading-relaxed mb-4">
                 Everything on this website is <span className="font-bold text-pink-600">100% free</span>, because I believe students shouldn't have to pay just to find a place to stay.
