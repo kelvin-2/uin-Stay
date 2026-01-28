@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // // // in development 
-// const API_URL = 'http://localhost:3005/api';
-const API_URL = 'https://uinstaybackend.onrender.com/api';
+const API_URL = 'http://localhost:3002/api';
+// const API_URL = 'https://uinstaybackend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,

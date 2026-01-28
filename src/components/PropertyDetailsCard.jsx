@@ -20,7 +20,8 @@ import {
   Wallet,
   ArrowLeft,
   Mail,
-  Loader2
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import { getAccommodationById } from '../api/accomodationApi';
 import PropertyImageGrid from '../components/PropertyImageGrid';
@@ -292,11 +293,19 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Image Gallery using PropertyImageGrid */}
         <div className="relative">
-          {/* Status Badge */}
-          <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10">
+          {/* Status and Verification Badges */}
+          <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10 flex flex-wrap gap-2">
             <span className="bg-blue-600 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">
               {property.is_verified ? 'Available Now' : 'Pending Verification'}
             </span>
+            
+            {/* Verification Badge */}
+            {property.is_verified && (
+              <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                Verified
+              </span>
+            )}
           </div>
           
           <PropertyImageGrid 
@@ -309,10 +318,16 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
         <div className="p-4 md:p-6">
           {/* Header Information */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                {property.location || property.title || 'Student Accommodation'}
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-start gap-2">
+                <h1 className="text-2xl md:text-3xl font-bold mb-2 flex-1">
+                  {property.location || property.title || 'Student Accommodation'}
+                </h1>
+                {/* Verification Icon next to title */}
+                {property.is_verified && (
+                  <CheckCircle className="w-6 h-6 md:w-7 md:h-7 text-green-600 flex-shrink-0 mt-1" title="Verified Property" />
+                )}
+              </div>
               <div className="flex items-center text-gray-600">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span className="text-sm md:text-base">{property.address || 'Address not specified'}</span>
@@ -333,6 +348,19 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
               )}
             </div>
           </div>
+
+          {/* Verification Status Banner (for verified properties) */}
+          {property.is_verified && (
+            <div className="mb-6 p-3 md:p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-green-900">Verified Property</h3>
+                <p className="text-xs md:text-sm text-green-700">This property has been verified by UniStay for your safety and security.</p>
+              </div>
+            </div>
+          )}
 
           {/* Quick Info */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
