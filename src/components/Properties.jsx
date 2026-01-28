@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   MapPin, Home, Heart, Clock, Shield, Wifi, 
   ImageOff, ChevronLeft, ChevronRight, Star, 
-  Wallet, CreditCard, GraduationCap, BadgeDollarSign, DollarSign
+  Wallet, CreditCard, GraduationCap, BadgeDollarSign, DollarSign, CheckCircle
 } from 'lucide-react';
 import { get_all_accomodation } from '../api/accomodationApi';
 import SearchBox from './SearchBox';
@@ -501,10 +501,18 @@ const Properties = () => {
                     className="block backdrop-blur-xl bg-white/40 border border-white/30 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 relative transform hover:-translate-y-2 hover:bg-white/50"
                   >
                     {/* Glassmorphic Status Badge */}
-                    <div className="absolute top-3 left-3 z-10">
+                    <div className="absolute top-3 left-3 z-10 flex gap-2">
                       <span className="backdrop-blur-md bg-gradient-to-r from-blue-500/90 to-purple-500/90 border border-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                         {accommodation.status === 'booked' ? 'Booked' : 'Available Now'}
                       </span>
+                      
+                      {/* Verification Badge */}
+                      {accommodation.is_verified && (
+                        <span className="backdrop-blur-md bg-gradient-to-r from-green-500/90 to-emerald-500/90 border border-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Verified
+                        </span>
+                      )}
                     </div>
 
                     {/* Glassmorphic Favorite Button */}
@@ -574,10 +582,15 @@ const Properties = () => {
                       {/* Decorative gradient line */}
                       <div className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
                       
-                      {/* Title/Location */}
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors duration-300">
-                        {accommodation.location || accommodation.title || 'Student Accommodation'}
-                      </h3>
+                      {/* Title/Location with Verification Badge */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg md:text-xl font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors duration-300 flex-1">
+                          {accommodation.location || accommodation.title || 'Student Accommodation'}
+                        </h3>
+                        {accommodation.is_verified && (
+                          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" title="Verified Property" />
+                        )}
+                      </div>
 
                       {/* Address with Glassmorphic Background */}
                       <div className="flex items-start gap-2 mb-4 p-2 rounded-xl backdrop-blur-sm bg-gray-50/50 border border-gray-200/50">

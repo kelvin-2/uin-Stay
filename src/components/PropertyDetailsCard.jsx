@@ -20,7 +20,8 @@ import {
   Wallet,
   ArrowLeft,
   Mail,
-  Loader2
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import { getAccommodationById } from '../api/accomodationApi';
 import PropertyImageGrid from '../components/PropertyImageGrid';
@@ -144,13 +145,29 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsAppContact = () => {
-    const phoneNumber = property?.landlord_contact || '';
-    const formattedPhone = phoneNumber.replace(/\D/g, '');
+    // Get phone number from property.users object
+    const phoneNumber = property?.users?.phone_number || '';
+    
+    console.log('📞 Original phone number:', phoneNumber);
+    
+    // Remove all non-digit characters
+    let formattedPhone = phoneNumber.replace(/\D/g, '');
+    
+    console.log('📞 Formatted phone number:', formattedPhone);
     
     if (!formattedPhone) {
       alert("Sorry, landlord contact information is not available.");
       return;
     }
+    
+    // If the number doesn't start with country code, add South African code (27)
+    if (!formattedPhone.startsWith('27') && formattedPhone.startsWith('0')) {
+      formattedPhone = '27' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('27') && !formattedPhone.startsWith('0')) {
+      formattedPhone = '27' + formattedPhone;
+    }
+    
+    console.log('📞 Final WhatsApp number:', formattedPhone);
     
     // Track WhatsApp button click with Google Analytics
     ReactGA.event({
@@ -178,6 +195,8 @@ I came across your property in ${property.location || property.title || 'Student
 If possible, I'd also like to arrange a viewing at your convenience. Looking forward to your response!`;
     
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
     
     // Open WhatsApp in a new tab
     window.open(whatsappUrl, '_blank');
@@ -250,9 +269,15 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
     );
   }
   
-  const landlordName = property.landlord_name || 'Property Owner';
-  const landlordContact = property.landlord_contact;
-  const landlordEmail = property.landlord_email;
+  // Combine first name and last name for landlord's full name
+  const landlordName = property.users?.first_name && property.users?.last_name
+    ? `${property.users.first_name} ${property.users.last_name}`
+    : property.users?.first_name || property.users?.last_name || 'Property Owner';
+  
+  const landlordContact = property.users?.phone_number;
+  const landlordEmail = property.users?.email;
+
+
 
   return (
     <div className="max-w-4xl mx-auto p-4 pt-6 mt-16 sm:mt-20 md:mt-24">
@@ -268,11 +293,19 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Image Gallery using PropertyImageGrid */}
         <div className="relative">
-          {/* Status Badge */}
-          <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10">
+          {/* Status and Verification Badges */}
+          <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10 flex flex-wrap gap-2">
             <span className="bg-blue-600 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">
               {property.is_verified ? 'Available Now' : 'Pending Verification'}
             </span>
+            
+            {/* Verification Badge */}
+            {property.is_verified && (
+              <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs md:text-sm font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                Verified
+              </span>
+            )}
           </div>
           
           <PropertyImageGrid 
@@ -285,10 +318,16 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
         <div className="p-4 md:p-6">
           {/* Header Information */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                {property.location || property.title || 'Student Accommodation'}
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-start gap-2">
+                <h1 className="text-2xl md:text-3xl font-bold mb-2 flex-1">
+                  {property.location || property.title || 'Student Accommodation'}
+                </h1>
+                {/* Verification Icon next to title */}
+                {property.is_verified && (
+                  <CheckCircle className="w-6 h-6 md:w-7 md:h-7 text-green-600 flex-shrink-0 mt-1" title="Verified Property" />
+                )}
+              </div>
               <div className="flex items-center text-gray-600">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span className="text-sm md:text-base">{property.address || 'Address not specified'}</span>
@@ -309,6 +348,19 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
               )}
             </div>
           </div>
+
+          {/* Verification Status Banner (for verified properties) */}
+          {property.is_verified && (
+            <div className="mb-6 p-3 md:p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-green-900">Verified Property</h3>
+                <p className="text-xs md:text-sm text-green-700">This property has been verified by UniStay for your safety and security.</p>
+              </div>
+            </div>
+          )}
 
           {/* Quick Info */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6 p-3 md:p-4 bg-gray-50 rounded-lg">
@@ -420,8 +472,8 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
                 
                 {/* Email button */}
                 {landlordEmail && (
-                  <a
-                    href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || property.title || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
+                  
+                  <a href={`mailto:${landlordEmail}?subject=Inquiry about ${property.location || property.title || 'Student Accommodation'}&body=Hello, I am interested in your property at ${property.address || 'Address not specified'}. Could you please provide more information about availability?`}
                     className="flex items-center justify-center px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full text-sm md:text-base mt-2 sm:mt-0 transition-colors"
                   >
                     <Mail className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
@@ -436,5 +488,6 @@ If possible, I'd also like to arrange a viewing at your convenience. Looking for
     </div>
   );
 };
+
 
 export default PropertyDetail;
